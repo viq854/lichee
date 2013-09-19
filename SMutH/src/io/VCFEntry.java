@@ -26,6 +26,11 @@ public class VCFEntry {
 	private String format;
 	private ArrayList<String> alleleFreqList;
 	
+		
+	private String[] genotype;
+	private int[] refCount;
+	private int[] altCount;
+	
 	/**
 	 * Function: VCFEntry(String entry)
 	 * Usage: (Constructor)
@@ -35,7 +40,8 @@ public class VCFEntry {
 	 * @param entry	The VCF entry line as a string from the VCF file.
 	 * 
 	 */
-	public VCFEntry(String entry){
+	
+	public VCFEntry(String entry, int numeofSamples){
 		raw = entry;
 		alleleFreqList = new ArrayList<String>();
 		String[] entryParts = entry.split("\t");
@@ -69,11 +75,18 @@ public class VCFEntry {
 				format = entryParts[i];
 				break;
 			default:
-				alleleFreqList.add(entryParts[i]);
+				String[] freqParts = entryParts[i].split(":");
+				genotype[i-9] = freqParts[0];
+				String[] alleleDepths = freqParts[1].split(",");
+				refCount[i-9] = Integer.parseInt(alleleDepths[0]);
+				altCount[i-9] = Integer.parseInt(alleleDepths[1]);
+
 				break;
 			}
 		}
+
 	}
+	
 	
 	/**
 	 * Function: getChromosome()
@@ -170,17 +183,6 @@ public class VCFEntry {
 		return format;
 	}
 	
-	/**
-	 * Function: getNumSamples()
-	 * Usage: int numSamples = entry.getNumSamples()
-	 * ----
-	 * Returns the number of samples in the entry
-	 * 
-	 * @return	number of samples in the entry
-	 */
-	public int getNumSamples(){
-		return alleleFreqList.size();
-	}
 	
 	/**
 	 * Function: getAlleleFreq(int sample)
@@ -220,27 +222,10 @@ public class VCFEntry {
 	 * @param sample	the particular sample from the entry
 	 * @return 	the major and minor allele of the sample of the entry as a String
 	 */
-	public String getAlleleCount(int sample){
-		String[] freqParts = getFreqParts(sample);
-		return freqParts[1];
+	public int getAltCount(int sample){
+		return altCount[sample];
 	}
 	
-	/**
-	 * Function: getAlleleCount(int sample, int index)
-	 * Usage: int count = entry.getAlleleCount(sample, index)
-	 * ----
-	 * Returns the count of either the major or minor allele of a sample
-	 * of the entry
-	 * 
-	 * @param sample	the particular sample from the entry
-	 * @param index		0 for the major allele, 1 for the minor
-	 * @return	the major or minor allele count as an int
-	 */
-	public int getAlleleCount(int sample, int index){
-		String[] freqParts = getFreqParts(sample);
-		String[] alleleDepths = freqParts[1].split(",");
-		return Integer.parseInt(alleleDepths[index]);
-	}
 	
 	/**
 	 * Function: getReadDepth(int sample)
@@ -251,8 +236,7 @@ public class VCFEntry {
 	 * @return	the depth of a sample of the entry as an int
 	 */
 	public int getReadDepth(int sample){
-		String[] freqParts = getFreqParts(sample);
-		return Integer.parseInt(freqParts[2]);
+		return refCount[sample]+altCount[sample];
 	}
 	
 	/**
@@ -265,8 +249,7 @@ public class VCFEntry {
 	 * @return	the genotype of the sample of the entry as a string
 	 */
 	public String getGenotype(int sample){
-		String[] freqParts = getFreqParts(sample);
-		return freqParts[0];
+		return genotype[sample];
 	}
 	
 	/**
@@ -284,7 +267,7 @@ public class VCFEntry {
 	public String getGATK(){
 		String result = "";
 		for (int i = 0; i < alleleFreqList.size(); i++){
-			if (getGenotype(i).equals("0/0")) result += "0";
+			if (genotype[i].equals("0/0")) result += "0";
 			else result += "1";
 		}
 		return result;
@@ -312,7 +295,7 @@ public class VCFEntry {
 	 * @return	The summed probability of a read being correct as a double
 	 */
 	public double getSumProb(int sample){
-		int a = getAlleleCount(sample, 1);
+		int a = altCount[sample];
 		int d = getReadDepth(sample);
 		double total = 0.0;
 		for (int i = d; i >= a; i--){
@@ -399,6 +382,6 @@ public class VCFEntry {
 	
 	
 	public double getAAF(int i) {
-		return (double)getAlleleCount(i, 1)/(getAlleleCount(i, 0)+getAlleleCount(i, 1));
+		return (double)altCount[i]/(refCount[i]+altCount[i]);
 	}
 }
