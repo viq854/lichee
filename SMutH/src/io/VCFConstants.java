@@ -7,9 +7,10 @@ public final class VCFConstants {
 	public static int NormalSample = 1;
 	
 	// to validate SNP
-	public static final double AVG_COVERAGE = 1;
+	public static final double AVG_COVERAGE = 50;
 	public static final double MIN_COVERAGE = 10;
 	public static final double GROUP_PVALUE = 0.5;
+	public static final double MIN_QUAL = 200;
 	
 	// to edit SNP 
 	public static final double BASE_ERROR = 0.02;

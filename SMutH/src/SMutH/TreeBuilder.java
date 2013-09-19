@@ -109,22 +109,23 @@ public class TreeBuilder {
 		 * Looks like it works for now. Can go back later.
 		 * 
 		 */
-		if (args.length == 0) {
+		/*if (args.length == 0) {
 			System.out.println("Must pass input matrix!");
 			System.exit(1);
 		}
+		*/
 
 		//for (Samples s: Samples.values())
 		{
 		testName = "LPM018";//s.toString();
 		VCFConstants.NormalSample = 1;//s.normal - 1;
 		System.out.println("Start "+ testName);
-		path =  "../../ash/"+testName+"/";//"../../BreastCancer/patients_vcfs/"; //
+		path =  "/Users/rahelehs/Work/ash/"+testName+"/";//"../../BreastCancer/patients_vcfs/"; //
 		String fileName = path+testName+".recalibrated.hardfiltered.vcf";
 		VCFDatabase vcfDB = new VCFDatabase(fileName);
 		vcfDB.generateMatrix("output.txt");
 		vcfDB.generateGATKFile(path+testName + ".GATK-output.txt");
-		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree(args[0]);
+		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree("output.txt");
 		if (matrixPrime != null) {
 			System.out.println("This can be a PhyTree!");
 			TreeChecker.printMatrix(matrixPrime);
@@ -136,8 +137,8 @@ public class TreeBuilder {
 			tb.buildTree(matrixPrime, mutMap, LColFuncMap,vcfDB);
 		} else {
 			System.out.println("This cannot be a PhyTree!");
-			matrixPrime = TreeChecker.getMatrixPrime(args[0]);
-			ArrayList<ArrayList<Integer>> noConflictMatrixPrime = TreeChecker.getCFMatrixPrime(args[0]);
+			matrixPrime = TreeChecker.getMatrixPrime("output.txt");
+			ArrayList<ArrayList<Integer>> noConflictMatrixPrime = TreeChecker.getCFMatrixPrime("output.txt");
 			Set<ArrayList<Integer>> conflicts = TreeChecker.getConflicts(matrixPrime, noConflictMatrixPrime);
 			Map<String, Integer> mutMap = TreeChecker.getMutMap();
 			updateMutMap(mutMap, matrixPrime.size());

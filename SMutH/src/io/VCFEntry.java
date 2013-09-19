@@ -41,10 +41,14 @@ public class VCFEntry {
 	 * 
 	 */
 	
-	public VCFEntry(String entry, int numeofSamples){
+	public VCFEntry(String entry, int numofSamples){
 		raw = entry;
 		alleleFreqList = new ArrayList<String>();
 		String[] entryParts = entry.split("\t");
+		genotype = new String[numofSamples];
+		refCount = new int[numofSamples];
+		altCount = new int[numofSamples];
+		
 		for (int i = 0; i < entryParts.length; i++){
 			switch(i){
 			case 0:
@@ -75,12 +79,14 @@ public class VCFEntry {
 				format = entryParts[i];
 				break;
 			default:
+				alleleFreqList.add(entryParts[i]);
 				String[] freqParts = entryParts[i].split(":");
 				genotype[i-9] = freqParts[0];
-				String[] alleleDepths = freqParts[1].split(",");
-				refCount[i-9] = Integer.parseInt(alleleDepths[0]);
-				altCount[i-9] = Integer.parseInt(alleleDepths[1]);
-
+				if (!freqParts[0].equals("./.")){
+					String[] alleleDepths = freqParts[1].split(",");
+					refCount[i-9] = Integer.parseInt(alleleDepths[0]);
+					altCount[i-9] = Integer.parseInt(alleleDepths[1]);
+				}
 				break;
 			}
 		}
@@ -254,7 +260,7 @@ public class VCFEntry {
 	 */
 	public String getGATK(){
 		String result = "";
-		for (int i = 0; i < alleleFreqList.size(); i++){
+		for (int i = 0; i < genotype.length; i++){
 			if (genotype[i].equals("0/0")) result += "0";
 			else result += "1";
 		}

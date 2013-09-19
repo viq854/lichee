@@ -24,6 +24,8 @@ public class VCFDatabase {
 	private ArrayList<String> names; 
 	private int allCounter = 0;
 	private	int germlineCounter = 0;
+	HashMap<String, ArrayList<VCFEntry>> TAG2SNVs;
+	
 	
 	/**
 	 * Function: VCFDatabase(String TESTFILE)
@@ -63,7 +65,7 @@ public class VCFDatabase {
 				
 				for (int i = 0; i < numSamples; i++){
 					/* TO FILTER OUT SNVs with very low coverage in some SAMPLES*/
-					if (entry.getAlleleFreq(i).equals("./.") || entry.getReadDepth(i) <= VCFConstants.MIN_COVERAGE){
+					if (entry.getGenotype(i).equals("./.") || entry.getReadDepth(i) <= VCFConstants.MIN_COVERAGE){
 						isLegitimate = false;
 						break;
 					}
@@ -92,7 +94,7 @@ public class VCFDatabase {
 					isGermline = true;
 				}else 
 				if (entry.getSumProb(VCFConstants.NormalSample) < VCFConstants.EDIT_PVALUE ){
-					System.out.println("*"+entry);
+					//System.out.println("*"+entry);
 					isGermline = true;
 				}
 				
@@ -105,7 +107,6 @@ public class VCFDatabase {
 					//continue;
 				
 				somaticSNPs.add(entry);
-				//System.out.println("s "+entry);
 			}
 			rd.close();
 			System.out.println("There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + "("+ hgSNPs.size() +") as germline (Heterozygous), and "+ somaticSNPs.size() +" as somatic. \n");
@@ -113,7 +114,7 @@ public class VCFDatabase {
 			System.out.println("File Reading Error!");
 		}
 		
-		
+		generateMatrix("output.txt");
 	}
 	
 	public String getHeader(){
@@ -141,6 +142,11 @@ public class VCFDatabase {
 
 	}
 	
+	
+	public ArrayList<VCFEntry> getHGEntries(){
+		return hgSNPs;
+	}
+	
 	/**
 	 * Function: getEntriesByGATK(String inputCode)
 	 * Usage: ArrayList<VCFEntry> entries = db.getEntriesByGATK(inputCode)
@@ -152,12 +158,13 @@ public class VCFDatabase {
 	 * @return	An ArrayList of VCFEntries with a GATK equivalent to inputCode
 	 */
 	public ArrayList<VCFEntry> getEntriesByGATK(String inputCode){
-		ArrayList<VCFEntry> list = new ArrayList<VCFEntry>();
-		for (VCFEntry entry: somaticSNPs){
-			if (entry.getGATK().equals(inputCode)) list.add(entry);
-		}
-		return list;
+		return TAG2SNVs.get(inputCode);
 	}
+	
+	public HashMap<String,ArrayList<VCFEntry>> getTAG2SNVsMap(){
+		return TAG2SNVs;
+	}
+	
 	
 	public void printInfo(PrintWriter pw, String inputCode){
 		double[] sum;//[names.size()];
@@ -488,6 +495,7 @@ public class VCFDatabase {
 		return result;
 	}
 
+	
 	/**
 	 * Function: generateMatrix(String outputFile)
 	 * Usage: generateMatrix(outputFile)
@@ -498,37 +506,38 @@ public class VCFDatabase {
 	 * @param outputFile	The file which to write the matrix
 	 */
 	public void generateMatrix(String outputFile){
-		Map<String, Integer> GATKCounter = new HashMap<String, Integer>();
+		TAG2SNVs = new HashMap<String, ArrayList<VCFEntry>>();
+
 		int codeLength = -1;
 		for (VCFEntry entry: somaticSNPs){
 			String code = entry.getGATK();
 			if (codeLength == -1) codeLength = code.length();
-			if (GATKCounter.containsKey(code)){
-				GATKCounter.put(code, GATKCounter.get(code) + 1);
-			} else {
-				GATKCounter.put(code, 1);
+			if (!TAG2SNVs.containsKey(code)){
+				TAG2SNVs.put(code, new ArrayList<VCFEntry>());				
 			}
+			TAG2SNVs.get(code).add(entry); 
 		}
 		//Quick-fix to remove the entry for all 1's
-		String imposCode = "";
+		/*String imposCode = "";
 		for (int i = 0; i < codeLength; i++){
 			imposCode += "1";
 		}
+		
 		if (GATKCounter.containsKey(imposCode)) GATKCounter.remove(imposCode);
+		*/
 		try {
+						
+			Object[] keys = (TAG2SNVs.keySet()).toArray();
+			Arrays.sort(keys);
+			
 			PrintWriter pw = new PrintWriter(new FileWriter(outputFile));
-			int rows = GATKCounter.size();
-			int cols = somaticSNPs.get(0).getGATK().length();
-			pw.write(rows + " " + cols + "\n");
-			ArrayList<String> keySet = new ArrayList<String>(GATKCounter.keySet());
-			for (int i = 0; i < rows; i++){
-				String key = largestKey(keySet, GATKCounter);
-				if (i < rows - 1){
-					pw.write(key + " " + GATKCounter.get(key) + "\n");
+			pw.write(keys.length + " " + names.size() + "\n");
+			for (int i = 0; i < keys.length; i++){
+				if (i < keys.length - 1){
+					pw.write(keys[i] + " " + TAG2SNVs.get(keys[i]).size() + "\n");
 				} else {
-					pw.write(key + " " + GATKCounter.get(key));
+					pw.write(keys[i] + " " + TAG2SNVs.get(keys[i]).size());
 				}
-				keySet.remove(key);
 			}
 			pw.close();
 		} catch (IOException e) {
