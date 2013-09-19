@@ -199,21 +199,6 @@ public class VCFEntry {
 	}
 	
 	/**
-	 * Function: getFreqParts(int sample)
-	 * Usage: String[] freqArray = entry.getFreqParts(sample)
-	 * ----
-	 * Returns an array of Strings which represent components
-	 * from the frequency parts of the allele frequency. This is the same
-	 * as the getAlleleFreq function, only splitting the string by ":"
-	 * as a delimiter.
-	 * @param sample	the particular sample wanted from the entry
-	 * @return	the raw allele frequency of the sample of the entry as a String
-	 */
-	private String[] getFreqParts(int sample){
-		return alleleFreqList.get(sample).split(":");
-	}
-	
-	/**
 	 * Function: getAlleleCount(int sample)
 	 * Usage: String counts = entry.getAlleleCount(sample)
 	 * ----
@@ -226,6 +211,9 @@ public class VCFEntry {
 		return altCount[sample];
 	}
 	
+	public int getRefCount(int sample){
+		return refCount[sample];
+	}
 	
 	/**
 	 * Function: getReadDepth(int sample)

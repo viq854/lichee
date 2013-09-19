@@ -43,12 +43,13 @@ public class VCFDatabase {
 			while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
 			//System.out.println(lastLine+"\n");
 			getNames(lastLine);
+			int numSamples = names.size();
 			
 			while (currLine != null){
-				VCFEntry entry = new VCFEntry(currLine);
+				VCFEntry entry = new VCFEntry(currLine,numSamples);
 				currLine = rd.readLine();
 				
-				int numSamples = entry.getNumSamples();
+				
 				
 				//GATK filter
 				if (!entry.getFilter().equals("PASS"))
@@ -84,7 +85,7 @@ public class VCFDatabase {
 				if(!entry.getGenotype(VCFConstants.NormalSample).equals("0/0")){
 					//Heterozygous Germline SNPs
 					if( entry.getGenotype(VCFConstants.NormalSample).equals("0/1") && 
-							(double)entry.getAlleleCount(VCFConstants.NormalSample, 1)/entry.getReadDepth(VCFConstants.NormalSample) > VCFConstants.HETEROZYGOUS){
+							entry.getAAF(VCFConstants.NormalSample) > VCFConstants.HETEROZYGOUS){
 						hgSNPs.add(entry);
 						//System.out.println("h "+entry);
 					}
@@ -166,8 +167,8 @@ public class VCFDatabase {
 		
 		for (VCFEntry entry: somaticSNPs){
 			if (entry.getGATK().equals(inputCode)){
-				for (int i = 0; i < entry.getNumSamples(); i++){
-					sum[i] += (double)entry.getAlleleCount(i, 1)/entry.getReadDepth(i);
+				for (int i = 0; i < names.size(); i++){
+					sum[i] += entry.getAAF(i);
 				}
 				count++;
 			}
@@ -185,8 +186,8 @@ public class VCFDatabase {
 			if (entry.getGATK().equals(inputCode)){
 				//pw.write(entry+"\n");
 				pw.write(entry.getChromosome()+"\t"+entry.getPosition());
-				for (int i = 0; i < entry.getNumSamples(); i++){
-					pw.write("\t"+entry.getAlleleCount(i, 0)+"\t"+entry.getAlleleCount(i, 1)+"\t"+entry.getReadDepth(i)+"\t"+(double)entry.getAlleleCount(i, 1)/entry.getReadDepth(i));
+				for (int i = 0; i < names.size(); i++){
+					pw.write("\t"+entry.getRefCount(i)+"\t"+entry.getAltCount(i));
 				}
 				pw.write("\n");
 			}
@@ -203,8 +204,8 @@ public class VCFDatabase {
 		
 		for (VCFEntry entry: hgSNPs){
 			pw.write(entry.getChromosome()+"\t"+entry.getPosition());
-			for (int i = 0; i < entry.getNumSamples(); i++){
-				pw.write("\t"+entry.getGenotype(i)+"\t"+entry.getAlleleCount(i, 0)+"\t"+entry.getAlleleCount(i, 1)+"\t"+entry.getReadDepth(i));
+			for (int i = 0; i < names.size(); i++){
+				pw.write("\t"+entry.getRefCount(i)+"\t"+entry.getAltCount(i));
 			}
 			pw.write("\n");
 		}
