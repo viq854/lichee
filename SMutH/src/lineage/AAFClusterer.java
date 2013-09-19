@@ -9,16 +9,52 @@ import java.util.Random;
  * representing the allele frequency values of the samples in the application.
  *
  */
-public class AAFClustering {
+public class AAFClusterer {
 	
 	/** Convergence threshold [0,1] (will converge if the change from one iteration to the next
 	 *  is smaller than this value) */
 	private static final double CONVERGENCE_THRESHOLD = 0.00001;
 	
+	/** Default fuzzifier (determines the level of cluster fuzziness; 
+	 * m = 2 in absence of knowledge) */
+	protected static final int DEFAULT_FUZZIFIER = 2;
+	
+	/** Clustering algorithms */
+	public enum ClusteringAlgorithms {
+		KMEANS,
+		FUZZYCMEANS
+	}
 	/** Distance measures */
 	public enum DistanceMetric {
 		EUCLIDEAN
 	}
+	
+	/**
+	 * Clustering dispatcher
+	 * @param group - SNP group to cluster based on AAF data
+	 * @param alg - algorithm to use for clustering
+	 */
+	public void clusterSubPopulations(SNPGroup group, ClusteringAlgorithms alg) {
+		AAFClusterer clusterer = new AAFClusterer();
+		int numClusters = 2;
+		
+		switch(alg) {
+		case FUZZYCMEANS:
+			clusterer.fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNPs(), 
+					group.getNumSamples(), numClusters, 
+					AAFClusterer.DEFAULT_FUZZIFIER, DistanceMetric.EUCLIDEAN);
+		case KMEANS:
+			System.err.println("Method not implemented");
+			System.exit(-1);
+		default:
+				
+		}
+		
+	}
+	
+	// ---- Clustering Algorithms ----
+	
+	// ---- K-Means ----
 	
 	/**
 	 * K-Means Clustering

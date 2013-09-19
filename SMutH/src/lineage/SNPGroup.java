@@ -1,8 +1,8 @@
 package lineage;
 
 import io.VCFEntry;
-
 import java.util.ArrayList;
+import lineage.AAFClusterer.Cluster;
 
 /**
  * A SNP group is a set of SNPs occurring in a given subset of samples.
@@ -27,6 +27,9 @@ public class SNPGroup {
 	/** Alternative allele frequency data matrix (numSNPs x numSamples) */
 	private double[][] alleleFreqBySample;
 	
+	/** SubPopulation clusters */
+	private Cluster[] subPopulations;
+	
 	public SNPGroup(String groupTag, ArrayList<VCFEntry> snps) {
 		tag = groupTag;
 		numSamples = 0;		
@@ -47,8 +50,23 @@ public class SNPGroup {
 		}
 	}
 	
-	// ---- Clustering into Sub-Populations
+	public double[][] getAlleleFreqBySample() {
+		return alleleFreqBySample;
+	}
 	
+	public int getNumSamples() {
+		return numSamples;
+	}
 	
+	public int getNumSNPs() {
+		return numSNPs;
+	}
 	
+	public void setSubPopulations(Cluster[] clusters) {
+		subPopulations = clusters;
+	}
+	
+	public Cluster[] getSubPopulations() {
+		return subPopulations;
+	}
 }
