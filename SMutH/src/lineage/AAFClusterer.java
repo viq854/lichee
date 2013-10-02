@@ -3,6 +3,12 @@ package lineage;
 import java.util.ArrayList;
 import java.util.Random;
 
+import weka.clusterers.SimpleKMeans;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
+import weka.core.Instances;
+
 /**
  * Simple implementation of a few clustering techniques
  * specialized for floating point data  
@@ -31,25 +37,23 @@ public class AAFClusterer {
 	
 	/**
 	 * Clustering dispatcher
+	 * @requires the number of SNPs in a group to be bigger than 1
 	 * @param group - SNP group to cluster based on AAF data
 	 * @param alg - algorithm to use for clustering
 	 */
-	public void clusterSubPopulations(SNPGroup group, ClusteringAlgorithms alg) {
-		AAFClusterer clusterer = new AAFClusterer();
-		int numClusters = 2;
-		
+	public void clusterSubPopulations(SNPGroup group, ClusteringAlgorithms alg, int minNumClusters) {		
+		// TODO: determine best number of clusters starting with minNumClusters
 		switch(alg) {
 		case FUZZYCMEANS:
-			clusterer.fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNPs(), 
-					group.getNumSamples(), numClusters, 
-					AAFClusterer.DEFAULT_FUZZIFIER, DistanceMetric.EUCLIDEAN);
+			group.setSubPopulations(fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNPs(), 
+					group.getNumSamples(), minNumClusters, 
+					AAFClusterer.DEFAULT_FUZZIFIER, DistanceMetric.EUCLIDEAN));
+			break;
 		case KMEANS:
-			System.err.println("Method not implemented");
-			System.exit(-1);
+			group.setSubPopulations(kmeans(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters));
 		default:
 				
 		}
-		
 	}
 	
 	// ---- Clustering Algorithms ----
@@ -61,7 +65,63 @@ public class AAFClusterer {
 	 * @param data - matrix of observations (numObs x numFeatures)
 	 * @param k - number of clusters
 	 */
-	public void kmeans(double[][] data, int numObs, int numFeatures, int k) {}
+	public Cluster[] kmeans(double[][] data, int numObs, int numFeatures, int k) {
+		// convert the data to WEKA format
+		FastVector atts = new FastVector();
+		for(int i = 0; i < numFeatures; i++) {
+			atts.addElement(new Attribute("Feature" + i, i));
+		}
+		
+		Instances ds = new Instances("AAF Data", atts, numObs);
+		for(int i = 0; i < numObs; i++) {
+			ds.add(new Instance(numFeatures));
+		}
+		for(int i = 0; i < numFeatures; i++) {
+			for(int j = 0; j < numObs; j++) {
+				ds.instance(j).setValue(i, data[j][i]);
+			}
+		}
+		
+		// uses Euclidean distance by default
+		SimpleKMeans clusterer = new SimpleKMeans();
+		try {
+			clusterer.setPreserveInstancesOrder(true);
+			clusterer.buildClusterer(ds);
+			
+			// cluster centers
+			Instances centers = clusterer.getClusterCentroids();
+			Cluster[] clusters = new Cluster[centers.numInstances()];
+			for(int i = 0; i < centers.numInstances(); i++) {
+				Instance inst = centers.instance(i);
+				double[] mean = new double[inst.numAttributes()];
+				for(int j = 0; j < mean.length; j++) {
+					mean[j] = inst.value(j);
+				}
+				clusters[i] = new Cluster(mean);
+			}
+			
+			// cluster members
+			int[] assignments = clusterer.getAssignments();
+			for(int i = 0; i < assignments.length; i++) {
+				clusters[assignments[i]].addMember(i, false);
+			}
+			return clusters;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+			return null;
+		}
+		
+	}
+	
+	/**
+	 * Expectation Maximization clustering
+	 * @param data - matrix of observations (numObs x numFeatures)
+	 * @param k - number of clusters
+	 */
+	public void em(double[][] data, int numObs, int numFeatures, int k) {
+		
+	}
 	
 	// ---- Fuzzy C-Means ----
 	
@@ -83,13 +143,16 @@ public class AAFClusterer {
 		// centers of each cluster
 		double[][] centroids = new double[c][numFeatures];
 				
-		// will randomly pick the centers and compute the resulting coefficients
-		for(int i = 0; i < c; i++) {
-			centroids[i] = data[new Random().nextInt(numObs)];
+		// pick random coefficients
+		double[][] coeff = new double[numObs][c];
+		for(int i = 0; i < numObs; i++) {
+			double totalProb = 0;
+			for(int j = 0; j < c-1; j++) {
+				coeff[i][j] = 0.1*new Random().nextInt(10 - (int)totalProb*10);
+				totalProb += coeff[i][j];
+			}
+			coeff[i][c-1] = 1 - totalProb;
 		}
-		
-		// initial coefficients giving the degree of belonging to each cluster 
-		double[][] coeff = computeFCMCoefficients(data, centroids, numObs, c, m, d);
 		
 		// 2. repeat until convergence
 		double delta = Double.MAX_VALUE;
@@ -124,6 +187,7 @@ public class AAFClusterer {
 					}
 				}
 			}
+			coeff = coeff_new;
 		}
 		
 		return getFCMHardClusters(coeff, centroids, numObs, c);
@@ -145,7 +209,7 @@ public class AAFClusterer {
 					clusterId = j;
 				}
 			}
-			clusters[clusterId].addMember(i);
+			clusters[clusterId].addMember(i, false);
 		}
 		return clusters;
 	}
@@ -162,9 +226,10 @@ public class AAFClusterer {
 			for(int j = 0; j < c; j++) {
 				double distRatioSum = 0;
 				for(int k = 0; k < c; k++) {
-					distRatioSum += Math.pow(distToCenters[c]/distToCenters[k], 2/(m-1));
+					distRatioSum += Math.pow(distToCenters[j]/distToCenters[k], 2/(m-1));
 				}
-				coeff_new[i][c] = 1/distRatioSum;
+
+				coeff_new[i][j] = 1/distRatioSum;
 			}
 		}
 		return coeff_new;
@@ -196,22 +261,50 @@ public class AAFClusterer {
 
 	// ---- Utilities ----
 	
+	public void evaluateClusters(Cluster[] clusters) {
+		
+	}
+	
 	protected class Cluster {
 		
 		/** Cluster centroid */
 		private double[] centroid;
 		
 		/** List of observations assigned to this cluster */
-		private ArrayList<Integer> membership;
+		private ArrayList<Integer> members;
 		
 		public Cluster(double[] clusterCentroid) {
 			centroid = clusterCentroid;
-			membership = new ArrayList<Integer>();
+			members = new ArrayList<Integer>();
 		}
 		
 		public Cluster(double[] clusterCentroid, ArrayList<Integer> assignments) {
 			centroid = clusterCentroid;
-			membership = assignments;
+			members = assignments;
+		}
+		
+		/**
+		 * Compute the distance of a given observation to this cluster
+		 * Currently the method computed the distance to the centroid
+		 * @param x - observation point
+		 * @param d - distance function to be used (e.g. Euclidean)
+		 * @return distance of observation to cluster
+		 */
+		public double getDistanceToCluster(double[] x, DistanceMetric d) {
+			return getDistance(x, centroid, d);
+		}
+		
+		/**
+		 * Add a new observation to the cluster
+		 * @param obsId - Id of the observation (index in the data matrix)
+		 * @param recomputeCentroid - flag indicating if the centroid needs to be adjusted
+		 */
+		public void addMember(int obsId, boolean recomputeCentroid) {
+			if(!recomputeCentroid) {
+				members.add(new Integer(obsId));
+			} else {
+				System.err.println("addMember: Operation not implemented");
+			}
 		}
 		
 		public double[] getCentroid() {
@@ -219,13 +312,18 @@ public class AAFClusterer {
 		}
 		
 		public ArrayList<Integer> getMembership() {
-			return membership;
+			return members;
 		}
 		
-		public void addMember(int obsId) {
-			membership.add(new Integer(obsId));
+		public String toString() {
+			String c = "";
+			c += "centroid = [";
+			for(int i = 0; i < centroid.length; i++) {
+				c += " " + centroid[i] + " ";
+			}
+			c += "] size = " + members.size();
+			return c;
 		}
-		
 	}
 	
 }
