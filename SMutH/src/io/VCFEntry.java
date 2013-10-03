@@ -16,7 +16,7 @@ public class VCFEntry {
 	/* Private Instance Variables */
 	private String raw;
 	private String chrom;
-	private String pos;
+	private int pos;
 	private String id;
 	private char ref;
 	private char alt;
@@ -30,6 +30,7 @@ public class VCFEntry {
 	private String[] genotype;
 	private int[] refCount;
 	private int[] altCount;
+
 	
 	/**
 	 * Function: VCFEntry(String entry)
@@ -55,7 +56,7 @@ public class VCFEntry {
 				chrom = entryParts[i];
 				break;
 			case 1:
-				pos = entryParts[i];
+				pos = new Integer(entryParts[i]).intValue();
 				break;
 			case 2:
 				id = entryParts[i];
@@ -106,6 +107,13 @@ public class VCFEntry {
 		return chrom;
 	}
 	
+	public int getChromNum(){
+		if (chrom.charAt(3) == 'X') return 23;
+		if (chrom.charAt(3) == 'Y') return 24;
+		return new Integer(chrom.substring(3)).intValue();
+	}
+	
+	
 	/**
 	 * Function: getPosition()
 	 * Usage: String pos = entry.getPos()
@@ -113,7 +121,7 @@ public class VCFEntry {
 	 * Returns the position of the entry as a string
 	 * @return
 	 */
-	public String getPosition(){
+	public int getPosition(){
 		return pos;
 	}
 	
@@ -377,5 +385,8 @@ public class VCFEntry {
 	
 	public double getAAF(int i) {
 		return (double)altCount[i]/(refCount[i]+altCount[i]);
+	}
+	public double getLAF(int i) {
+		return (double)(refCount[i] < altCount[i]? refCount[i]:altCount[i])/(double)(refCount[i]+altCount[i]);
 	}
 }

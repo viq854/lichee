@@ -4,13 +4,11 @@ public final class VCFConstants {
 
 	private VCFConstants(){}
 	
-	public static int NormalSample = 1;
-	
 	// to validate SNP
-	public static final double AVG_COVERAGE = 50;
-	public static final double MIN_COVERAGE = 10;
+	//public static final double AVG_COVERAGE = 50;
+	public static final double MIN_COVERAGE = 20;
 	public static final double GROUP_PVALUE = 0.5;
-	public static final double MIN_QUAL = 200;
+	public static final double MIN_QUAL = 30;
 	
 	// to edit SNP 
 	public static final double BASE_ERROR = 0.02;
@@ -18,7 +16,7 @@ public final class VCFConstants {
 	public static final int EDIT_DISTANCE = 4;
 	
 	// to identify sub-population _
-	public static final double SUBPOP_PVALUE = 0.01;
+	public static final double SUBPOP_PVALUE = 0.00001;
 	
 	// LOH analysis
 	public static final double HETEROZYGOUS = 0.2;
