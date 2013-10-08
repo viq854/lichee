@@ -3,6 +3,8 @@ package lineage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import unmixing.Unmixing;
+
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
 import io.VCFDatabase;
@@ -18,17 +20,20 @@ public class LineageEngine {
 	 * The main pipeline for constructing the cell lineage 
 	 * @param vcfFileName - path to the input VCF file
 	 */
-	public static void buildLineage(String vcfFileName) {
+	public static void buildLineage(String path, String sampleName, int normalSample) {
 		// 1. load VCF data
-		VCFDatabase db = new VCFDatabase(vcfFileName);
+		VCFDatabase db = new VCFDatabase(path+sampleName+".raw.vcf", normalSample);
+		
 		
 		// 2. handle normal cell contamination, CNVs, 
 		//    determine the minimum number of clusters using LOH
 		//    (+ any additional filtering, pre-processing)
-		// TODO
+		
+		//Unmixing um = new Unmixing(path+sampleName+".BP.txt",normalSample);
+
 		
 		// 3. get the SNPs partitioned by group tag
-		HashMap<String, ArrayList<VCFEntry>> snpsByTag = db.getTAG2SNVsMap();
+		HashMap<String, ArrayList<VCFEntry>> snpsByTag = db.generateFilteredTAG2SNVsMap(null);
 		// create the appropriate SNP group objects
 		ArrayList<SNPGroup> groups = new ArrayList<SNPGroup>();
 		for(String groupTag : snpsByTag.keySet()) {
@@ -56,17 +61,19 @@ public class LineageEngine {
 		// 5. incorporate CNVs
 		
 		// 6. construct constraint network
-		PHYGraph constrNetwork = new PHYGraph(groups, db.getNumofSamples());
+		//PHYGraph constrNetwork = new PHYGraph(groups, db.getNumofSamples());
 		
 		// 7. build and output final cell lineage
-		constrNetwork.getLineageTrees();
+		//constrNetwork.getLineageTrees();  
 		
 		// 8. result visualization
 		
 	}
 	
 	public static void main(String[] args) {
-		buildLineage("/Users/viq/smuth/SMutH/data/patient1.vcf");
+		buildLineage("/Users/rahelehs/Work/cancerTree/simulation_vcfs/","tree_3_03", 0);
+		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/","Patient_2", 0);
+
 	}
 	
 }
