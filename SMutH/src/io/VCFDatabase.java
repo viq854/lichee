@@ -15,12 +15,14 @@ package io;
 import java.io.*;
 import java.util.*;
 
+import unmixing.CNVregion;
+
 
 public class VCFDatabase {
 	
 	/* Private Instance Variables */
 	private ArrayList<VCFEntry> somaticSNPs;
-	private ArrayList<VCFEntry> hgSNPs;
+	//private ArrayList<VCFEntry> hgSNPs;
 	private ArrayList<String> names; 
 	private int allCounter = 0;
 	private	int germlineCounter = 0;
@@ -33,13 +35,13 @@ public class VCFDatabase {
 	 * ----
 	 * This is the constructor for the VCFDatabase.
 	 */
-	public VCFDatabase(String TESTFILE){
+	public VCFDatabase(String inputFile, int normalSample){
 		BufferedReader rd;
 		somaticSNPs = new ArrayList<VCFEntry>();
-		hgSNPs = new ArrayList<VCFEntry>();
 		names = new ArrayList<String>();
+		
 		try{
-			rd = new BufferedReader(new FileReader(TESTFILE));
+			rd = new BufferedReader(new FileReader(inputFile));
 			String currLine = rd.readLine();
 			String lastLine = "";
 			while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
@@ -49,12 +51,12 @@ public class VCFDatabase {
 			
 			while (currLine != null){
 				VCFEntry entry = new VCFEntry(currLine,numSamples);
+				//System.out.println(currLine);
 				currLine = rd.readLine();
 				
 				
-				
 				//GATK filter
-				if (!entry.getFilter().equals("PASS"))
+				if (!entry.getFilter().equals("PASS") || entry.getQuality() < VCFConstants.MIN_QUAL)
 					continue;
 				allCounter++;
 				
@@ -78,22 +80,16 @@ public class VCFDatabase {
 				}
 				//if (!isLegitimate) continue;
 				/* TO FILTER OUT SNVs with low average coverage in all SAMPLES*/
-				if (totalCoverage/numSamples <= VCFConstants.AVG_COVERAGE){
+				/*if (totalCoverage/numSamples <= VCFConstants.AVG_COVERAGE){
 					isLegitimate = false;
-				}
+				}*/
 				if (!isLegitimate) continue;
 				
 				/* Germline mutations */
-				if(!entry.getGenotype(VCFConstants.NormalSample).equals("0/0")){
-					//Heterozygous Germline SNPs
-					if( entry.getGenotype(VCFConstants.NormalSample).equals("0/1") && 
-							entry.getAAF(VCFConstants.NormalSample) > VCFConstants.HETEROZYGOUS){
-						hgSNPs.add(entry);
-						//System.out.println("h "+entry);
-					}
+				if(!entry.getGenotype(normalSample).equals("0/0")){
 					isGermline = true;
 				}else 
-				if (entry.getSumProb(VCFConstants.NormalSample) < VCFConstants.EDIT_PVALUE ){
+				if (entry.getSumProb(normalSample) < VCFConstants.EDIT_PVALUE ){
 					//System.out.println("*"+entry);
 					isGermline = true;
 				}
@@ -107,9 +103,106 @@ public class VCFDatabase {
 					//continue;
 				
 				somaticSNPs.add(entry);
+				
 			}
 			rd.close();
-			System.out.println("There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + "("+ hgSNPs.size() +") as germline (Heterozygous), and "+ somaticSNPs.size() +" as somatic. \n");
+			System.out.println("There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + " as germline (Heterozygous), and "+ somaticSNPs.size() +" as somatic. \n");
+		} catch (IOException e){
+			System.out.println("File Reading Error!");
+		}
+		
+		generateMatrix("output.txt");
+	}
+	
+	public VCFDatabase(String inputFile, String hgFile, int normalSample){
+		BufferedReader rd;
+		somaticSNPs = new ArrayList<VCFEntry>();
+		names = new ArrayList<String>();
+		try{
+			rd = new BufferedReader(new FileReader(inputFile));
+			PrintWriter pw = new PrintWriter(new FileWriter(hgFile));
+			String currLine = rd.readLine();
+			String lastLine = "";
+			while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
+			//System.out.println(lastLine+"\n");
+			getNames(lastLine);
+			int numSamples = names.size();
+			
+			while (currLine != null){
+				VCFEntry entry = new VCFEntry(currLine,numSamples);
+				//System.out.println(currLine);
+				currLine = rd.readLine();
+				
+				
+				//GATK filter
+				if (!entry.getFilter().equals("PASS") || entry.getQuality() < VCFConstants.MIN_QUAL)
+					continue;
+				allCounter++;
+				
+				//Makes sure entries are legitimate.
+				boolean isLegitimate = true;
+				boolean isGermline = false;
+				int totalCoverage = 0;
+				
+				for (int i = 0; i < numSamples; i++){
+					/* TO FILTER OUT SNVs with very low coverage in some SAMPLES*/
+					if (entry.getGenotype(i).equals("./.") || entry.getReadDepth(i) <= VCFConstants.MIN_COVERAGE){
+						isLegitimate = false;
+						break;
+					}
+					totalCoverage += entry.getReadDepth(i);
+					
+					/*if(!entry.getGenotype(i).equals("0/1") && !entry.getGenotype(i).equals("1/1")){
+						isGermline = false;
+						break;
+					}*/
+				}
+				//if (!isLegitimate) continue;
+				/* TO FILTER OUT SNVs with low average coverage in all SAMPLES*/
+				/*if (totalCoverage/numSamples <= VCFConstants.AVG_COVERAGE){
+					isLegitimate = false;
+				}*/
+				if (!isLegitimate) continue;
+				
+				/* Germline mutations */
+				if(!entry.getGenotype(normalSample).equals("0/0")){
+					//Heterozygous Germline SNPs
+					
+					if( entry.getGenotype(normalSample).equals("0/1") && 
+							entry.getAAF(normalSample) > VCFConstants.HETEROZYGOUS &&
+							!entry.getId().equals(".")){
+						//hgSNPs.add(entry);
+						//System.out.println("h "+entry);
+						
+						pw.write(entry.getChromNum()+"\t"+entry.getPosition());
+						for (int i = 0; i < names.size(); i++){
+							//if (i != VCFConstants.NormalSample)
+								pw.write("\t"+entry.getRefCount(i)+"\t"+entry.getAltCount(i));
+						}
+						pw.write("\n");
+						
+					}
+					isGermline = true;
+				}else 
+				if (entry.getSumProb(normalSample) < VCFConstants.EDIT_PVALUE ){
+					//System.out.println("*"+entry);
+					isGermline = true;
+				}
+				
+				if (isGermline) {
+					germlineCounter++;
+					continue;
+				}
+				
+				//if (!entry.getId().equals("."))
+					//continue;
+				
+				somaticSNPs.add(entry);
+				
+			}
+			rd.close();
+			pw.close();
+			System.out.println("There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + " as germline, and "+ somaticSNPs.size() +" as somatic. \n");
 		} catch (IOException e){
 			System.out.println("File Reading Error!");
 		}
@@ -119,7 +212,7 @@ public class VCFDatabase {
 	
 	public String getHeader(){
 		
-		String header = "Samples = ";//"#There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + "("+ hgSNPs.size() +") as germline (Heterozygous), and "+ somaticSNPs.size() +" as somatic. \n";
+		String header = "Samples = ";//"#There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + " as germline, and "+ somaticSNPs.size() +" as somatic. \n";
 		//header +="#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t";
 		
 		for(int i =0; i< names.size();i++)
@@ -143,10 +236,6 @@ public class VCFDatabase {
 	}
 	
 	
-	public ArrayList<VCFEntry> getHGEntries(){
-		return hgSNPs;
-	}
-	
 	/**
 	 * Function: getEntriesByGATK(String inputCode)
 	 * Usage: ArrayList<VCFEntry> entries = db.getEntriesByGATK(inputCode)
@@ -165,6 +254,24 @@ public class VCFDatabase {
 		return TAG2SNVs;
 	}
 	
+	public HashMap<String,ArrayList<VCFEntry>> generateFilteredTAG2SNVsMap(ArrayList<CNVregion> CNVs){
+		HashMap<String, ArrayList<VCFEntry>> filteredTAG2SNVs = new HashMap<String, ArrayList<VCFEntry>>();
+
+		int codeLength = -1;
+		int cnvID = 0;
+		for (VCFEntry entry: somaticSNPs){
+			int loc = CNVs.get(cnvID).compareLocation(entry);
+			if (loc == 0) break;
+			if (loc == 1 && cnvID < CNVs.size()) cnvID++;
+			String code = entry.getGATK();
+			if (codeLength == -1) codeLength = code.length();
+			if (!filteredTAG2SNVs.containsKey(code)){
+				filteredTAG2SNVs.put(code, new ArrayList<VCFEntry>());				
+			}
+			filteredTAG2SNVs.get(code).add(entry); 
+		}
+		return filteredTAG2SNVs;
+	}
 	
 	public void printInfo(PrintWriter pw, String inputCode){
 		double[] sum;//[names.size()];
@@ -201,22 +308,24 @@ public class VCFDatabase {
 		}
 	}
 	
-	public void printLOH(PrintWriter pw) throws IOException{
+/*	public void printLOH(PrintWriter pw) throws IOException{
 		String header ="#CHROM\tPOS";
 		
 		for(int i =0; i< names.size();i++)
-			header += "\t"+names.get(i)+"[REF,ALT,DEPTH]" ;
+			header += "\t"+names.get(i);
 		
-		pw.write(header+"\n");
+		//pw.write(header+"\n");
 		
 		for (VCFEntry entry: hgSNPs){
 			pw.write(entry.getChromosome()+"\t"+entry.getPosition());
 			for (int i = 0; i < names.size(); i++){
-				pw.write("\t"+entry.getRefCount(i)+"\t"+entry.getAltCount(i));
+				//if (i != VCFConstants.NormalSample)
+					pw.write("\t"+entry.getLAF(i));
 			}
 			pw.write("\n");
 		}
 	}
+*/
 	
 	public String getName(int i){
 		return names.get(i);
@@ -546,30 +655,6 @@ public class VCFDatabase {
 		}
 	}
 
-	/**
-	 * Function: largestKey(ArrayList<String> keySet, Map<String, Integer> GATKCounter)
-	 * Usage: String key = largestKey(keySet, GATKCounter)
-	 * ----
-	 * Finds the largest key in the map. The keySet may only be a subset of the keys in
-	 * GATKCounter. This function is generally used to sort the map.
-	 * @param keySet	The remaining keys to sort
-	 * @param GATKCounter	The map of GATK codes to mutation numbers
-	 * @return	The largest key that is in keySet
-	 */
-	private String largestKey(ArrayList<String> keySet,
-			Map<String, Integer> GATKCounter) {
-		// TODO Auto-generated method stub
-		int maxCount = 0;
-		String topKey = "";
-		for (String key: keySet){
-			int currCount = Integer.parseInt(key, 2);
-			if (currCount > maxCount){
-				topKey = key;
-				maxCount = currCount;
-			}
-		}
-		return topKey;
-	}
 
 	public void generateGATKFile(String outputFile) {
 		PrintWriter pw = null;
