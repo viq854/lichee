@@ -657,7 +657,7 @@ public class SPBuilder {
 		//System.out.println();
 		PrintWriter pw = null;
 		try{
-			pw = new PrintWriter(new FileWriter("../editSNV/" + testName + "_SubPopOutput.txt"));
+			pw = new PrintWriter(new FileWriter(TreeBuilder.path + testName + "_SubPopOutput.txt"));
 			pw.write(outputLine);
 		} catch (IOException e){
 			

@@ -6,8 +6,8 @@ public final class VCFConstants {
 	
 	// to validate SNP
 	//public static final double AVG_COVERAGE = 50;
-	public static final double MIN_COVERAGE = 20;
-	public static final double GROUP_PVALUE = 0.5;
+	public static final double MIN_COVERAGE = 5;
+	public static final double GROUP_PVALUE = 0.1;
 	public static final double MIN_QUAL = 30;
 	
 	// to edit SNP 

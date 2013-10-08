@@ -35,7 +35,7 @@ public class Unmixing {
 	private static final double LAF_ERROR = .05;
 	public static final double Depth_ERROR = .05;
 
-	private static final double LAF_THR = .4;
+	private static final double LAF_THR = .42;
 	private static final double EPSILON = 1e-10;
 
 	private int numofLOHs;
@@ -63,8 +63,7 @@ public class Unmixing {
 		
 		//double[][] listofLohs = new double[][] {{0.6,0.5,0.2,0.43},{1,0.5,0.2,0.43},{1,0.8,1,1},{1,0.8,0.2,1}};
 		//double[][] listofLohs = new double[][] {{0.6,0.5},{1,0.5},{1,0.8}};
-		new Unmixing("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/Patient_2.BP.txt",0);
-		
+		new Unmixing("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_6/Patient_6.BP.txt",5);	
 
 	}
 	public Unmixing(String BPFILE, int normalSample){
@@ -189,7 +188,7 @@ public class Unmixing {
 		System.out.print("List of LOHs:\n");
 		for (int i=0; i< numofLOHs;i++){
 			for (int j=0; j< LOHs[0].length;j++){
-				System.out.print(LOHs[i][j]+" ");
+				System.out.printf("%.3f ", LOHs[i][j]);
 			}
 			System.out.print("\n");
 
@@ -217,6 +216,8 @@ public class Unmixing {
 		
 		}
 		
+		decomposition();
+		
 		
 		
 	}
@@ -229,8 +230,14 @@ public class Unmixing {
 		//LOHs[2][3]=LOHs[0][3]; //?????
 		
 		NORMALsamples = new boolean[numofSamples];
-		for (int j=0; j< LOHs[0].length;j++)
-			NORMALsamples[j] = true;
+		for (int j=0; j< LOHs[0].length;j++){
+			 NORMALsamples[j] = true;
+			 for (int i=0; i< numofLOHs;i++)
+				if (LOHs[i][j] != 1) {
+					NORMALsamples[j] = false;
+					break;
+				}
+		}
 		
 
 	
@@ -265,7 +272,7 @@ public class Unmixing {
 		
 		for (int i=0; i < numofpoints-1; i++){
 			if (isNeeded(int2binary(i))){
-				System.out.println("needed: "+i);
+				System.out.println(" needed: "+i);
 				components.add(new Integer(i));
 			}
 		}
@@ -289,6 +296,17 @@ public class Unmixing {
 		for (int s=0; s< numofSamples; s++){
 			if (NORMALsamples[s]) continue;
 			boolean needed = true;
+			int count = 0;
+			for (int u=0; u < numofLOHs-1; u++){
+				if ((LOHs[u][s] ==1 && vertex[u]) || (LOHs[u][s] ==0 && !vertex[u]))
+					count++;
+			}
+			
+			if (count >=  numofLOHs-1) {
+				System.out.print("* for sample "+s);
+				return true;
+			}
+			
 			checkpoint:
 			for (int u=0; u < numofLOHs-1; u++)
 			for (int v=u+1; v < numofLOHs; v++){
@@ -375,8 +393,8 @@ public class Unmixing {
           fractions[s][i] = (B[i] - sum) / A[i][i];
       }
    
-      for (int i = 1; i < n; i++) 
-          System.out.println("C" + i + "  " +fractions[s][i]);
+      for (int i = 0; i < n; i++) 
+          System.out.printf("C%d %.3f \n", i,  fractions[s][i]);
 
     }
 	

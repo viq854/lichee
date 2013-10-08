@@ -65,6 +65,9 @@ public class TreeBuilder {
 		LPM029 (3)
 		;
 		
+		
+		
+		
 		public final int normal;
 		Samples(int normal) {
 	        this.normal = normal;
@@ -72,8 +75,10 @@ public class TreeBuilder {
 		
 	}
 	
-	private static String testName;
-	private static String path;// = "../../ash/"+testName+"/";
+	public static String path;
+	public static String testName;
+	public static int normalSample;
+	
 		
 	private static CommandLine cmdLineArgs;
 	
@@ -117,12 +122,13 @@ public class TreeBuilder {
 
 		//for (Samples s: Samples.values())
 		{
-		testName = "LPM018";//s.toString();
-		VCFConstants.NormalSample = 1;//s.normal - 1;
-		System.out.println("Start "+ testName);
-		path =  "/Users/rahelehs/Work/ash/"+testName+"/";//"../../BreastCancer/patients_vcfs/"; //
-		String fileName = path+testName+".recalibrated.hardfiltered.vcf";
-		VCFDatabase vcfDB = new VCFDatabase(fileName);
+		testName = "tree_4_11";//s.toString();
+		normalSample = 0;//s.normal - 1;
+		//path =  "/Users/rahelehs/Work/ash/"+testName+"/"
+		//path =  "/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/"+testName+"/";
+		path =  "/Users/rahelehs/Work/cancerTree/simulation_vcfs/";
+		String inputFile = path+testName+".raw.vcf";
+		VCFDatabase vcfDB = new VCFDatabase(inputFile, normalSample);
 		vcfDB.generateMatrix("output.txt");
 		vcfDB.generateGATKFile(path+testName + ".GATK-output.txt");
 		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree("output.txt");
@@ -207,12 +213,13 @@ public class TreeBuilder {
 	private static void printSNVs(Map<String, Integer> mutMap, VCFDatabase vcfDB) {
 		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
 		Collections.sort(codes);
+		Collections.reverse(codes);
 		PrintWriter pwv = null, pwh=null;
 		try{
-			pwh = new PrintWriter(new FileWriter(path+testName+".LOH.txt"));
+			/*pwh = new PrintWriter(new FileWriter(path+testName+".LOH.txt"));
 			vcfDB.printLOH(pwh);
 			pwh.close();
-			
+			*/
 			pwv = new PrintWriter(new FileWriter(path+testName+".validSNVs.txt"));
 			pwv.write(vcfDB.getHeader()+"\n");
 		} catch (IOException e) {
@@ -246,6 +253,7 @@ public class TreeBuilder {
 		printSNVs(mutMap,vcfDB);
 		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
 		Collections.sort(codes);
+		Collections.reverse(codes);
 
 		PrintWriter pw = null;
 		try{

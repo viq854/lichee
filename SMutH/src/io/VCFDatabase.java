@@ -56,13 +56,13 @@ public class VCFDatabase {
 				
 				
 				//GATK filter
-				if (!entry.getFilter().equals("PASS") || entry.getQuality() < VCFConstants.MIN_QUAL)
-					continue;
+				//if (!entry.getFilter().equals("PASS") || entry.getQuality() < VCFConstants.MIN_QUAL)
+					//continue;
 				allCounter++;
 				
 				//Makes sure entries are legitimate.
 				boolean isLegitimate = true;
-				boolean isGermline = false;
+				boolean isGermline = true;
 				int totalCoverage = 0;
 				
 				for (int i = 0; i < numSamples; i++){
@@ -73,10 +73,11 @@ public class VCFDatabase {
 					}
 					totalCoverage += entry.getReadDepth(i);
 					
-					/*if(!entry.getGenotype(i).equals("0/1") && !entry.getGenotype(i).equals("1/1")){
+					/* Germline mutations - soft filtering */
+					if(!entry.getGenotype(i).equals("0/1") && !entry.getGenotype(i).equals("1/1")){
 						isGermline = false;
 						break;
-					}*/
+					}
 				}
 				//if (!isLegitimate) continue;
 				/* TO FILTER OUT SNVs with low average coverage in all SAMPLES*/
@@ -85,14 +86,14 @@ public class VCFDatabase {
 				}*/
 				if (!isLegitimate) continue;
 				
-				/* Germline mutations */
-				if(!entry.getGenotype(normalSample).equals("0/0")){
+				/* Germline mutations - hard filtering */
+				/*if(!entry.getGenotype(normalSample).equals("0/0")){
 					isGermline = true;
 				}else 
 				if (entry.getSumProb(normalSample) < VCFConstants.EDIT_PVALUE ){
 					//System.out.println("*"+entry);
 					isGermline = true;
-				}
+				}*/
 				
 				if (isGermline) {
 					germlineCounter++;
@@ -103,6 +104,7 @@ public class VCFDatabase {
 					//continue;
 				
 				somaticSNPs.add(entry);
+				
 				
 			}
 			rd.close();
@@ -130,13 +132,13 @@ public class VCFDatabase {
 			
 			while (currLine != null){
 				VCFEntry entry = new VCFEntry(currLine,numSamples);
-				//System.out.println(currLine);
+				System.out.println(currLine);
 				currLine = rd.readLine();
 				
 				
 				//GATK filter
-				if (!entry.getFilter().equals("PASS") || entry.getQuality() < VCFConstants.MIN_QUAL)
-					continue;
+				//if (!entry.getFilter().equals("PASS") || entry.getQuality() < VCFConstants.MIN_QUAL)
+				//	continue;
 				allCounter++;
 				
 				//Makes sure entries are legitimate.
@@ -260,9 +262,11 @@ public class VCFDatabase {
 		int codeLength = -1;
 		int cnvID = 0;
 		for (VCFEntry entry: somaticSNPs){
-			int loc = CNVs.get(cnvID).compareLocation(entry);
-			if (loc == 0) break;
-			if (loc == 1 && cnvID < CNVs.size()) cnvID++;
+			if (CNVs != null && cnvID < CNVs.size()){
+				int loc = CNVs.get(cnvID).compareLocation(entry);
+				if (loc == 0) break;
+				if (loc == 1) cnvID++;
+			}
 			String code = entry.getGATK();
 			if (codeLength == -1) codeLength = code.length();
 			if (!filteredTAG2SNVs.containsKey(code)){
@@ -618,14 +622,18 @@ public class VCFDatabase {
 		TAG2SNVs = new HashMap<String, ArrayList<VCFEntry>>();
 
 		int codeLength = -1;
+		int cover = 0;
 		for (VCFEntry entry: somaticSNPs){
 			String code = entry.getGATK();
 			if (codeLength == -1) codeLength = code.length();
 			if (!TAG2SNVs.containsKey(code)){
-				TAG2SNVs.put(code, new ArrayList<VCFEntry>());				
+				TAG2SNVs.put(code, new ArrayList<VCFEntry>());	
+				
 			}
 			TAG2SNVs.get(code).add(entry); 
+			System.out.print(" "+entry.getAltCount(1));
 		}
+		//System.out.println("****"+cover/somaticSNPs.size());
 		//Quick-fix to remove the entry for all 1's
 		/*String imposCode = "";
 		for (int i = 0; i < codeLength; i++){
@@ -636,16 +644,17 @@ public class VCFDatabase {
 		*/
 		try {
 						
-			Object[] keys = (TAG2SNVs.keySet()).toArray();
-			Arrays.sort(keys);
+			List<String> keys = new ArrayList(TAG2SNVs.keySet());
+			Collections.sort(keys);
+			Collections.reverse(keys);
 			
 			PrintWriter pw = new PrintWriter(new FileWriter(outputFile));
-			pw.write(keys.length + " " + names.size() + "\n");
-			for (int i = 0; i < keys.length; i++){
-				if (i < keys.length - 1){
-					pw.write(keys[i] + " " + TAG2SNVs.get(keys[i]).size() + "\n");
+			pw.write(keys.size() + " " + names.size() + "\n");
+			for (int i = 0; i < keys.size(); i++){
+				if (i < keys.size() - 1){
+					pw.write(keys.get(i) + " " + TAG2SNVs.get(keys.get(i)).size() + "\n");
 				} else {
-					pw.write(keys[i] + " " + TAG2SNVs.get(keys[i]).size());
+					pw.write(keys.get(i) + " " + TAG2SNVs.get(keys.get(i)).size());
 				}
 			}
 			pw.close();
