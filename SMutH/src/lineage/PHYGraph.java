@@ -27,6 +27,12 @@ public class PHYGraph {
 	/** Error margin used for comparing AAF centroid data */
 	private static final double AAF_ERROR_MARGIN = 0.08;
 	
+	/** Maximum AAF */
+	private static final double AAF_MAX = 0.5;
+	
+	/** Debugging-only */
+	protected static int nodeCounter = 0;
+	
 	/**
 	 * Constructs a PHYGraph from the sub-populations of the SNP groups
 	 */
@@ -35,6 +41,9 @@ public class PHYGraph {
 		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
 		edges = new HashMap<PHYNode, ArrayList<PHYNode>>(); 
 		
+		// add root node
+		addNode(new PHYNode(), numSamples+1);
+				
 		// add group sub-population nodes
 		for(SNPGroup g : groups) {
 			PHYNode[] groupNodes = new PHYNode[g.getSubPopulations().length];
@@ -57,10 +66,14 @@ public class PHYGraph {
 		}
 		
 		// add inter-level edges
-		for(int i = numSamples; i > 0; i--) {
+		for(int i = numSamples + 1; i > 0; i--) {
 			for(int j = i-1; j >= 0; j--) {
-				for(PHYNode n1 : nodes.get(i)) {
-					for(PHYNode n2: nodes.get(j)) {
+				ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
+				if(fromLevelNodes == null) continue;
+				for(PHYNode n1 : fromLevelNodes) {
+					ArrayList<PHYNode> toLevelNodes = nodes.get(j);
+					if(toLevelNodes == null) continue;
+					for(PHYNode n2: toLevelNodes) {
 						checkAndAddEdge(n1, n2);
 					}
 				}
@@ -88,6 +101,7 @@ public class PHYGraph {
 		
 		int comp = 0;
 		for(int i = 0; i < numSamples; i++) {
+			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
 			comp += (n1.getAAF(i) >= (n2.getAAF(i) - AAF_ERROR_MARGIN)) ? 1 : 0;
 		}
 		if(comp == numSamples) {
@@ -134,27 +148,96 @@ public class PHYGraph {
 	}
 	
 	/**
+	 * Returns a string representation of the graph
+	 */
+	public String toString() {
+		String graph = "--- PHYLOGENETIC CONSTRAINT GRAPH --- \n";
+		graph += "numNodes = " + nodes.size() + ", ";
+		graph += "numEdges = " + edges.values().size() + "\n";
+		
+		// print nodes by level
+		graph += "NODES: \n";
+		for(int i = numSamples + 1; i >= 0; i--) {
+			graph += "level = " + i + ": \n";
+			ArrayList<PHYNode> levelNodes = nodes.get(i);
+			if(levelNodes == null) {
+				graph += "EMPTY \n";
+			} else {
+				for(PHYNode n : levelNodes) {
+					graph += n.toString() + "\n";
+				}
+			}
+		}
+		graph += "EDGES: \n";
+		for(PHYNode n1 : edges.keySet()) {
+			ArrayList<PHYNode> nbrs = edges.get(n1);
+			for(PHYNode n2 : nbrs) {
+				graph += n1.getNodeId() + " -> " + n2.getNodeId() + "\n";
+			}
+		}
+		
+		return graph;
+	}
+	
+	/**
 	 * Node in the phylogenetic graph
 	 * Represents a sub-population or sample (if leaf)
 	 * Is associated with a given AAF (alternative allele frequency)
 	 * 
 	 */
 	protected class PHYNode {
-		private Cluster cluster;
+		
+		/** Sub-population cluster that the node represents */
+		private Cluster cluster;		
+		
+		/** SNP group the node belongs to */
 		private SNPGroup snpGroup;
+		
+		/** Flag indicating if the node is a sample leaf*/
 		private boolean isLeaf;
+		
+		/** Flag indicating if the node is the germline root */
+		private boolean isRoot;
+		
+		/** The sample id if node is a leaf*/
 		private int leafSampleId;
 		
+		/** Debugging-only node id */
+		private int nodeId;
+		
+		
+		
+		/** 
+		 * Internal node constructor
+		 * @param g - SNP group the node belongs to
+		 * @param nodeClusterId
+		 */
 		public PHYNode(SNPGroup g, int nodeClusterId) {
 			snpGroup = g;
 			cluster = snpGroup.getSubPopulations()[nodeClusterId];
 			isLeaf = false;
+			nodeId = nodeCounter;
+			nodeCounter++;
 		}
 		
-		// leaf
+		/**
+		 * Leaf node constructor - represents each tumor sample
+		 * @param sampleId - ID of the represented tumor sample
+		 */
 		public PHYNode(int sampleId) {
 			isLeaf = true;
 			leafSampleId = sampleId;
+			nodeId = nodeCounter;
+			nodeCounter++;
+		}
+		
+		/**
+		 * Root node constructor
+		 */
+		public PHYNode() {
+			isRoot = true;
+			nodeId = nodeCounter;
+			nodeCounter++;
 		}
 		
 		/**
@@ -171,19 +254,48 @@ public class PHYGraph {
 			return isLeaf;
 		}
 		
+		/**
+		 * Returns the ID of the sample 
+		 * @requires node is a leaf
+		 */
 		public int getLeafSampleId() {
 			return leafSampleId;
 		}
 		
+		public int getNodeId() {
+			return nodeId;
+		}
+		
 		/**
 		 * Returns the cluster centroid AAF for the given sample ID
+		 * Returns 0 if the sample is not represented
 		 */
 		public double getAAF(int sampleId) {
+			if(isRoot) {
+				return AAF_MAX;
+			} 
+			if(isLeaf) {
+				return 0;
+			}
+			
 			int sampleIndex = snpGroup.getSampleIndex(sampleId);
 			if(sampleIndex == -1) {
 				return 0;
 			}
 			return cluster.getCentroid()[sampleIndex];
+		}
+		
+		public String toString() {
+			String node = "Node " + nodeId + ": ";
+			if(!isLeaf && !isRoot) {
+				node += "group tag = " + snpGroup.getTag() + ", ";
+				node += cluster.toString();
+			} else if(isLeaf) {
+				node += "leaf sample id = " + leafSampleId;
+			} else {
+				node += "root";
+			}
+			return node;
 		}
 		
 	}
