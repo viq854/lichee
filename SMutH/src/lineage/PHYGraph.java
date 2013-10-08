@@ -21,6 +21,12 @@ public class PHYGraph {
 	/** Adjacency map of nodes to their down-neighbors */
 	private HashMap<PHYNode, ArrayList<PHYNode>> edges;
 	
+	/** Total number of nodes in the graph */
+	private int numNodes;
+	
+	/** Total number of edges in the graph */
+	private int numEdges;
+	
 	/** Total number of cancer samples */
 	private int numSamples;
 	
@@ -118,6 +124,7 @@ public class PHYGraph {
 			nodes.put(level, new ArrayList<PHYNode>());
 		}
 		nodes.get(level).add(node);
+		numNodes++;
 	}
 	
 	/** Adds a new edge to the graph */
@@ -127,6 +134,7 @@ public class PHYGraph {
 			edges.put(from, new ArrayList<PHYNode>());
 		}
 		edges.get(from).add(to);
+		numEdges++;
 	}
 	
 	/**
@@ -138,7 +146,15 @@ public class PHYGraph {
 	}
 	
 	
-	// ---- Network Flow ----
+	// ---- Spanning Tree Generation ----
+	// based on Gabow, Myers '78
+	
+	public void grow() {
+		
+	}
+	
+	
+	
 	
 	/**
 	 * Place-holder operation for lineage
@@ -152,8 +168,8 @@ public class PHYGraph {
 	 */
 	public String toString() {
 		String graph = "--- PHYLOGENETIC CONSTRAINT GRAPH --- \n";
-		graph += "numNodes = " + nodes.size() + ", ";
-		graph += "numEdges = " + edges.values().size() + "\n";
+		graph += "numNodes = " + numNodes + ", ";
+		graph += "numEdges = " + numEdges + "\n";
 		
 		// print nodes by level
 		graph += "NODES: \n";
