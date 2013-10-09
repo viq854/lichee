@@ -3,11 +3,14 @@ package lineage;
 import java.util.ArrayList;
 import java.util.Random;
 
+import weka.clusterers.ClusterEvaluation;
+import weka.clusterers.EM;
 import weka.clusterers.SimpleKMeans;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.Utils;
 
 /**
  * Simple implementation of a few clustering techniques
@@ -28,7 +31,8 @@ public class AAFClusterer {
 	/** Clustering algorithms */
 	public enum ClusteringAlgorithms {
 		KMEANS,
-		FUZZYCMEANS
+		FUZZYCMEANS,
+		EM
 	}
 	/** Distance measures */
 	public enum DistanceMetric {
@@ -51,6 +55,9 @@ public class AAFClusterer {
 			break;
 		case KMEANS:
 			group.setSubPopulations(kmeans(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters));
+			break;
+		case EM:
+			group.setSubPopulations(em(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters));
 		default:
 				
 		}
@@ -66,21 +73,7 @@ public class AAFClusterer {
 	 * @param k - number of clusters
 	 */
 	public Cluster[] kmeans(double[][] data, int numObs, int numFeatures, int k) {
-		// convert the data to WEKA format
-		FastVector atts = new FastVector();
-		for(int i = 0; i < numFeatures; i++) {
-			atts.addElement(new Attribute("Feature" + i, i));
-		}
-		
-		Instances ds = new Instances("AAF Data", atts, numObs);
-		for(int i = 0; i < numObs; i++) {
-			ds.add(new Instance(numFeatures));
-		}
-		for(int i = 0; i < numFeatures; i++) {
-			for(int j = 0; j < numObs; j++) {
-				ds.instance(j).setValue(i, data[j][i]);
-			}
-		}
+		Instances ds = convertMatrixToWeka(data, numObs, numFeatures);
 		
 		// uses Euclidean distance by default
 		SimpleKMeans clusterer = new SimpleKMeans();
@@ -119,8 +112,70 @@ public class AAFClusterer {
 	 * @param data - matrix of observations (numObs x numFeatures)
 	 * @param k - number of clusters
 	 */
-	public void em(double[][] data, int numObs, int numFeatures, int k) {
-		
+	public Cluster[] em(double[][] data, int numObs, int numFeatures, int k) {
+		Instances ds = convertMatrixToWeka(data, numObs, numFeatures);
+		EM clusterer = new EM();
+		try {
+			clusterer.buildClusterer(ds);
+			ClusterEvaluation eval = new ClusterEvaluation();                                        
+			eval.setClusterer(clusterer);                                  
+			eval.evaluateClusterer(new Instances(ds));                               
+			int numClusters = eval.getNumClusters();
+			System.out.println("# of clusters: " + numClusters);
+			System.out.println(eval.clusterResultsToString());
+			
+			// output predictions
+		    //System.out.println("# - cluster - distribution");
+		    for (int i = 0; i < ds.numInstances(); i++) {
+		    	Instance inst = ds.instance(i);
+		    	double[] mean = new double[inst.numAttributes()];
+				for(int j = 0; j < mean.length; j++) {
+					mean[j] = inst.value(j);
+					//System.out.println(" " + mean[j] + " ");
+				}
+		    	//int cluster = clusterer.clusterInstance(ds.instance(i));
+		    	//double[] dist = clusterer.distributionForInstance(ds.instance(i));
+		    	//System.out.print((i+1));
+		    	//System.out.print(" - ");
+		    	//System.out.print(cluster);
+		    	//System.out.print(" - ");
+		    	//System.out.print(Utils.arrayToString(dist));
+		    	//System.out.println();
+		    }
+			
+			Cluster[] clusters = new Cluster[numClusters];
+			double[][] clusterCentroids = new double[numClusters][numFeatures];
+			int[] clusterCount = new int[numClusters];
+			
+			double[] assignments = eval.getClusterAssignments();
+			for(int i = 0; i < ds.numInstances(); i++) {
+				Instance inst = ds.instance(i);
+				int clusterId = (int) assignments[i];
+				for(int j = 0; j < numFeatures; j++) {
+					clusterCentroids[clusterId][j] += inst.value(j);
+				}
+				clusterCount[clusterId]++;
+			}
+			
+			for(int i = 0; i < numClusters; i++) {
+				double[] mean = new double[numFeatures];
+				for(int j = 0; j < numFeatures; j++) {
+					mean[j] = clusterCentroids[i][j]/clusterCount[i];
+				}
+				clusters[i] = new Cluster(mean);
+			}
+			
+			// cluster members
+			for(int i = 0; i < ds.numInstances(); i++) {
+				clusters[(int)assignments[i]].addMember(i, false);
+			}
+			
+			return clusters;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+			return null;
+		}
 	}
 	
 	// ---- Fuzzy C-Means ----
@@ -258,6 +313,27 @@ public class AAFClusterer {
 		}
 		return Math.sqrt(diffSum);
 	}
+	
+	// ---- WEKA Utilities ----
+	public Instances convertMatrixToWeka(double[][] data, int numObs, int numFeatures) {
+		// convert the data to WEKA format
+		FastVector atts = new FastVector();
+		for(int i = 0; i < numFeatures; i++) {
+			atts.addElement(new Attribute("Feature" + i, i));
+		}
+		
+		Instances ds = new Instances("AAF Data", atts, numObs);
+		for(int i = 0; i < numObs; i++) {
+			ds.add(new Instance(numFeatures));
+		}
+		for(int i = 0; i < numFeatures; i++) {
+			for(int j = 0; j < numObs; j++) {
+				ds.instance(j).setValue(i, data[j][i]);
+			}
+		}
+		return ds;
+	}
+	
 
 	// ---- Utilities ----
 	
