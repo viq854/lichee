@@ -110,10 +110,18 @@ public class PHYGraph {
 			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
 			comp += (n1.getAAF(i) >= (n2.getAAF(i) - AAF_ERROR_MARGIN)) ? 1 : 0;
 		}
+		
 		if(comp == numSamples) {
 			addEdge(n1, n2);
-		} else if (comp == 0) {
-			addEdge(n2, n1);
+		} else {
+			comp = 0;
+			for(int i = 0; i < numSamples; i++) {
+				if((n2.getAAF(i) == 0) && (n1.getAAF(i) != 0)) break;
+				comp += (n2.getAAF(i) >= (n1.getAAF(i) - AAF_ERROR_MARGIN)) ? 1 : 0;
+			}
+			if(comp == numSamples) {
+				addEdge(n2, n1);
+			}
 		} 
 	}
 	
@@ -135,6 +143,8 @@ public class PHYGraph {
 		}
 		edges.get(from).add(to);
 		numEdges++;
+		
+		
 	}
 	
 	/**
