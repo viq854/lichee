@@ -17,6 +17,8 @@ public class PHYGraph {
 
 	/** Nodes in the graph divided by levels (number of samples node SNPs occurred in) */
 	private HashMap<Integer, ArrayList<PHYNode>> nodes;
+	/** Nodes in the graph indexed by ID */
+	private HashMap<Integer, PHYNode> nodesById;
 	
 	/** Adjacency map of nodes to their down-neighbors */
 	private HashMap<PHYNode, ArrayList<PHYNode>> edges;
@@ -45,6 +47,7 @@ public class PHYGraph {
 	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples, int[] sampleMutationMask) {
 		numSamples = totalNumSamples;
 		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
+		nodesById = new HashMap<Integer, PHYNode>();
 		edges = new HashMap<PHYNode, ArrayList<PHYNode>>(); 
 		
 		// add root node
@@ -68,7 +71,7 @@ public class PHYGraph {
 		}
 		
 		// add sample leaf nodes
-		for(int i = 0; i < numSamples; i++) {
+		/*for(int i = 0; i < numSamples; i++) {
 			PHYNode sampleLeaf = new PHYNode(i);
 			addNode(sampleLeaf, 0);
 			// add edges from the root to the samples without any mutations
@@ -76,7 +79,7 @@ public class PHYGraph {
 			if(sampleMutationMask[i] == 1) {
 				addEdge(root, sampleLeaf);
 			}
-		}
+		}*/
 	
 		
 		// add inter-level edges
@@ -95,6 +98,20 @@ public class PHYGraph {
 				for(PHYNode n2: toLevelNodes) {
 					checkAndAddEdge(n1, n2);
 				}
+			}
+		}
+		
+		// find the nodes that are not connected and connect them to the root
+		int[] nodeMask = new int[numNodes];
+		for(PHYNode n : edges.keySet()) {
+			for(PHYNode m : edges.get(n)) {
+				nodeMask[m.getNodeId()] = 1;
+			}
+		}
+		
+		for(int i = 1; i < nodeMask.length; i++) {
+			if(nodeMask[i] == 0) {
+				addEdge(root, nodesById.get(i));
 			}
 		}
 	}
@@ -144,6 +161,7 @@ public class PHYGraph {
 			nodes.put(level, new ArrayList<PHYNode>());
 		}
 		nodes.get(level).add(node);
+		nodesById.put(node.getNodeId(), node);
 		numNodes++;
 	}
 	
