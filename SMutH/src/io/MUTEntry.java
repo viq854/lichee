@@ -14,7 +14,7 @@ public class MUTEntry extends SNVEntry{
 	private double[] AAF;
 	
 	public MUTEntry(String entry, int numofSamples){
-		raw = entry;
+		row = entry;
 		
 		
 		String[] entryParts = entry.split("\t");

@@ -14,12 +14,7 @@ public class VCFEntry extends SNVEntry{
 	
 	
 	/* Private Instance Variables */
-	private String raw;
-	private String chrom;
-	private int pos;
 	private String id;
-	private char ref;
-	private char alt;
 	private Double qual;
 	private String filter;
 	private String info;
@@ -27,7 +22,6 @@ public class VCFEntry extends SNVEntry{
 	private ArrayList<String> alleleFreqList;
 	
 		
-	private String[] genotype;
 	private int[] refCount;
 	private int[] altCount;
 
@@ -43,7 +37,7 @@ public class VCFEntry extends SNVEntry{
 	 */
 	
 	public VCFEntry(String entry, int numofSamples){
-		raw = entry;
+		row = entry;
 		alleleFreqList = new ArrayList<String>();
 		String[] entryParts = entry.split("\t");
 		genotype = new String[numofSamples];
@@ -94,36 +88,6 @@ public class VCFEntry extends SNVEntry{
 
 	}
 	
-	
-	/**
-	 * Function: getChromosome()
-	 * Usage: String chrom = entry.getChromosome()
-	 * ----
-	 * Returns the chromosome of the entry as a string
-	 * 
-	 * @return	The chrom as a string
-	 */
-	public String getChromosome(){
-		return chrom;
-	}
-	
-	public int getChromNum(){
-		if (chrom.charAt(3) == 'X') return 23;
-		if (chrom.charAt(3) == 'Y') return 24;
-		return new Integer(chrom.substring(3)).intValue();
-	}
-	
-	
-	/**
-	 * Function: getPosition()
-	 * Usage: String pos = entry.getPos()
-	 * ----
-	 * Returns the position of the entry as a string
-	 * @return
-	 */
-	public int getPosition(){
-		return pos;
-	}
 	
 	/**
 	 * Function: getRefChar()
@@ -345,19 +309,7 @@ public class VCFEntry extends SNVEntry{
 	    return numerator / denominator;
 	}
 
-	/**
-	 * Function: toString()
-	 * Usage: String rawEntry = entry.toString()
-	 * ----
-	 * Returns the VCF entry in string form.
-	 * This is the same argument that was input
-	 * into the constructor of the class.
-	 * 
-	 * @return	The raw VCF entry as a string
-	 */
-	public String toString(){
-		return raw;
-	}
+
 	
 	public void updateGATK(String code){
 		for (int i = 0; i < alleleFreqList.size(); i++){

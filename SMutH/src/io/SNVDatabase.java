@@ -215,7 +215,6 @@ public class SNVDatabase {
 				
 				somaticSNPs.add(entry);
 				
-				
 			}
 			rd.close();
 			System.out.println("There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + " as germline (Heterozygous), and "+ somaticSNPs.size() +" as somatic. \n");

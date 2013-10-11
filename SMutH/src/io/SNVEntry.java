@@ -12,7 +12,7 @@ public abstract class  SNVEntry {
 	
 		
 	/* Instance Variables */
-	 protected String raw;
+	 protected String row;
 
 	 protected String chrom;
 	 protected int pos;
@@ -96,9 +96,11 @@ public abstract class  SNVEntry {
 	 */
 	public String getGroup(){
 		String result = "";
+		//System.out.println(this.toString());
 		for (int i = 0; i < genotype.length; i++){
 			if (genotype[i].equals("0/0")) result += "0";
 			else result += "1";
+			//System.out.println(result);
 		}
 		return result;
 	}
@@ -131,6 +133,6 @@ public abstract class  SNVEntry {
 
 	
 	public String toString(){
-		return raw;
+		return row;
 	}
 }
