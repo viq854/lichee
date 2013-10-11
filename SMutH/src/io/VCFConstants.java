@@ -4,7 +4,9 @@ public final class VCFConstants {
 
 	private VCFConstants(){}
 	
-	// to validate SNP
+	// to validate SNV
+	public static final double VALIDATION_THR = 0.02;
+	
 	//public static final double AVG_COVERAGE = 50;
 	public static final double MIN_COVERAGE = 5;
 	public static final double GROUP_PVALUE = 0.1;

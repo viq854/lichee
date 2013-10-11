@@ -1,7 +1,7 @@
 package SMutH;
 
 import io.VCFConstants;
-import io.VCFDatabase;
+import io.SNVDatabase;
 import io.VCFEntry;
 
 import java.io.FileWriter;
@@ -20,10 +20,10 @@ public class SPBuilder {
 	private HashMap<Integer, String> nodeLabels;
 	private HashMap<Integer, String> edgeLabels;
 
-	private VCFDatabase vcfDB;
+	private SNVDatabase vcfDB;
 
 	public SPBuilder(Map<String, Integer> mutMap, ArrayList<ArrayList<Integer>> noConflictMatrixPrime, Set<ArrayList<Integer>> conflicts, 
-			String testName, VCFDatabase db){
+			String testName, SNVDatabase db){
 		TreeBuilder tb = new TreeBuilder();
 		vcfDB = db;
 		HashMap<Integer, Integer> LColFuncMap = tb.getLColFuncMap(noConflictMatrixPrime);

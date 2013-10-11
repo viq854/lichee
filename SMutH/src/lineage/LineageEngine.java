@@ -7,8 +7,7 @@ import unmixing.Unmixing;
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
 import lineage.PHYGraph.Tree;
-import io.VCFDatabase;
-import io.VCFEntry;
+import io.*;
 
 /**
  * Main cell lineage builder pipeline
@@ -22,7 +21,7 @@ public class LineageEngine {
 	 */
 	public static void buildLineage(String path, String sampleName, int normalSample) {
 		// 1. load VCF data
-		VCFDatabase db = new VCFDatabase(path+sampleName+".vcf", normalSample);
+		SNVDatabase db = new SNVDatabase(path+sampleName+".vcf", normalSample);
 		
 		
 		// 2. handle normal cell contamination, CNVs, 
@@ -33,7 +32,7 @@ public class LineageEngine {
 
 		
 		// 3. get the SNPs partitioned by group tag
-		HashMap<String, ArrayList<VCFEntry>> snpsByTag = db.generateFilteredTAG2SNVsMap(null);
+		HashMap<String, ArrayList<SNVEntry>> snpsByTag = db.generateFilteredTAG2SNVsMap(null);
 		// create the appropriate SNP group objects
 		ArrayList<SNPGroup> groups = new ArrayList<SNPGroup>();
 		for(String groupTag : snpsByTag.keySet()) {

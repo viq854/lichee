@@ -1,7 +1,7 @@
 package unmixing;
 
 import io.VCFConstants;
-import io.VCFDatabase;
+import io.SNVDatabase;
 import io.VCFEntry;
 
 import java.io.BufferedReader;
@@ -33,7 +33,7 @@ public class Unmixing {
 	
 	private static final double MAXNLOHs = 10;
 	private static final double LAF_ERROR = .05;
-	public static final double Depth_ERROR = .05;
+	public static final double Depth_ERROR = .04;
 
 	private static final double LAF_THR = .42;
 	private static final double EPSILON = 1e-10;
@@ -63,7 +63,7 @@ public class Unmixing {
 		
 		//double[][] listofLohs = new double[][] {{0.6,0.5,0.2,0.43},{1,0.5,0.2,0.43},{1,0.8,1,1},{1,0.8,0.2,1}};
 		//double[][] listofLohs = new double[][] {{0.6,0.5},{1,0.5},{1,0.8}};
-		new Unmixing("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_6/Patient_6.BP.txt",5);	
+		new Unmixing("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/Patient_2.BP.txt",0);	
 
 	}
 	public Unmixing(String BPFILE, int normalSample){
@@ -114,7 +114,7 @@ public class Unmixing {
 			}
 			System.out.print("\n");
 			
-			if (validCNV(avgLAF)){
+			if (validCNV(avgLAF,avgDepth)){
 				if (CNVs.size() >0 &&
 					//CNVregion lastCNV = CNVs.get(CNVs.size()-1);
 					 CNVs.get(CNVs.size()-1).getEndPos() == lastPoint && 
@@ -215,9 +215,18 @@ public class Unmixing {
 			
 		
 		}
-		
+		fractions = new double [numofSamples][numofLOHs+1];
 		decomposition();
 		
+		for (int j=0; j< numofSamples;j++){
+			for (int i=0; i< numofLOHs+1;i++ ){
+			
+					System.out.printf("%.2f ", fractions[j][i]);
+				//if(sl.get(i+1) == 1) break;
+			}
+			
+			System.out.print("\n");
+		}
 		
 		
 	}
@@ -413,9 +422,9 @@ public class Unmixing {
 		return comp;
 	}
 	
-	public boolean validCNV(double[] a){
+	public boolean validCNV(double[] a, double[] b){
 		for (int i =0; i< a.length; i++){
-			if (a[i]  < LAF_THR)
+			if (a[i]  < LAF_THR && Math.abs(a[i] - b[i]) > Depth_ERROR )
 				return true;
 		}
 		return false;

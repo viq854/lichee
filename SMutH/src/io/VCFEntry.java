@@ -10,7 +10,7 @@ package io;
 
 import java.util.ArrayList;
 
-public class VCFEntry {
+public class VCFEntry extends SNVEntry{
 	
 	
 	/* Private Instance Variables */

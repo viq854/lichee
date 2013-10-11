@@ -265,7 +265,14 @@ public class TreeChecker {
 		totalMut += newMut;
 	}
 	
-	public static int getConflictThreshold(int n, int k){
+	/**
+	 * Returns the minimum size for a group to be considered significant
+	 * @param n total number of mutations
+	 * @param k number of groups
+	 * @return
+	 */
+	
+	public static int getGroupSizeThreshold(int n, int k){
 		double pValue = 0.0;
 		int x = n / k;
 		for (; x > 1; x--){
@@ -336,7 +343,7 @@ public class TreeChecker {
 			}
 			/* recalculate threshold */
 						
-			int conflictThreshold = getConflictThreshold(totalMut+maxMutRate, numEdgesInTree+1);
+			int conflictThreshold = getGroupSizeThreshold(totalMut+maxMutRate, numEdgesInTree+1);
 			//System.out.println("Conflict Threshold: " + conflictThreshold);
 			/*
 			 * if the highest mut rate is less than

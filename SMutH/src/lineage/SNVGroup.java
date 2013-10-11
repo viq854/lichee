@@ -12,7 +12,7 @@ import lineage.AAFClusterer.Cluster;
  * a given sample), where a bit is set if that sample contains the SNPs in this group.
  *
  */
-public class SNPGroup {
+public class SNVGroup {
 
 	/** Binary tag identifying the group 
 	 * (the length of the tag is equal to the number of input samples) */
@@ -33,7 +33,7 @@ public class SNPGroup {
 	/** SNPs assigned to this group */
 	private ArrayList<SNVEntry> snps;
 	
-	public SNPGroup(String groupTag, ArrayList<SNVEntry> groupSNPs) {
+	public SNVGroup(String groupTag, ArrayList<SNVEntry> groupSNPs) {
 		tag = groupTag;
 		numSamples = 0;		
 		sampleIndex = new int[tag.length()];

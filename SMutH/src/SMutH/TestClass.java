@@ -1,6 +1,6 @@
 package SMutH;
 
-import io.VCFDatabase;
+import io.SNVDatabase;
 
 //import java.util.ArrayList;
 

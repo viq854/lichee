@@ -1,8 +1,7 @@
 package SMutH;
 
-import io.VCFConstants;
-import io.VCFDatabase;
-import io.VCFEntry;
+import io.*;
+
 
 import java.awt.*;
 import java.awt.event.ItemEvent;
@@ -122,13 +121,13 @@ public class TreeBuilder {
 
 		//for (Samples s: Samples.values())
 		{
-		testName = "tree_4_11";//s.toString();
+		testName = "tree_4_01";//s.toString();
 		normalSample = 0;//s.normal - 1;
 		//path =  "/Users/rahelehs/Work/ash/"+testName+"/"
 		//path =  "/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/"+testName+"/";
-		path =  "/Users/rahelehs/Work/cancerTree/simulation_vcfs/";
+		path =  "/Users/rahelehs/Work/cancerTree/simulation_vcfs/RECOMB2013/";
 		String inputFile = path+testName+".raw.vcf";
-		VCFDatabase vcfDB = new VCFDatabase(inputFile, normalSample);
+		SNVDatabase vcfDB = new SNVDatabase(inputFile, normalSample);
 		vcfDB.generateMatrix("output.txt");
 		vcfDB.generateGATKFile(path+testName + ".GATK-output.txt");
 		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree("output.txt");
@@ -210,7 +209,7 @@ public class TreeBuilder {
 		return cmd;
 	}
 	
-	private static void printSNVs(Map<String, Integer> mutMap, VCFDatabase vcfDB) {
+	private static void printSNVs(Map<String, Integer> mutMap, SNVDatabase vcfDB) {
 		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
 		Collections.sort(codes);
 		Collections.reverse(codes);
@@ -248,7 +247,7 @@ public class TreeBuilder {
 	 * @param iterCounter Which iteration of editSNV this is
 	 * @param testName 
 	 */
-	private static void editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Integer> mutMap, VCFDatabase vcfDB, int iterCounter) {
+	private static void editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Integer> mutMap, SNVDatabase vcfDB, int iterCounter) {
 		System.out.println("Original Mutation Map");
 		printSNVs(mutMap,vcfDB);
 		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
@@ -305,8 +304,8 @@ public class TreeBuilder {
 			//If conflictMatches is empty, no possible things can be moved,
 			//should write the relevant codes to EditSNV, and continue
 			if (conflictMatches.isEmpty()){
-				ArrayList<VCFEntry> entries = vcfDB.getEntriesByGATK(conflictStr);
-				for (VCFEntry entry : entries){
+				ArrayList<SNVEntry> entries = vcfDB.getEntriesByGATK(conflictStr);
+				for (SNVEntry entry : entries){
 					//System.out.println("**"+entry.toString());
 					pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictStr + "T\n");
 			//		System.out.println("Counter: " + counter++);
@@ -492,7 +491,7 @@ public class TreeBuilder {
 	 * @param lColFuncMap	The LColFuncMap made from getLColFuncMap
 	 */
 	private void buildTree(ArrayList<ArrayList<Integer>> matrixPrime, Map<String, Integer> mutMap,
-			HashMap<Integer, Integer> lColFuncMap, VCFDatabase db) {
+			HashMap<Integer, Integer> lColFuncMap, SNVDatabase db) {
 		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 		int numRows = matrixPrime.size();
 		int numCols = matrixPrime.get(0).size();
@@ -546,7 +545,7 @@ public class TreeBuilder {
 	 * @param g	A specific instance of a DirectedGraph built already
 	 * @param hashMap 
 	 */
-	private void VisualizeTree(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels, HashMap<Integer, String> edgeLabels, VCFDatabase db) {
+	private void VisualizeTree(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels, HashMap<Integer, String> edgeLabels, SNVDatabase db) {
 		final HashMap<Integer, String> nodeLabelsFinal;
 		final HashMap<Integer, String> edgeLabelsFinal;
 		

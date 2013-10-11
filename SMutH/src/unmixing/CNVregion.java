@@ -81,7 +81,7 @@ public class CNVregion {
 	 * @param entry
 	 * @return
 	 */
-	public int compareLocation(VCFEntry entry){
+	public int compareLocation(SNVEntry entry){
 		if (endChr < entry.getChromNum())
 			return 1;
 				
