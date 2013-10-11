@@ -42,13 +42,14 @@ public class PHYGraph {
 	/**
 	 * Constructs a PHYGraph from the sub-populations of the SNP groups
 	 */
-	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples) {
+	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples, int[] sampleMutationMask) {
 		numSamples = totalNumSamples;
 		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
 		edges = new HashMap<PHYNode, ArrayList<PHYNode>>(); 
 		
 		// add root node
-		addNode(new PHYNode(), numSamples+1);
+		PHYNode root = new PHYNode();
+		addNode(root, numSamples+1);
 				
 		// add group sub-population nodes
 		for(SNPGroup g : groups) {
@@ -68,20 +69,31 @@ public class PHYGraph {
 		
 		// add sample leaf nodes
 		for(int i = 0; i < numSamples; i++) {
-			addNode(new PHYNode(i), 0);
+			PHYNode sampleLeaf = new PHYNode(i);
+			addNode(sampleLeaf, 0);
+			// add edges from the root to the samples without any mutations
+			// in order to have a connected graph
+			if(sampleMutationMask[i] == 1) {
+				addEdge(root, sampleLeaf);
+			}
 		}
+	
 		
 		// add inter-level edges
 		for(int i = numSamples + 1; i > 0; i--) {
-			for(int j = i-1; j >= 0; j--) {
-				ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
-				if(fromLevelNodes == null) continue;
-				for(PHYNode n1 : fromLevelNodes) {
-					ArrayList<PHYNode> toLevelNodes = nodes.get(j);
-					if(toLevelNodes == null) continue;
-					for(PHYNode n2: toLevelNodes) {
-						checkAndAddEdge(n1, n2);
-					}
+			ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
+			if(fromLevelNodes == null) continue;
+			// find the next non-empty level
+			int j = i-1;
+			ArrayList<PHYNode> toLevelNodes = nodes.get(j);
+			while((toLevelNodes == null) && (j > 0)) {
+				j--;
+				toLevelNodes = nodes.get(j);
+			}
+			if(toLevelNodes == null) continue;
+			for(PHYNode n1 : fromLevelNodes) {
+				for(PHYNode n2: toLevelNodes) {
+					checkAndAddEdge(n1, n2);
 				}
 			}
 		}
@@ -143,9 +155,21 @@ public class PHYGraph {
 		}
 		edges.get(from).add(to);
 		numEdges++;
-		
-		
 	}
+	
+	/** Removes an edge from the graph */
+	public void removeEdge(PHYNode from, PHYNode to) {
+		ArrayList<PHYNode> nbrs = edges.get(from);
+		if(nbrs != null) {
+			for(PHYNode n : nbrs) {
+				if(n.equals(to)) {
+					nbrs.remove(n);
+					break;
+				}
+			}
+		}
+	}
+	
 	
 	/**
 	 * Returns the nodes to which this node has edges to
@@ -157,20 +181,132 @@ public class PHYGraph {
 	
 	
 	// ---- Spanning Tree Generation ----
-	// based on Gabow, Myers '78
 	
-	public void grow() {
-		
+	// based on Gabow & Myers '78
+	
+	/** List of all generated spanning trees */
+	private ArrayList<Tree> spanningTrees;
+	
+	/** Stack of edges directed from vertices in T to vertices not in T */
+	private ArrayList<PHYEdge> f;
+	
+	/** The last spanning tree output so far */
+	private Tree L;
+	
+	/**
+	 * Finds all spanning trees rooted at r
+	 */
+	public void grow(Tree t) {
+		// if the tree t contains all the nodes, it is complete
+		if(t.treeNodes.size() == numNodes) {
+			L = t;
+			spanningTrees.add(L.clone());
+			System.out.println("Found tree");
+			System.out.println(L);
+		} else {
+			// list used to reconstruct the original F
+			ArrayList<PHYEdge> ff = new ArrayList<PHYEdge>();
+			
+			boolean b = true;
+			while(b && (f.size() > 0)) {
+				// new tree edge
+				//System.out.println(f.size() - 1);
+				PHYEdge e = f.remove(f.size() - 1);
+				//System.out.println(e);
+				PHYNode v = e.to;
+				t.addNode(v);
+				t.addEdge(e.from, v);
+				
+				// update f
+				ArrayList<PHYNode> vNbrs = edges.get(v);
+				if(vNbrs != null) {
+					for(PHYNode w : vNbrs) {
+						if(!t.containsNode(w)) {
+							f.add(new PHYEdge(v, w));
+						}
+					}
+				}
+				
+				// remove (w,v) w in T from f
+				ArrayList<PHYEdge> edgesRemoved = new ArrayList<PHYEdge>();
+				for(PHYEdge wv : f) {
+					if(t.containsNode(wv.from) && (wv.to.equals(v))) {
+						edgesRemoved.add(wv);
+					}
+				}
+				f.removeAll(edgesRemoved);
+				
+				// recurse
+				grow(t.clone());
+				
+				// pop
+				ArrayList<PHYEdge> popEdges = new ArrayList<PHYEdge>();
+				for(PHYEdge vw : f) {
+					if((!t.containsNode(vw.to)) && (vw.from.equals(v))) {
+						popEdges.add(vw);
+					}
+				}
+				f.removeAll(popEdges);
+				
+				// restore
+				for(PHYEdge wv : edgesRemoved) {
+					f.add(wv);
+				}
+				
+				// remove e from T and G
+				t.removeEdge(e.from, e.to);
+				this.removeEdge(e.from, e.to);
+				
+				// add e to FF
+				ff.add(e);
+				
+				// bridge test
+				for(PHYEdge wv : f) {
+					PHYNode w = wv.from;
+					//ArrayList<PHYNode> wNbrs = L.treeEdges.get(w);
+					//for(PHYNode n : wNbrs) {
+						if(wv.to.equals(v)) {
+							// check if w is a descendant of v in L
+							if(!L.isDescendent(v, w)) {
+								b = false;
+								break;
+							}
+						}
+					//}
+					//if(!b) break;
+				}
+			}
+			
+			// pop from ff, push to f, add to G
+			for(int i = ff.size()-1; i >=0; i--) {
+				PHYEdge e = ff.get(i);
+				f.add(e);
+				this.addEdge(e.from, e.to);
+			}
+			ff.clear();
+		}
 	}
 	
 	
-	
-	
 	/**
-	 * Place-holder operation for lineage
+	 * Generates all the spanning trees from the constraint network
+	 * that pass the AAF constraints
 	 */
-	public void getLineageTrees() {
+	public ArrayList<Tree> getLineageTrees() {
+		spanningTrees = new ArrayList<Tree>();
 		
+		PHYNode root = nodes.get(numSamples+1).get(0);
+		// initialize tree t to contain the root
+		Tree t = new Tree();
+		t.addNode(root);
+		// initialize f to contain all edges (root, v)
+		f = new ArrayList<PHYEdge>();
+		for(PHYNode n : edges.get(root)) {
+			f.add(new PHYEdge(root, n));
+		}
+		grow(t);
+		
+		return spanningTrees;
 	}
 	
 	/**
@@ -324,7 +460,130 @@ public class PHYGraph {
 			return node;
 		}
 		
+		public boolean equals(Object o) {
+			if(!(o instanceof PHYNode)) {
+				return false;
+			}
+			PHYNode n = (PHYNode) o;
+			if(this.nodeId == n.nodeId) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 	}
 	
+	protected class PHYEdge {
+		PHYNode from;
+		PHYNode to;
+		
+		public PHYEdge(PHYNode from, PHYNode to) {
+			this.from = from;
+			this.to = to;
+		}
+		
+		public boolean equals(Object o) {
+			if(!(o instanceof PHYEdge)) {
+				return false;
+			}
+			PHYEdge e = (PHYEdge) o;
+			if(this.from.equals(e.from) && this.to.equals(e.to)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
 	
+	protected class Tree {
+		ArrayList<PHYNode> treeNodes;
+		HashMap<PHYNode, ArrayList<PHYNode>> treeEdges;
+		
+		public Tree() {
+			treeNodes = new ArrayList<PHYNode>();
+			treeEdges = new HashMap<PHYNode, ArrayList<PHYNode>>();
+		}
+		
+		public void addNode(PHYNode n) {
+			treeNodes.add(n);
+		}
+		
+		public void addEdge(PHYNode from, PHYNode to) {
+			ArrayList<PHYNode> nbrs = treeEdges.get(from);
+			if(nbrs == null) {
+				treeEdges.put(from, new ArrayList<PHYNode>());
+			}
+			treeEdges.get(from).add(to);
+		}
+		
+		public void removeEdge(PHYNode from, PHYNode to) {
+			ArrayList<PHYNode> nbrs = treeEdges.get(from);
+			if(nbrs != null) {
+				for(PHYNode n : nbrs) {
+					if(n.equals(to)) {
+						nbrs.remove(n);
+						break;
+					}
+				}
+			}
+		}
+		
+		public boolean containsNode(PHYNode n) {
+			return false;
+		}
+		
+		public boolean containsEdge(PHYNode from, PHYNode to) {
+			return false;
+		}
+		
+		/** 
+		 * Returns a copy of the tree
+		 */
+		public Tree clone() {
+			Tree copy = new Tree();
+			copy.treeNodes.addAll(this.treeNodes);
+			copy.treeEdges.putAll(this.treeEdges);
+			return copy;
+		}
+		
+		/**
+		 * Returns true if w is a descendant of v in this tree
+		 */
+		public boolean isDescendent(PHYNode v, PHYNode w) {
+			ArrayList<PHYNode> nodes = treeEdges.get(v);
+			if(nodes == null) {
+				return false;
+			}
+			while(nodes.size() > 0) {
+				PHYNode n = nodes.remove(0);
+				if(n.equals(w)) {
+					return true;
+				}
+				if(treeEdges.get(n) != null) {
+					nodes.addAll(treeEdges.get(n));
+				}
+			}
+			return false;
+		}
+		
+		public String toString() {
+			String graph = "--- SPANNING TREE --- \n";
+			
+			// print nodes by level
+			graph += "NODES: \n";
+			for(PHYNode n : treeNodes) {
+				graph += n.toString() + "\n";
+			}
+			graph += "EDGES: \n";
+			for(PHYNode n1 : treeEdges.keySet()) {
+				ArrayList<PHYNode> nbrs = edges.get(n1);
+				for(PHYNode n2 : nbrs) {
+					graph += n1.getNodeId() + " -> " + n2.getNodeId() + "\n";
+				}
+			}
+			
+			return graph;
+		}
+	}	
 }
