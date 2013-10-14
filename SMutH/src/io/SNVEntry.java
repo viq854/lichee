@@ -96,7 +96,6 @@ public abstract class  SNVEntry {
 	 */
 	public String getGroup(){
 		String result = "";
-		//System.out.println(this.toString());
 		for (int i = 0; i < genotype.length; i++){
 			if (genotype[i].equals("0/0")) result += "0";
 			else result += "1";

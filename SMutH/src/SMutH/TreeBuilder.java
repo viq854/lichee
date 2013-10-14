@@ -3,30 +3,13 @@ package SMutH;
 import io.*;
 
 
-import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-
 import org.apache.commons.cli.*;
-import org.apache.commons.collections15.Transformer;
 
-
-import edu.uci.ics.jung.algorithms.layout.*;
 import edu.uci.ics.jung.graph.*;
 import edu.uci.ics.jung.graph.util.*;
-import edu.uci.ics.jung.visualization.*;
-import edu.uci.ics.jung.visualization.control.*;
-import edu.uci.ics.jung.visualization.decorators.*;
-import edu.uci.ics.jung.visualization.layout.LayoutTransition;
-import edu.uci.ics.jung.visualization.util.Animator;
 
 /**
  * Class: TreeBuilder
@@ -81,10 +64,6 @@ public class TreeBuilder {
 		
 	private static CommandLine cmdLineArgs;
 	
-	private VisualizationViewer<Integer, Integer> visServer;
-	private TreeLayout<Integer, Integer> treeLayout;
-	private RadialTreeLayout<Integer, Integer> radialLayout;
-	private VisualizationServer.Paintable rings;
 	
 	private DirectedGraph<Integer, Integer> graph;
 	
@@ -131,6 +110,7 @@ public class TreeBuilder {
 		vcfDB.generateMatrix("output.txt");
 		vcfDB.generateGATKFile(path+testName + ".GATK-output.txt");
 		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree("output.txt");
+		//matrixPrime = TreeChecker.getMatrixPrime("output.txt");
 		if (matrixPrime != null) {
 			System.out.println("This can be a PhyTree!");
 			TreeChecker.printMatrix(matrixPrime);
@@ -157,8 +137,12 @@ public class TreeBuilder {
 				editSNV(conflicts, mutMap, vcfDB, i);
 				SPBuilder spb = new SPBuilder(mutMap, noConflictMatrixPrime, conflicts, testName, vcfDB);
 				TreeBuilder tb = new TreeBuilder();	
-				tb.graph = spb.getTree();
-				tb.VisualizeTree(tb.graph, spb.getNodeLabels(),spb.getEdgeLabels(),vcfDB);
+			 tb.graph = spb.getTree();
+				//HashMap<Integer, Integer> LColFuncMap = tb.getLColFuncMap(noConflictMatrixPrime);
+				//tb.graph = tb.buildNetwork(matrixPrime, mutMap, LColFuncMap,vcfDB);
+				
+				/**/
+				new TreeVisualizer(tb.graph, spb.getNodeLabels(),spb.getEdgeLabels(),vcfDB);
 				
 //				TreeBuilder tb = new TreeBuilder();
 //				HashMap<Integer, Integer> LColFuncMap = tb.getLColFuncMap(noConflictMatrixPrime);
@@ -213,7 +197,7 @@ public class TreeBuilder {
 		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
 		Collections.sort(codes);
 		Collections.reverse(codes);
-		PrintWriter pwv = null, pwh=null;
+		PrintWriter pwv = null;//, pwh=null;
 		try{
 			/*pwh = new PrintWriter(new FileWriter(path+testName+".LOH.txt"));
 			vcfDB.printLOH(pwh);
@@ -272,11 +256,6 @@ public class TreeBuilder {
 				i++;
 			}
 			ArrayList<VCFEntry> failCodes = null;
-			//System.out.println("----");
-			//System.out.println(conflictStr + ": " + mutMap.get(conflictStr));
-			//Set<String> possible = getPossibleCodes(conflictStr, 1);
-			//System.out.println("--POSSIBLE--");
-			//System.out.println(possible.toString());
 			Set<String> allCodes = new HashSet<String>(mutMap.keySet());
 			//Remove all conflicts
 			for (ArrayList<Integer> currConflict: conflicts){
@@ -286,12 +265,7 @@ public class TreeBuilder {
 				}
 				allCodes.remove(currConflictStr);
 			}
-			//--
-			////allCodes.remove(conflictStr);
-			////System.out.println(allCodes.toString());
-			//System.out.println("--ALL CODES--");
-			//System.out.println(allCodes.toString());
-			////allCodes.retainAll(possible);
+
 			Map<String, Integer> editDistMap = getEditDistMap(conflictStr, allCodes);
 			//System.out.println(editDistMap.toString());
 			allCodes = filterEditDistance(allCodes, editDistMap, VCFConstants.EDIT_DISTANCE);
@@ -533,169 +507,9 @@ public class TreeBuilder {
 				edgeLabels.put(new Integer(i+1), mutMap.get(edgeStr).toString());
 		}
 		graph = g;
-		VisualizeTree(g, null,edgeLabels,db);
+		new TreeVisualizer(g, null,edgeLabels,db);
 	}
 
-	/**
-	 * Creates the actual graphics and sets up visualizing the tree
-	 * 
-	 * Uses a combination of JUNG and Java's Swing libraries to display
-	 * tree. This might be made into it's own class if necessary.
-	 * 
-	 * @param g	A specific instance of a DirectedGraph built already
-	 * @param hashMap 
-	 */
-	private void VisualizeTree(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels, HashMap<Integer, String> edgeLabels, SNVDatabase db) {
-		final HashMap<Integer, String> nodeLabelsFinal;
-		final HashMap<Integer, String> edgeLabelsFinal;
-		
-		if (nodeLabels == null) nodeLabelsFinal = new HashMap<Integer, String>();
-		else nodeLabelsFinal = new HashMap<Integer, String>(nodeLabels);
-		nodeLabelsFinal.put(0, "germline");
-		for(int i=0; i < db.getNumofSamples(); i++){
-			nodeLabelsFinal.put(-i-1, db.getName(i));
-		}
-		
-		
-		if (edgeLabels == null) edgeLabelsFinal = new HashMap<Integer, String>();
-		else edgeLabelsFinal = new HashMap<Integer, String>(edgeLabels);
-		
-		JFrame frame = new JFrame(testName+" Tree View");
-		DelegateTree<Integer, Integer> tree = new DelegateTree<Integer, Integer>(g);
-		tree.setRoot(0);
-		treeLayout = new TreeLayout<Integer, Integer>((Forest<Integer, Integer>) tree,100,70);
-		//treeLayout.setSize(new Dimension(600, 600));
-		radialLayout = new RadialTreeLayout<Integer, Integer>(tree);
-		radialLayout.setSize(new Dimension(700, 700));
-//		BasicVisualizationServer<Integer, Integer> visServer =
-//			new BasicVisualizationServer<Integer, Integer>(treeLayout);
-		visServer = 
-			new VisualizationViewer<Integer, Integer>(treeLayout);
-		visServer.setPreferredSize(new Dimension(600, 500));
-		rings = new Rings();
-		
-		//Setting up transformers for JUNG
-		
-		Transformer<Integer, String> PhyVertexLabelTransformer = new Transformer<Integer, String>(){
-			public String transform(Integer num) {
-				if (nodeLabelsFinal != null && nodeLabelsFinal.containsKey(num)) return nodeLabelsFinal.get(num);
-				/*if (num < 0)
-					return db.getName(-1*num - 1);
-				else if (num == 0)
-					return "Root";*/
-				//else return "N-" + num.toString();
-				else return null;//"N-" + num.toString();
-			}
-		};
-		
-		Transformer<Integer, String> PhyEdgeLabelTransformer = new Transformer<Integer, String>(){
-			public String transform(Integer num) {
-				if (edgeLabelsFinal != null && edgeLabelsFinal.containsKey(num)) return edgeLabelsFinal.get(num); 
-				else
-					return null;
-			}
-		};
-		
-//		Transformer<Integer, EdgeShape<Integer, Integer>> PhyEdgeShapeTransformer = new Transformer<Integer, EdgeShape<Integer, Integer>>(){
-//			public Line<Integer, Integer> transformer(Integer num){
-//				if (num >= 0) return (new EdgeShape.Line<Integer, Integer>());
-//				else return (new EdgeShape.BentLine<Integer,Integer>());
-//			}
-//
-//			@Override
-//			public EdgeShape<Integer, Integer> transform(Integer num) {
-//				if (num >= 0) return (new EdgeShape.Line<Integer, Integer>());
-//				else return (new EdgeShape.BentLine<Integer,Integer>());
-//			}
-//		}
-		
-		float dash[] = {5.0f};
-		final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT,
-				BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
-		Transformer<Integer, Stroke> PhyEdgeStrokeTransformer =
-			new Transformer<Integer, Stroke>() {
-				public Stroke transform(Integer num) {
-					if (num < 0) return edgeStroke;
-					else return null;
-				}
-			};
-			
-		Transformer<Integer, Paint> PhyVertexPaintTransformer =
-			new Transformer<Integer, Paint>() {
-				public Paint transform(Integer num){
-					if (nodeLabelsFinal != null && nodeLabelsFinal.containsKey(num)) return Color.BLUE;
-					if (num < 0) return Color.GREEN;
-					else return Color.RED;
-				}
-			};
-		
-		//visServer.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Integer>());
-		//visServer.setBackground(Color.WHITE);
-		visServer.getRenderContext().setVertexLabelTransformer(PhyVertexLabelTransformer);
-		visServer.getRenderContext().setVertexFillPaintTransformer(PhyVertexPaintTransformer);
-		visServer.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<Integer, Integer>());
-		visServer.getRenderContext().setEdgeLabelTransformer(PhyEdgeLabelTransformer);
-		visServer.getRenderContext().setEdgeStrokeTransformer(PhyEdgeStrokeTransformer);
-		
-		//Creating graph mouse
-		DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
-		graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
-		visServer.setGraphMouse(graphMouse);
-		
-		Container content = frame.getContentPane();
-		//final GraphZoomScrollPane panel = new GraphZoomScrollPane(visServer);
-		content.add(visServer);
-		
-		JToggleButton radial = new JToggleButton("Radial");
-		radial.addItemListener(new ItemListener() {
-
-			public void itemStateChanged(ItemEvent e) {
-				if(e.getStateChange() == ItemEvent.SELECTED){
-					LayoutTransition<Integer, Integer> lt = 
-						new LayoutTransition<Integer, Integer>(visServer, treeLayout, radialLayout);
-					Animator a = new Animator(lt);
-					a.start();
-					visServer.getRenderContext().getMultiLayerTransformer().setToIdentity();
-					visServer.addPreRenderPaintable(rings);
-				} else {
-					LayoutTransition<Integer, Integer> lt =
-						new LayoutTransition<Integer, Integer>(visServer, radialLayout, treeLayout);
-					Animator a = new Animator(lt);
-					a.start();
-					visServer.getRenderContext().getMultiLayerTransformer().setToIdentity();
-					visServer.removePreRenderPaintable(rings);
-				}
-				visServer.repaint();
-			}
-		});
-		
-		JPanel controls = new JPanel();
-		//controls.setBackground(Color.WHITE);
-		controls.add(radial);
-		content.add(controls, BorderLayout.SOUTH);
-		
-		//JFrame frame = new JFrame("Simple Tree View");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//		frame.getContentPane().add(content);
-		frame.pack();
-		frame.setVisible(true);
-		
-		Dimension size = frame.getSize();
-	      //BufferedImage image = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_RGB);
-	      BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
-	      Graphics gr = image.getGraphics();
-	      frame.paint(gr);
-	      gr.dispose();
-	      
-	      try
-	      {
-	        ImageIO.write(image, "jpg", new File(path+testName+".tree.jpg"));
-	      }
-	      catch (IOException e)
-	      {
-	        e.printStackTrace();
-	      }
-	}
 	
 	/**
 	 * Creates the LColFuncMap which maps the column to the largest L-function value 
@@ -738,49 +552,62 @@ public class TreeBuilder {
 		return colFuncMap;
 	}
 	
+	
 	/**
-	 * Function: Rings
-	 * Constructor: Rings r = new Rings()
-	 * ----
-	 * A simple set of shapes taken from the JUNG library
-	 * to draw the graph in a radial views.
-	 *
+	 * Builds the PhyTree when given M' and the LColFuncMap
+	 * 
+	 * Uses Gusfield's 1991 phylogenetic tree algorithm to construct
+	 * a PhyTree. The graph data structures are taken from the JUNG
+	 * library, a graph package for Java.
+	 * 
+	 * @param matrixPrime	M'
+	 * @param lColFuncMap	The LColFuncMap made from getLColFuncMap
 	 */
-	class Rings implements VisualizationServer.Paintable {
+	private void buildNetwork(ArrayList<ArrayList<Integer>> matrixPrime, Map<String, Integer> mutMap,
+			HashMap<Integer, Integer> lColFuncMap, SNVDatabase db) {
+		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
+		int numGroups = matrixPrime.size();
+		int numSamples = matrixPrime.get(0).size();
 		
-		Collection<Double> depths;
-		
-		public Rings() {
-			depths = getDepths();
-		}
-		
-		private Collection<Double> getDepths() {
-			Set<Double> depths = new HashSet<Double>();
-			Map<Integer,PolarPoint> polarLocations = radialLayout.getPolarLocations();
-			for(Integer v : graph.getVertices()) {
-				PolarPoint pp = polarLocations.get(v);
-				depths.add(pp.getRadius());
-			}
-			return depths;
-		}
-
-		public void paint(Graphics g) {
-			g.setColor(Color.lightGray);
-		
-			Graphics2D g2d = (Graphics2D)g;
-			Point2D center = radialLayout.getCenter();
-
-			Ellipse2D ellipse = new Ellipse2D.Double();
-			for(double d : depths) {
-				ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, 
-						center.getX()+d, center.getY()+d);
-				Shape shape = visServer.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
-				g2d.draw(shape);
+		HashMap<Integer, String> edgeLabels = new HashMap<Integer, String>();
+		//Add root
+		g.addVertex((Integer) 0);
+		for (int i = 0; i < numSamples; i++){
+			Integer nodeNum = i + 1;
+			g.addVertex(nodeNum);
+			if (lColFuncMap.get(i + 1) > 0){
+				//g.addEdge(i + 1, lColFuncMap.get(nodeNum), nodeNum, EdgeType.DIRECTED);
+			} else {
+				//g.addEdge(i + 1, 0, nodeNum, EdgeType.DIRECTED);
 			}
 		}
-
-		public boolean useTransform() {
-			return true;
-		}
+		for (int i = 0; i < numGroups; i++){
+			int maxIndex = 0;
+				
+			for (int j = numSamples - 1; j >= 0; j--){
+				if (matrixPrime.get(i).get(j) == 1){
+					maxIndex = j + 1;
+					break;
+				}
+				
+				
+				
+			}
+			Integer currParent = g.getDest(maxIndex);
+			if (maxIndex == 0) currParent = 0;
+			g.addVertex(-1 * (i + 1));
+			g.addEdge(-1 * (i + 1), currParent, -1 * (i + 1), EdgeType.DIRECTED);
+			
+		}/*
+		for (int i = 0; i < numSamples; i++){
+			String edgeStr = "";  
+			for (int j = 0; j < numGroups ; j++)
+				edgeStr += matrixPrime.get(j).get(i);
+			if (mutMap.get(edgeStr).intValue() > 0)
+				edgeLabels.put(new Integer(i+1), mutMap.get(edgeStr).toString());
+		}*/
+		graph = g;
+		new TreeVisualizer(g, null,edgeLabels,db);
 	}
+	
 }

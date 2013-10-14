@@ -238,7 +238,6 @@ public class SNVDatabase {
 			
 			while (currLine != null){
 				MUTEntry entry = new MUTEntry(currLine,numSamples);
-				System.out.println(entry.getGroup()+"\t"+currLine);
 				//System.out.println(currLine);
 				currLine = rd.readLine();
 				allCounter++;
@@ -303,12 +302,12 @@ public class SNVDatabase {
 			names = new ArrayList<String>(Arrays.asList(header).subList(9, header.length));
 		else if (header[4].equals("EOA"))
 			names = new ArrayList<String>(Arrays.asList(header).subList(5, header.length));
-		else {
+		/*else {
 			names = new ArrayList<String>();
 			for (char c='A'; c<='Z'; c++)
 				names.add(c+"");
-		}
-
+		}*/
+		System.out.println("There are "+names.size()+" samples!");
 	}
 	
 	
