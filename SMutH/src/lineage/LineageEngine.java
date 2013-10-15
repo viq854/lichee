@@ -3,6 +3,7 @@ package lineage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import SMutH.TreeVisualizer;
 import unmixing.Unmixing;
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
@@ -21,7 +22,7 @@ public class LineageEngine {
 	 */
 	public static void buildLineage(String path, String sampleName, int normalSample) {
 		// 1. load VCF data
-		SNVDatabase db = new SNVDatabase(path+sampleName+".vcf", normalSample);
+		SNVDatabase db = new SNVDatabase(path+sampleName+".validation.txt", normalSample);
 		
 		
 		// 2. handle normal cell contamination, CNVs, 
@@ -71,18 +72,33 @@ public class LineageEngine {
 		PHYGraph constrNetwork = new PHYGraph(groups, db.getNumofSamples(), sampleMutationMask);
 		System.out.println(constrNetwork.toString());
 		
-		// 7. build and output final cell lineage
-		//ArrayList<Tree> spanningTrees = constrNetwork.getLineageTrees();  
-		//for(Tree t : spanningTrees) {
-			//System.out.println(t);
-		//}
+		// 7. find all the spanning trees
+		ArrayList<Tree> spanningTrees = constrNetwork.getLineageTrees();  
+		System.out.println("Found " + spanningTrees.size() + " trees");
+		if(spanningTrees.size() > 0) {
+			System.out.println(spanningTrees.get(0));
+		}
 		
-		// 8. result visualization
+		// 8. apply AAF constraints and other filters to prune out trees
+		constrNetwork.testSpanningTrees();
+		constrNetwork.filterSpanningTrees();
+		System.out.println("Filtered " + spanningTrees.size() + " trees");	
+		if(spanningTrees.size() > 0) {
+			System.out.println(spanningTrees.get(0));
+		}
+		
+		// 9. result visualization
+		constrNetwork.displayNetwork();
+		if(spanningTrees.size() > 0) {
+			spanningTrees.get(0).displayTree();;
+		}
+		
 		
 	}
 	
 	public static void main(String[] args) {
-		buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
+		//buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
+		buildLineage("/Users/viq/smuth/SMutH/data/","Patient_3", 0);
 		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/","Patient_2", 0);
 
 	}

@@ -121,8 +121,8 @@ public class AAFClusterer {
 			eval.setClusterer(clusterer);                                  
 			eval.evaluateClusterer(new Instances(ds));                               
 			int numClusters = eval.getNumClusters();
-			System.out.println("# of clusters: " + numClusters);
-			System.out.println(eval.clusterResultsToString());
+			//System.out.println("# of clusters: " + numClusters);
+			//System.out.println(eval.clusterResultsToString());
 			
 			// output predictions
 		    //System.out.println("# - cluster - distribution");
@@ -393,11 +393,11 @@ public class AAFClusterer {
 		
 		public String toString() {
 			String c = "";
-			c += "centroid = [";
+			c += "[";
 			for(int i = 0; i < centroid.length; i++) {
 				c += " " + centroid[i] + " ";
 			}
-			c += "] size = " + members.size();
+			c += "] " + members.size();
 			return c;
 		}
 	}

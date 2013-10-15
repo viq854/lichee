@@ -32,6 +32,7 @@ import javax.swing.JToggleButton;
 
 import org.apache.commons.collections15.Transformer;
 
+import edu.uci.ics.jung.algorithms.layout.DAGLayout;
 import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.algorithms.layout.TreeLayout;
@@ -69,6 +70,7 @@ public class TreeVisualizer {
 		
 		if (nodeLabels == null) nodeLabelsFinal = new HashMap<Integer, String>();
 		else nodeLabelsFinal = new HashMap<Integer, String>(nodeLabels);
+		
 		nodeLabelsFinal.put(0, "germline");
 		for(int i=0; i < db.getNumofSamples(); i++){
 			nodeLabelsFinal.put(-i-1, db.getName(i));
@@ -212,6 +214,106 @@ public class TreeVisualizer {
 	      {
 	        e.printStackTrace();
 	      }
+	}
+	
+	public TreeVisualizer(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels, HashMap<Integer, String> edgeLabels) {
+		
+		final HashMap<Integer, String> nodeLabelsFinal = new HashMap<Integer, String>(nodeLabels);
+		
+		JFrame frame = new JFrame(TreeBuilder.testName + " Network View");
+		DAGLayout<Integer, Integer> dagLayout = new DAGLayout<Integer, Integer>(g);
+		visServer = new VisualizationViewer<Integer, Integer>(dagLayout);
+		visServer.setPreferredSize(new Dimension(600, 500));
+		
+		//Creating graph mouse
+		DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+		graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+		visServer.setGraphMouse(graphMouse);
+		
+		Transformer<Integer, String> PhyVertexLabelTransformer = new Transformer<Integer, String>(){
+			public String transform(Integer num) {
+				if (nodeLabelsFinal != null && nodeLabelsFinal.containsKey(num)) {
+					return nodeLabelsFinal.get(num);
+				}
+				else return null;
+			}
+		};
+		
+		visServer.getRenderContext().setVertexLabelTransformer(PhyVertexLabelTransformer);
+		
+		Container content = frame.getContentPane();
+		content.add(visServer);
+		
+		JPanel controls = new JPanel();
+		content.add(controls, BorderLayout.SOUTH);
+		
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.pack();
+		frame.setVisible(true);
+		
+		Dimension size = frame.getSize();
+	    BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
+	    Graphics gr = image.getGraphics();
+	    frame.paint(gr);
+	    gr.dispose();
+      
+	    try {
+	    	ImageIO.write(image, "jpg", new File(TreeBuilder.path+TreeBuilder.testName+".tree.jpg"));
+	    }
+	    catch (IOException e) {
+	    	e.printStackTrace();
+	    }
+	}
+	
+	public TreeVisualizer(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels) {
+		
+		final HashMap<Integer, String> nodeLabelsFinal = new HashMap<Integer, String>(nodeLabels);
+		
+		JFrame frame = new JFrame(TreeBuilder.testName + " Tree View");
+		DelegateTree<Integer, Integer> tree = new DelegateTree<Integer, Integer>(g);
+		tree.setRoot(0);
+		treeLayout = new TreeLayout<Integer, Integer>((Forest<Integer, Integer>) tree,100,70);
+		visServer = new VisualizationViewer<Integer, Integer>(treeLayout);
+		visServer.setPreferredSize(new Dimension(600, 500));
+		
+		//Creating graph mouse
+		DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+		graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+		visServer.setGraphMouse(graphMouse);
+		
+		Transformer<Integer, String> PhyVertexLabelTransformer = new Transformer<Integer, String>(){
+			public String transform(Integer num) {
+				if (nodeLabelsFinal != null && nodeLabelsFinal.containsKey(num)) {
+					return nodeLabelsFinal.get(num);
+				}
+				else return null;
+			}
+		};
+		
+		visServer.getRenderContext().setVertexLabelTransformer(PhyVertexLabelTransformer);
+		
+		Container content = frame.getContentPane();
+		content.add(visServer);
+		
+		JPanel controls = new JPanel();
+		content.add(controls, BorderLayout.SOUTH);
+		
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.pack();
+		frame.setVisible(true);
+		
+		Dimension size = frame.getSize();
+	    BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
+	    Graphics gr = image.getGraphics();
+	    frame.paint(gr);
+	    gr.dispose();
+      
+	    try {
+	    	ImageIO.write(image, "jpg", new File(TreeBuilder.path+TreeBuilder.testName+".tree.jpg"));
+	    }
+	    catch (IOException e) {
+	    	e.printStackTrace();
+	    }
 	}
 	
 	/**

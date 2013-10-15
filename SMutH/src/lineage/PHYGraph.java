@@ -3,6 +3,10 @@ package lineage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import edu.uci.ics.jung.graph.DirectedGraph;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
+import SMutH.TreeVisualizer;
 import lineage.AAFClusterer.Cluster;
 
 /**
@@ -20,8 +24,9 @@ public class PHYGraph {
 	/** Nodes in the graph indexed by ID */
 	private HashMap<Integer, PHYNode> nodesById;
 	
-	/** Adjacency map of nodes to their down-neighbors */
+	/** Adjacency map of nodes to the nodes that have direct edges to them */
 	private HashMap<PHYNode, ArrayList<PHYNode>> edges;
+	
 	
 	/** Total number of nodes in the graph */
 	private int numNodes;
@@ -49,7 +54,7 @@ public class PHYGraph {
 		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
 		nodesById = new HashMap<Integer, PHYNode>();
 		edges = new HashMap<PHYNode, ArrayList<PHYNode>>(); 
-		
+	
 		// add root node
 		PHYNode root = new PHYNode();
 		addNode(root, numSamples+1);
@@ -58,7 +63,7 @@ public class PHYGraph {
 		for(SNPGroup g : groups) {
 			PHYNode[] groupNodes = new PHYNode[g.getSubPopulations().length];
 			for(int i = 0; i < groupNodes.length; i++) {
-				PHYNode node = new PHYNode(g, i);
+				PHYNode node = new PHYNode(g, i, g.getNumSamples());
 				addNode(node, g.getNumSamples());
 				groupNodes[i] = node;
 			}
@@ -101,7 +106,8 @@ public class PHYGraph {
 			}
 		}
 		
-		// find the nodes that are not connected and connect them to the root
+		// find the nodes that are not connected and connect them to a valid node in the closest
+		// higher level
 		int[] nodeMask = new int[numNodes];
 		for(PHYNode n : edges.keySet()) {
 			for(PHYNode m : edges.get(n)) {
@@ -109,9 +115,27 @@ public class PHYGraph {
 			}
 		}
 		
+		// skips the root
 		for(int i = 1; i < nodeMask.length; i++) {
 			if(nodeMask[i] == 0) {
-				addEdge(root, nodesById.get(i));
+				PHYNode n = nodesById.get(i);			
+				// find a parent in the closest higher level
+				boolean found = false;
+				for(int j = n.getLevel() + 2; j <= numSamples + 1; j++) {
+					ArrayList<PHYNode> fromLevelNodes = nodes.get(j);
+					if(fromLevelNodes == null) continue;
+					for(PHYNode n2 : fromLevelNodes) {
+						if(checkAndAddEdge(n2, n) == 0) {
+							// found a parent
+							found = true;
+							break;
+						}
+					}
+					if(found) break;
+				}
+				if(!found) {
+					addEdge(root, n);
+				}
 			}
 		}
 	}
@@ -125,13 +149,14 @@ public class PHYGraph {
 	 * @param n1 - node 1
 	 * @param n2 - node 2
 	 */
-	public void checkAndAddEdge(PHYNode n1, PHYNode n2) {
+	public int checkAndAddEdge(PHYNode n1, PHYNode n2) {
 		if(n2.isLeaf) {
 			int sampleId = n2.getLeafSampleId();
 			if(n1.getAAF(sampleId) > 0) {
 				addEdge(n1, n2);
+				return 0;
 			}
-			return;
+			return -1;
 		}
 		
 		int comp = 0;
@@ -142,6 +167,7 @@ public class PHYGraph {
 		
 		if(comp == numSamples) {
 			addEdge(n1, n2);
+			return 0;
 		} else {
 			comp = 0;
 			for(int i = 0; i < numSamples; i++) {
@@ -150,8 +176,10 @@ public class PHYGraph {
 			}
 			if(comp == numSamples) {
 				addEdge(n2, n1);
+				return 1;
 			}
 		} 
+		return -1;
 	}
 	
 	/** Adds a new node to the graph */
@@ -188,13 +216,25 @@ public class PHYGraph {
 		}
 	}
 	
-	
-	/**
-	 * Returns the nodes to which this node has edges to
-	 * or null if the node connects to no edges
-	 */
-	public ArrayList<PHYNode> getDownNeighbors(PHYNode node) {
-		return edges.get(node);
+	public void displayNetwork() {
+		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
+		HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
+		HashMap<Integer, String> edgeLabels = new HashMap<Integer, String>();
+			
+		int edgeId = 0;
+		for (PHYNode n : edges.keySet()) {
+			g.addVertex(n.getNodeId());
+			nodeLabels.put(n.getNodeId(), n.getLabel());
+			for(PHYNode n2 : edges.get(n)) {
+				if(!g.containsVertex(n2.getNodeId())) {
+					g.addVertex(n2.getNodeId());
+					nodeLabels.put(n2.getNodeId(), n2.getLabel());
+				}
+				g.addEdge(edgeId, n.getNodeId(), n2.getNodeId(), EdgeType.DIRECTED);
+				edgeId++;
+			}
+		}
+		new TreeVisualizer(g, nodeLabels, edgeLabels);	
 	}
 	
 	
@@ -219,57 +259,57 @@ public class PHYGraph {
 		if(t.treeNodes.size() == numNodes) {
 			L = t;
 			spanningTrees.add(L.clone());
-			System.out.println("Found tree");
-			System.out.println(L);
+			//System.out.println("Found tree");
+			//System.out.println(L.clone());
 		} else {
 			// list used to reconstruct the original F
 			ArrayList<PHYEdge> ff = new ArrayList<PHYEdge>();
 			
-			boolean b = true;
-			while(b && (f.size() > 0)) {
+			boolean b = false;
+			while(!b && (f.size() > 0)) {
 				// new tree edge
 				//System.out.println(f.size() - 1);
 				PHYEdge e = f.remove(f.size() - 1);
-				//System.out.println(e);
+				//System.out.println(e.from.getNodeId() + "->" + e.to.getNodeId());
+				
 				PHYNode v = e.to;
 				t.addNode(v);
 				t.addEdge(e.from, v);
 				
 				// update f
+				//System.out.println("Update f");
+				ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
 				ArrayList<PHYNode> vNbrs = edges.get(v);
 				if(vNbrs != null) {
 					for(PHYNode w : vNbrs) {
 						if(!t.containsNode(w)) {
-							f.add(new PHYEdge(v, w));
+							PHYEdge vw = new PHYEdge(v, w);
+							f.add(vw);
+							edgesAdded.add(vw);
+							//System.out.println(vw.from.getNodeId() + "->" + vw.to.getNodeId());
 						}
 					}
 				}
+				//System.out.println("---");
 				
 				// remove (w,v) w in T from f
 				ArrayList<PHYEdge> edgesRemoved = new ArrayList<PHYEdge>();
-				for(PHYEdge wv : f) {
+				for(int i = 0; i < f.size(); i++) {
+					PHYEdge wv = f.get(i);
 					if(t.containsNode(wv.from) && (wv.to.equals(v))) {
 						edgesRemoved.add(wv);
 					}
 				}
 				f.removeAll(edgesRemoved);
-				
+	
 				// recurse
-				grow(t.clone());
+				grow(t);
 				
 				// pop
-				ArrayList<PHYEdge> popEdges = new ArrayList<PHYEdge>();
-				for(PHYEdge vw : f) {
-					if((!t.containsNode(vw.to)) && (vw.from.equals(v))) {
-						popEdges.add(vw);
-					}
-				}
-				f.removeAll(popEdges);
+				f.removeAll(edgesAdded);
 				
 				// restore
-				for(PHYEdge wv : edgesRemoved) {
-					f.add(wv);
-				}
+				f.addAll(edgesRemoved);
 				
 				// remove e from T and G
 				t.removeEdge(e.from, e.to);
@@ -279,20 +319,22 @@ public class PHYGraph {
 				ff.add(e);
 				
 				// bridge test
-				for(PHYEdge wv : f) {
-					PHYNode w = wv.from;
-					//ArrayList<PHYNode> wNbrs = L.treeEdges.get(w);
-					//for(PHYNode n : wNbrs) {
-						if(wv.to.equals(v)) {
+				for(PHYNode w : this.edges.keySet()) {
+					ArrayList<PHYNode> wNbrs = this.edges.get(w);
+					if(wNbrs == null) continue;
+					for(PHYNode n : wNbrs) {
+						if(n.equals(v)) {
 							// check if w is a descendant of v in L
 							if(!L.isDescendent(v, w)) {
+						//		System.out.println("Bridge edge "+w.getNodeId() + "->" + v.getNodeId());
 								b = false;
 								break;
 							}
 						}
-					//}
-					//if(!b) break;
+					}
+					if(!b) break;
 				}
+				//System.out.println("Bridge test for edge " + e.from.getNodeId() + " -> " + e.to.getNodeId() + " b = " + b);
 			}
 			
 			// pop from ff, push to f, add to G
@@ -321,11 +363,86 @@ public class PHYGraph {
 		f = new ArrayList<PHYEdge>();
 		for(PHYNode n : edges.get(root)) {
 			f.add(new PHYEdge(root, n));
+			
 		}
 		grow(t);
-		
 		return spanningTrees;
 	}
+	
+	/**
+	 * Apply the AAF constraints
+	 */
+	public void filterSpanningTrees() {
+		ArrayList<Tree> toBeRemoved = new ArrayList<Tree>();
+		for(Tree t : spanningTrees) {
+			if(!checkAndFixAAFConstraints(t)) {
+				toBeRemoved.add(t);
+			}
+		}
+		spanningTrees.removeAll(toBeRemoved);
+	}
+	
+	/**
+	 * Returns true if the tree passes the AAF constraints
+	 * @param t - spanning tree
+	 */
+	public boolean checkAndFixAAFConstraints(Tree t) {
+		for(PHYNode n : t.treeEdges.keySet()) {
+			ArrayList<PHYNode> nbrs = t.treeEdges.get(n);			
+			for(int i = 0; i < numSamples; i++) {
+				double affSum = 0;
+				for(PHYNode n2 : nbrs) {
+					affSum += n2.getAAF(i);
+				}
+				if(affSum >= n.getAAF(i) + AAF_ERROR_MARGIN) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Adds "hidden edges" s.t. the constraint is not violated
+	 */
+	public boolean fixTree(Tree t) {
+		// traverse the tree starting at the root
+		ArrayList<PHYNode> nodes = t.treeEdges.get(nodesById.get(0));
+
+		while(nodes.size() > 0) {
+			PHYNode n = nodes.remove(0);
+			if(t.treeEdges.get(n) != null) {
+				nodes.addAll(t.treeEdges.get(n));
+			}
+		}
+		
+		return false;
+	}
+	
+	public void testSpanningTrees() {
+		for(int i = 0; i < spanningTrees.size(); i++) {
+			for(int j = i + 1; j < spanningTrees.size(); j++) {
+				Tree t1 = spanningTrees.get(i);
+				Tree t2 = spanningTrees.get(j);
+				
+				// compare
+				boolean sameEdges = true;
+				for(PHYNode n1 : t1.treeEdges.keySet()) {
+					for(PHYNode n2 : t1.treeEdges.get(n1)) {
+						sameEdges &= t2.containsEdge(n1, n2);
+					}
+				}
+				if(sameEdges) {
+					System.out.println("Found same tree");
+					System.out.println(t1);
+					System.out.println(t2);
+					return;
+				}
+			}
+		}
+		System.out.println("All trees are distinct");
+	}
+	
 	
 	/**
 	 * Returns a string representation of the graph
@@ -385,6 +502,9 @@ public class PHYGraph {
 		/** Debugging-only node id */
 		private int nodeId;
 		
+		/** Level in the constraint network */
+		private int level;
+		
 		
 		
 		/** 
@@ -392,12 +512,13 @@ public class PHYGraph {
 		 * @param g - SNP group the node belongs to
 		 * @param nodeClusterId
 		 */
-		public PHYNode(SNPGroup g, int nodeClusterId) {
+		public PHYNode(SNPGroup g, int nodeClusterId, int networkLevel) {
 			snpGroup = g;
 			cluster = snpGroup.getSubPopulations()[nodeClusterId];
 			isLeaf = false;
 			nodeId = nodeCounter;
 			nodeCounter++;
+			level = networkLevel;
 		}
 		
 		/**
@@ -409,6 +530,7 @@ public class PHYGraph {
 			leafSampleId = sampleId;
 			nodeId = nodeCounter;
 			nodeCounter++;
+			level = 0;
 		}
 		
 		/**
@@ -418,6 +540,7 @@ public class PHYGraph {
 			isRoot = true;
 			nodeId = nodeCounter;
 			nodeCounter++;
+			level = numSamples + 1;
 		}
 		
 		/**
@@ -446,6 +569,10 @@ public class PHYGraph {
 			return nodeId;
 		}
 		
+		public int getLevel() {
+			return level;
+		}
+		
 		/**
 		 * Returns the cluster centroid AAF for the given sample ID
 		 * Returns 0 if the sample is not represented
@@ -470,6 +597,19 @@ public class PHYGraph {
 			if(!isLeaf && !isRoot) {
 				node += "group tag = " + snpGroup.getTag() + ", ";
 				node += cluster.toString();
+			} else if(isLeaf) {
+				node += "leaf sample id = " + leafSampleId;
+			} else {
+				node += "root";
+			}
+			return node;
+		}
+		
+		public String getLabel() {
+			String node = nodeId + ": \n";
+			if(!isLeaf && !isRoot) {
+				node += snpGroup.getTag() + "\n";
+				//node += cluster.toString();
 			} else if(isLeaf) {
 				node += "leaf sample id = " + leafSampleId;
 			} else {
@@ -517,14 +657,19 @@ public class PHYGraph {
 	protected class Tree {
 		ArrayList<PHYNode> treeNodes;
 		HashMap<PHYNode, ArrayList<PHYNode>> treeEdges;
+		PHYNode[] parents;
+		
 		
 		public Tree() {
 			treeNodes = new ArrayList<PHYNode>();
 			treeEdges = new HashMap<PHYNode, ArrayList<PHYNode>>();
+			parents = new PHYNode[numNodes]; // excludes the root
 		}
 		
 		public void addNode(PHYNode n) {
-			treeNodes.add(n);
+			if(!treeNodes.contains(n)) {
+				treeNodes.add(n);
+			}
 		}
 		
 		public void addEdge(PHYNode from, PHYNode to) {
@@ -532,7 +677,10 @@ public class PHYGraph {
 			if(nbrs == null) {
 				treeEdges.put(from, new ArrayList<PHYNode>());
 			}
-			treeEdges.get(from).add(to);
+			if(!treeEdges.get(from).contains(to)) {
+				treeEdges.get(from).add(to);
+			}
+			parents[to.getNodeId()] = from;
 		}
 		
 		public void removeEdge(PHYNode from, PHYNode to) {
@@ -545,13 +693,41 @@ public class PHYGraph {
 					}
 				}
 			}
+			
+			// remove the node if no edge points to it
+			boolean connected = false;
+			for(PHYNode n : treeEdges.keySet()) {
+				for(PHYNode n2 : treeEdges.get(n)) {
+					if(to.equals(n2)) {
+						connected = true;
+						break;
+					}
+				}
+			}
+			if(!connected) {
+				treeNodes.remove(to);
+			}
+			
+			parents[to.getNodeId()] = null;
+			
 		}
 		
-		public boolean containsNode(PHYNode n) {
+		public boolean containsNode(PHYNode v) {
+			for(PHYNode n : treeNodes) {
+				if(n.equals(v)) {
+					return true;
+				}
+			}
 			return false;
 		}
 		
 		public boolean containsEdge(PHYNode from, PHYNode to) {
+			if(treeEdges.get(from) == null) return false;
+			for(PHYNode n : treeEdges.get(from)) {
+				if(n.equals(to)) {
+					return true;
+				}
+			}
 			return false;
 		}
 		
@@ -561,7 +737,11 @@ public class PHYGraph {
 		public Tree clone() {
 			Tree copy = new Tree();
 			copy.treeNodes.addAll(this.treeNodes);
-			copy.treeEdges.putAll(this.treeEdges);
+			for(PHYNode n : this.treeEdges.keySet()) {
+				ArrayList<PHYNode> nbrs = new ArrayList<PHYNode>();
+				nbrs.addAll(this.treeEdges.get(n));
+				copy.treeEdges.put(n, nbrs);
+			}
 			return copy;
 		}
 		
@@ -589,19 +769,39 @@ public class PHYGraph {
 			String graph = "--- SPANNING TREE --- \n";
 			
 			// print nodes by level
-			graph += "NODES: \n";
-			for(PHYNode n : treeNodes) {
-				graph += n.toString() + "\n";
-			}
-			graph += "EDGES: \n";
+			//graph += "NODES: \n";
+			//for(PHYNode n : treeNodes) {
+				//graph += n.toString() + "\n";
+			//}
+			//graph += "EDGES: \n";
 			for(PHYNode n1 : treeEdges.keySet()) {
-				ArrayList<PHYNode> nbrs = edges.get(n1);
+				ArrayList<PHYNode> nbrs = treeEdges.get(n1);
 				for(PHYNode n2 : nbrs) {
 					graph += n1.getNodeId() + " -> " + n2.getNodeId() + "\n";
 				}
 			}
 			
 			return graph;
+		}
+		
+		public void displayTree() {
+			DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
+			HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
+				
+			int edgeId = 0;
+			for (PHYNode n : treeEdges.keySet()) {
+				g.addVertex(n.getNodeId());
+				nodeLabels.put(n.getNodeId(), n.getLabel());
+				for(PHYNode n2 : treeEdges.get(n)) {
+					if(!g.containsVertex(n2.getNodeId())) {
+						g.addVertex(n2.getNodeId());
+						nodeLabels.put(n2.getNodeId(), n2.getLabel());
+					}
+					g.addEdge(edgeId, n.getNodeId(), n2.getNodeId(), EdgeType.DIRECTED);
+					edgeId++;
+				}
+			}
+			new TreeVisualizer(g, nodeLabels);	
 		}
 	}	
 }
