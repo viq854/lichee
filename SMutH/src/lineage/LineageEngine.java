@@ -3,8 +3,6 @@ package lineage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import SMutH.TreeVisualizer;
-import unmixing.Unmixing;
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
 import lineage.PHYGraph.Tree;
@@ -22,7 +20,8 @@ public class LineageEngine {
 	 */
 	public static void buildLineage(String path, String sampleName, int normalSample) {
 		// 1. load VCF data
-		SNVDatabase db = new SNVDatabase(path+sampleName+".validation.txt", normalSample);
+		SNVDatabase db = new SNVDatabase(path+sampleName+".vcf", normalSample);
+		//SNVDatabase db = new SNVDatabase(path+sampleName+".validation.txt", normalSample);
 		
 		
 		// 2. handle normal cell contamination, CNVs, 
@@ -45,44 +44,28 @@ public class LineageEngine {
 		// 4. cluster SNPs in each group
 		AAFClusterer clusterer = new AAFClusterer();
 		for(SNPGroup group : groups) {
-			/*clusterer.clusterSubPopulations(group, ClusteringAlgorithms.FUZZYCMEANS, 2);
-			System.out.println("FUZZYCMEANS Clustering results group: " + group.getTag());
-			for(Cluster c : group.getSubPopulations()) {
+			System.out.println("Clustering results group: " + group.getTag());
+			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 2);
+			for(Cluster c : clusters) {
 				System.out.println(c.toString());
 			}
-			
-			clusterer.clusterSubPopulations(group, ClusteringAlgorithms.KMEANS, 2);
-			System.out.println("KMEANS Clustering results group: " + group.getTag());
-			for(Cluster c : group.getSubPopulations()) {
-				System.out.println(c.toString());
-			}*/
-			
-			System.out.println("EM Clustering results group: " + group.getTag());
-			clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 2);
-			for(Cluster c : group.getSubPopulations()) {
-				System.out.println(c.toString());
-			}
+			group.setSubPopulations(clusters);
 		}
 		
-		// 5. incorporate CNVs
-		
-		// 6. construct constraint network
+		// 5. construct constraint network
 		int[] sampleMutationMask = new int[db.getNumofSamples()];
 		sampleMutationMask[0] = 1; // sample 0 has no mutations
 		PHYGraph constrNetwork = new PHYGraph(groups, db.getNumofSamples(), sampleMutationMask);
 		System.out.println(constrNetwork.toString());
 		
-		// 7. find all the spanning trees
+		// 6. find all the spanning trees
 		ArrayList<Tree> spanningTrees = constrNetwork.getLineageTrees();  
-		System.out.println("Found " + spanningTrees.size() + " trees");
-		if(spanningTrees.size() > 0) {
-			System.out.println(spanningTrees.get(0));
-		}
+		System.out.println("Spanning trees: " + spanningTrees.size() + " trees total");
 		
-		// 8. apply AAF constraints and other filters to prune out trees
-		constrNetwork.testSpanningTrees();
+		// 7. apply AAF constraints and other filters to prune out trees
+		//constrNetwork.testSpanningTrees();
 		constrNetwork.filterSpanningTrees();
-		System.out.println("Filtered " + spanningTrees.size() + " trees");	
+		System.out.println("Spanning trees: " + spanningTrees.size() + " trees after *filtering*");	
 		if(spanningTrees.size() > 0) {
 			System.out.println(spanningTrees.get(0));
 		}
@@ -97,8 +80,8 @@ public class LineageEngine {
 	}
 	
 	public static void main(String[] args) {
-		//buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
-		buildLineage("/Users/viq/smuth/SMutH/data/","Patient_3", 0);
+		buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
+		//buildLineage("/Users/viq/smuth/SMutH/data/","Patient_3", 0);
 		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/","Patient_2", 0);
 
 	}

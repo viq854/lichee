@@ -10,7 +10,6 @@ import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.Utils;
 
 /**
  * Simple implementation of a few clustering techniques
@@ -45,21 +44,18 @@ public class AAFClusterer {
 	 * @param group - SNP group to cluster based on AAF data
 	 * @param alg - algorithm to use for clustering
 	 */
-	public void clusterSubPopulations(SNPGroup group, ClusteringAlgorithms alg, int minNumClusters) {		
-		// TODO: determine best number of clusters starting with minNumClusters
+	public Cluster[] clusterSubPopulations(SNPGroup group, ClusteringAlgorithms alg, int minNumClusters) {		
 		switch(alg) {
 		case FUZZYCMEANS:
-			group.setSubPopulations(fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNPs(), 
+			return fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNPs(), 
 					group.getNumSamples(), minNumClusters, 
-					AAFClusterer.DEFAULT_FUZZIFIER, DistanceMetric.EUCLIDEAN));
-			break;
+					AAFClusterer.DEFAULT_FUZZIFIER, DistanceMetric.EUCLIDEAN);
 		case KMEANS:
-			group.setSubPopulations(kmeans(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters));
-			break;
+			return kmeans(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters);
 		case EM:
-			group.setSubPopulations(em(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters));
+			return em(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters);
 		default:
-				
+			return null;	
 		}
 	}
 	
@@ -90,13 +86,13 @@ public class AAFClusterer {
 				for(int j = 0; j < mean.length; j++) {
 					mean[j] = inst.value(j);
 				}
-				clusters[i] = new Cluster(mean);
+				clusters[i] = new Cluster(mean, i);
 			}
 			
 			// cluster members
 			int[] assignments = clusterer.getAssignments();
 			for(int i = 0; i < assignments.length; i++) {
-				clusters[assignments[i]].addMember(i, false);
+				clusters[assignments[i]].addMember(i);
 			}
 			return clusters;
 		} catch (Exception e) {
@@ -121,26 +117,15 @@ public class AAFClusterer {
 			eval.setClusterer(clusterer);                                  
 			eval.evaluateClusterer(new Instances(ds));                               
 			int numClusters = eval.getNumClusters();
-			//System.out.println("# of clusters: " + numClusters);
-			//System.out.println(eval.clusterResultsToString());
 			
 			// output predictions
-		    //System.out.println("# - cluster - distribution");
 		    for (int i = 0; i < ds.numInstances(); i++) {
 		    	Instance inst = ds.instance(i);
 		    	double[] mean = new double[inst.numAttributes()];
 				for(int j = 0; j < mean.length; j++) {
 					mean[j] = inst.value(j);
-					//System.out.println(" " + mean[j] + " ");
 				}
-		    	//int cluster = clusterer.clusterInstance(ds.instance(i));
 		    	//double[] dist = clusterer.distributionForInstance(ds.instance(i));
-		    	//System.out.print((i+1));
-		    	//System.out.print(" - ");
-		    	//System.out.print(cluster);
-		    	//System.out.print(" - ");
-		    	//System.out.print(Utils.arrayToString(dist));
-		    	//System.out.println();
 		    }
 			
 			Cluster[] clusters = new Cluster[numClusters];
@@ -162,12 +147,12 @@ public class AAFClusterer {
 				for(int j = 0; j < numFeatures; j++) {
 					mean[j] = clusterCentroids[i][j]/clusterCount[i];
 				}
-				clusters[i] = new Cluster(mean);
+				clusters[i] = new Cluster(mean, i);
 			}
 			
 			// cluster members
 			for(int i = 0; i < ds.numInstances(); i++) {
-				clusters[(int)assignments[i]].addMember(i, false);
+				clusters[(int)assignments[i]].addMember(i);
 			}
 			
 			return clusters;
@@ -252,7 +237,7 @@ public class AAFClusterer {
 		
 		Cluster[] clusters = new Cluster[c];
 		for(int i = 0; i < c; i++) {
-			clusters[i] = new Cluster(centroids[i]);
+			clusters[i] = new Cluster(centroids[i], i);
 		}
 		for(int i = 0; i < numObs; i++) {
 			// find the cluster to which this observation has the highest probability of belonging
@@ -264,7 +249,7 @@ public class AAFClusterer {
 					clusterId = j;
 				}
 			}
-			clusters[clusterId].addMember(i, false);
+			clusters[clusterId].addMember(i);
 		}
 		return clusters;
 	}
@@ -314,7 +299,7 @@ public class AAFClusterer {
 		return Math.sqrt(diffSum);
 	}
 	
-	// ---- WEKA Utilities ----
+	// ---- WEKA-related Utilities ----
 	public Instances convertMatrixToWeka(double[][] data, int numObs, int numFeatures) {
 		// convert the data to WEKA format
 		FastVector atts = new FastVector();
@@ -335,13 +320,14 @@ public class AAFClusterer {
 	}
 	
 
-	// ---- Utilities ----
-	
-	public void evaluateClusters(Cluster[] clusters) {
-		
-	}
-	
+	/**
+	 * Cluster of observation points
+	 * Each cluster has an associated centroid point and a list of members
+	 */
 	protected class Cluster {
+		
+		/** Cluster id, unique per group */
+		private int id;
 		
 		/** Cluster centroid */
 		private double[] centroid;
@@ -349,14 +335,16 @@ public class AAFClusterer {
 		/** List of observations assigned to this cluster */
 		private ArrayList<Integer> members;
 		
-		public Cluster(double[] clusterCentroid) {
+		public Cluster(double[] clusterCentroid, int clusterId) {
 			centroid = clusterCentroid;
 			members = new ArrayList<Integer>();
+			id = clusterId;
 		}
 		
-		public Cluster(double[] clusterCentroid, ArrayList<Integer> assignments) {
+		public Cluster(double[] clusterCentroid, ArrayList<Integer> assignments, int clusterId) {
 			centroid = clusterCentroid;
 			members = assignments;
+			id = clusterId;
 		}
 		
 		/**
@@ -373,14 +361,27 @@ public class AAFClusterer {
 		/**
 		 * Add a new observation to the cluster
 		 * @param obsId - Id of the observation (index in the data matrix)
-		 * @param recomputeCentroid - flag indicating if the centroid needs to be adjusted
 		 */
-		public void addMember(int obsId, boolean recomputeCentroid) {
-			if(!recomputeCentroid) {
-				members.add(new Integer(obsId));
-			} else {
-				System.err.println("addMember: Operation not implemented");
+		public void addMember(int obsId) {
+			members.add(new Integer(obsId));
+		}
+		
+		/** 
+		 * Computes the mean of all the members of the cluster
+		 */
+		public void recomputeCentroid(double[][] data, int numObs, int numFeatures) {
+			double[] newCentroid = new double[numFeatures];
+			for(int i = 0; i < members.size(); i++) {
+				for(int j = 0; j < numFeatures; j++) {
+					newCentroid[j] += data[members.get(i)][j];
+				}
 			}
+			
+			for(int j = 0; j < numFeatures; j++) {
+				newCentroid[j] = newCentroid[j]/members.size();
+			}
+			
+			centroid = newCentroid;
 		}
 		
 		public double[] getCentroid() {
@@ -389,6 +390,10 @@ public class AAFClusterer {
 		
 		public ArrayList<Integer> getMembership() {
 			return members;
+		}
+		
+		public int getId() {
+			return id;
 		}
 		
 		public String toString() {

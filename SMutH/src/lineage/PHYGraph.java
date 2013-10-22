@@ -24,9 +24,8 @@ public class PHYGraph {
 	/** Nodes in the graph indexed by ID */
 	private HashMap<Integer, PHYNode> nodesById;
 	
-	/** Adjacency map of nodes to the nodes that have direct edges to them */
+	/** Adjacency map of nodes to the their neighbors */
 	private HashMap<PHYNode, ArrayList<PHYNode>> edges;
-	
 	
 	/** Total number of nodes in the graph */
 	private int numNodes;
@@ -216,6 +215,7 @@ public class PHYGraph {
 		}
 	}
 	
+	/** Displays the constraint network graph */
 	public void displayNetwork() {
 		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 		HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
@@ -240,7 +240,7 @@ public class PHYGraph {
 	
 	// ---- Spanning Tree Generation ----
 	
-	// based on Gabow & Myers '78
+	// based on the algorithm from Gabow & Myers '78
 	
 	/** List of all generated spanning trees */
 	private ArrayList<Tree> spanningTrees;
@@ -259,8 +259,6 @@ public class PHYGraph {
 		if(t.treeNodes.size() == numNodes) {
 			L = t;
 			spanningTrees.add(L.clone());
-			//System.out.println("Found tree");
-			//System.out.println(L.clone());
 		} else {
 			// list used to reconstruct the original F
 			ArrayList<PHYEdge> ff = new ArrayList<PHYEdge>();
@@ -268,16 +266,12 @@ public class PHYGraph {
 			boolean b = false;
 			while(!b && (f.size() > 0)) {
 				// new tree edge
-				//System.out.println(f.size() - 1);
 				PHYEdge e = f.remove(f.size() - 1);
-				//System.out.println(e.from.getNodeId() + "->" + e.to.getNodeId());
-				
 				PHYNode v = e.to;
 				t.addNode(v);
 				t.addEdge(e.from, v);
 				
 				// update f
-				//System.out.println("Update f");
 				ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
 				ArrayList<PHYNode> vNbrs = edges.get(v);
 				if(vNbrs != null) {
@@ -286,11 +280,9 @@ public class PHYGraph {
 							PHYEdge vw = new PHYEdge(v, w);
 							f.add(vw);
 							edgesAdded.add(vw);
-							//System.out.println(vw.from.getNodeId() + "->" + vw.to.getNodeId());
 						}
 					}
 				}
-				//System.out.println("---");
 				
 				// remove (w,v) w in T from f
 				ArrayList<PHYEdge> edgesRemoved = new ArrayList<PHYEdge>();
@@ -326,7 +318,6 @@ public class PHYGraph {
 						if(n.equals(v)) {
 							// check if w is a descendant of v in L
 							if(!L.isDescendent(v, w)) {
-						//		System.out.println("Bridge edge "+w.getNodeId() + "->" + v.getNodeId());
 								b = false;
 								break;
 							}
@@ -334,7 +325,6 @@ public class PHYGraph {
 					}
 					if(!b) break;
 				}
-				//System.out.println("Bridge test for edge " + e.from.getNodeId() + " -> " + e.to.getNodeId() + " b = " + b);
 			}
 			
 			// pop from ff, push to f, add to G
@@ -419,6 +409,7 @@ public class PHYGraph {
 		return false;
 	}
 	
+	/** Debugging only - tests that all the spanning trees found are different */
 	public void testSpanningTrees() {
 		for(int i = 0; i < spanningTrees.size(); i++) {
 			for(int j = i + 1; j < spanningTrees.size(); j++) {
@@ -504,8 +495,6 @@ public class PHYGraph {
 		
 		/** Level in the constraint network */
 		private int level;
-		
-		
 		
 		/** 
 		 * Internal node constructor
@@ -632,6 +621,9 @@ public class PHYGraph {
 		
 	}
 	
+	/**
+	 * Edge in the phylogenetic graph
+	 */
 	protected class PHYEdge {
 		PHYNode from;
 		PHYNode to;
@@ -654,6 +646,9 @@ public class PHYGraph {
 		}
 	}
 	
+	/**
+	 * Spanning tree of the phylogenetic constraint network
+	 */
 	protected class Tree {
 		ArrayList<PHYNode> treeNodes;
 		HashMap<PHYNode, ArrayList<PHYNode>> treeEdges;
@@ -767,23 +762,16 @@ public class PHYGraph {
 		
 		public String toString() {
 			String graph = "--- SPANNING TREE --- \n";
-			
-			// print nodes by level
-			//graph += "NODES: \n";
-			//for(PHYNode n : treeNodes) {
-				//graph += n.toString() + "\n";
-			//}
-			//graph += "EDGES: \n";
 			for(PHYNode n1 : treeEdges.keySet()) {
 				ArrayList<PHYNode> nbrs = treeEdges.get(n1);
 				for(PHYNode n2 : nbrs) {
 					graph += n1.getNodeId() + " -> " + n2.getNodeId() + "\n";
 				}
 			}
-			
 			return graph;
 		}
 		
+		/** Displays the tree */
 		public void displayTree() {
 			DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 			HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
