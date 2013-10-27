@@ -1,5 +1,6 @@
 package lineage;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -562,6 +563,10 @@ public class PHYGraph {
 			return level;
 		}
 		
+		public SNPGroup getSNPGroup() {
+			return snpGroup;
+		}
+		
 		/**
 		 * Returns the cluster centroid AAF for the given sample ID
 		 * Returns 0 if the sample is not represented
@@ -595,12 +600,13 @@ public class PHYGraph {
 		}
 		
 		public String getLabel() {
-			String node = nodeId + ": \n";
+			String node = "";
 			if(!isLeaf && !isRoot) {
+				node += nodeId + ": \n";
 				node += snpGroup.getTag() + "\n";
 				//node += cluster.toString();
 			} else if(isLeaf) {
-				node += "leaf sample id = " + leafSampleId;
+				node += "sample " + leafSampleId;
 			} else {
 				node += "root";
 			}
@@ -789,7 +795,63 @@ public class PHYGraph {
 					edgeId++;
 				}
 			}
+			
+			// add sample leaves
+			for(int i = 0; i < numSamples; i++) {
+				PHYNode n = new PHYNode(i);
+				g.addVertex(-n.getNodeId());
+				nodeLabels.put(-n.getNodeId(), n.getLabel());
+				
+				// find a parent in the closest higher level		 
+				boolean found = false;
+				for(int j = n.getLevel() + 1; j <= numSamples; j++) {
+					ArrayList<PHYNode> fromLevelNodes = nodes.get(j);
+					if(fromLevelNodes == null) continue;
+					for(PHYNode n2 : fromLevelNodes) {
+						if(n2.getAAF(i) > 0) {
+							g.addEdge(edgeId, n2.getNodeId(), -n.getNodeId());
+							edgeId++;
+							found = true;
+						}
+					}
+				}
+				if(!found) {
+					g.addEdge(edgeId, 0, -n.getNodeId());
+					edgeId++;
+				}
+			}
+			
 			new TreeVisualizer(g, nodeLabels);	
+		}
+		
+		/**
+		 * Returns the sub-populations of a given sample
+		 */
+		public String getLineage(int sampleId) {
+			StringBuilder lineage = new StringBuilder();
+			String indent = "";
+			lineage.append("SAMPLE " + sampleId + ":\n");
+			lineage.append("GERMLINE\n");
+			
+			// traverse the tree starting from the root in DFS order
+			for(PHYNode n : treeEdges.get(treeNodes.get(0))) {
+				getLinearHelper(lineage, indent, n, sampleId);
+			}
+			return lineage.toString();
+		}
+		
+		private void getLinearHelper(StringBuilder lineage, String indent, PHYNode n, int sampleId) {
+			indent += "\t";			
+			
+			DecimalFormat df = new DecimalFormat("#.##");
+			if(n.getSNPGroup().containsSample(sampleId)) {
+				lineage.append(indent + n.getSNPGroup().getTag() + ": " + df.format(n.getAAF(sampleId)) + "\n");
+			}
+			if(treeEdges.get(n) != null) {
+				for(PHYNode nbr : treeEdges.get(n)) {
+					getLinearHelper(lineage, indent, nbr, sampleId);
+				}
+			}
 		}
 	}	
 }

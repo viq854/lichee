@@ -1,5 +1,6 @@
 package lineage;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -75,6 +76,7 @@ public class AAFClusterer {
 		SimpleKMeans clusterer = new SimpleKMeans();
 		try {
 			clusterer.setPreserveInstancesOrder(true);
+			clusterer.setNumClusters(k);
 			clusterer.buildClusterer(ds);
 			
 			// cluster centers
@@ -398,9 +400,10 @@ public class AAFClusterer {
 		
 		public String toString() {
 			String c = "";
+			DecimalFormat df = new DecimalFormat("#.##");
 			c += "[";
 			for(int i = 0; i < centroid.length; i++) {
-				c += " " + centroid[i] + " ";
+				c += " " + df.format(centroid[i]) + " ";
 			}
 			c += "] " + members.size();
 			return c;

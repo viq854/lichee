@@ -290,7 +290,21 @@ public class TreeVisualizer {
 			}
 		};
 		
+		Transformer<Integer, Paint> PhyVertexPaintTransformer = new Transformer<Integer, Paint>() {
+			public Paint transform(Integer num){
+				if (nodeLabelsFinal != null && nodeLabelsFinal.containsKey(num)) {
+					if(num < 0) {
+						return Color.BLUE;
+					} else {
+						return Color.RED;
+					}
+				} 
+				else return Color.RED;
+			}
+		};
+		
 		visServer.getRenderContext().setVertexLabelTransformer(PhyVertexLabelTransformer);
+		visServer.getRenderContext().setVertexFillPaintTransformer(PhyVertexPaintTransformer);
 		
 		Container content = frame.getContentPane();
 		content.add(visServer);

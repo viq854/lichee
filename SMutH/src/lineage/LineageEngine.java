@@ -45,7 +45,7 @@ public class LineageEngine {
 		AAFClusterer clusterer = new AAFClusterer();
 		for(SNPGroup group : groups) {
 			System.out.println("Clustering results group: " + group.getTag());
-			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 2);
+			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 1);
 			for(Cluster c : clusters) {
 				System.out.println(c.toString());
 			}
@@ -70,18 +70,22 @@ public class LineageEngine {
 			System.out.println(spanningTrees.get(0));
 		}
 		
+		// 8. evaluate/rank the trees
+		
 		// 9. result visualization
 		constrNetwork.displayNetwork();
 		if(spanningTrees.size() > 0) {
-			spanningTrees.get(0).displayTree();;
+			spanningTrees.get(0).displayTree();
+			for(int i = 0; i < db.getNumofSamples(); i++) {
+				System.out.println(spanningTrees.get(0).getLineage(i));
+			}
 		}
-		
 		
 	}
 	
 	public static void main(String[] args) {
 		buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
-		//buildLineage("/Users/viq/smuth/SMutH/data/","Patient_3", 0);
+		//buildLineage("/Users/viq/smuth/SMutH/data/","Patient_1", 0);
 		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/","Patient_2", 0);
 
 	}

@@ -113,13 +113,20 @@ public class SNPGroup {
 		return -1;
 	}
 	
+	/**
+	 * Returns true if the given sample contains the mutations of this group
+	 */
+	public boolean containsSample(int sampleId) {
+		return (getSampleIndex(sampleId) != -1);
+	}
+	
 	// --- Sub-population Cluster Filtering / Collapse ---
 	
 	/** Minimum size a sub-population cluster must have to be valid */
 	private static final int MIN_CLUSTER_SIZE = 10;
 	
 	/** Maximum difference up to which two clusters can be collapsed */
-	private static final double MAX_COLLAPSE_CLUSTER_DIFF = 0.05;
+	private static final double MAX_COLLAPSE_CLUSTER_DIFF = 0;
 	
 	/** Entry in the cluster centroid distance minimum priority queue */
 	protected class ClusterPairDistance {
