@@ -218,26 +218,15 @@ public class VCFEntry extends SNVEntry{
 		return genotype[sample];
 	}
 	
-	/**
-	 * Function: getGATK(int sample)
-	 * Usage: String gatk = entry.getGATK(sample)
-	 * ----
-	 * Returns the GATK code for a sample. The GATK code is
-	 * found by checking whether the genotype is equivalent to "0/0"
-	 * for each sample. If so, 0 is appended as the GATK code
-	 * for that sample; otherwise, 1 is appended. At the end,
-	 * one will have a binary code of length equal to the number of 
-	 * samples for the entry.
-	 * @return	The GATK code for an entry as a string
-	 */
-	public String getGATK(){
+
+/*	public String getGATK(){
 		String result = "";
 		for (int i = 0; i < genotype.length; i++){
 			if (genotype[i].equals("0/0")) result += "0";
 			else result += "1";
 		}
 		return result;
-	}
+	}*/
 
 // -------Old Probability Formula-------
 //	public double getConversionProb(int sample){
@@ -246,6 +235,14 @@ public class VCFEntry extends SNVEntry{
 //		return nCr(d, a) * Math.pow(BASE_ERROR, a) * Math.pow((1 - BASE_ERROR), d - a);
 //	}
 // -------End-------
+	
+	/**
+	 * 
+	 */
+	
+	public boolean EvidenceOfPresence(int sample){
+		return (getSumProb(sample) >= VCFConstants.EDIT_PVALUE);
+	}
 	
 	/**
 	 * Function: getSumProb(int sample)
@@ -311,13 +308,15 @@ public class VCFEntry extends SNVEntry{
 
 
 	
-	public void updateGATK(String code){
+	public void updateGroup(String code){
 		for (int i = 0; i < alleleFreqList.size(); i++){
 			String parts[] = alleleFreqList.get(i).split(":");
 			String result = "";
 			if (parts[0].equals("0/0") && code.charAt(i) =='1') {
+				genotype[i] = "0/1";
 				result = "0/1";
 			}else if (!parts[0].equals("0/0") && code.charAt(i) =='0') {
+				genotype[i] = "0/0";
 				result = "0/0";
 			}
 			
@@ -338,6 +337,7 @@ public class VCFEntry extends SNVEntry{
 	public double getAAF(int i) {
 		return (double)altCount[i]/(refCount[i]+altCount[i]);
 	}
+	
 	public double getLAF(int i) {
 		return (double)(refCount[i] < altCount[i]? refCount[i]:altCount[i])/(double)(refCount[i]+altCount[i]);
 	}

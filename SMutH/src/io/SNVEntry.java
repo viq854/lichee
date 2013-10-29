@@ -103,32 +103,22 @@ public abstract class  SNVEntry {
 		}
 		return result;
 	}
-
-// -------Old Probability Formula-------
-//	public double getConversionProb(int sample){
-//		int a = getAlleleCount(sample, 1);
-//		int d = getReadDepth(sample);
-//		return nCr(d, a) * Math.pow(BASE_ERROR, a) * Math.pow((1 - BASE_ERROR), d - a);
-//	}
-// -------End-------
 	
-	/**
-	 * Function: getProb(int sample, int d, int k)
-	 * Usage: double prob = entry.getProb(sample, d, k)
-	 * ----
-	 * This function calculates the probability of a sample
-	 * being called incorrectly. Is used by getSumProb (which
-	 * acts as a wrapper).
-	 * 
-	 * @param sample	The particular sample of the entry
-	 * @param d			The allele depth of the sample
-	 * @param k			The minor allele count
-	 * @return	The probability as a double
-	 */
-	
+	public abstract void updateGroup(String code);
 
 	
 	public abstract double getAAF(int i) ;
+	
+	
+	/**
+	 * Function: isConvertable(int sample)
+	 * Usage: Boolean = entry.isConvertable(sample)
+	 * ----
+	 * Returns true if there is evidence of presence for the mutation. 
+	 * If so the genotype can be changed.
+	 * @return	ture if the genotype for sample can be changed.
+	 */
+	public abstract boolean EvidenceOfPresence(int sample) ;
 
 	
 	public String toString(){

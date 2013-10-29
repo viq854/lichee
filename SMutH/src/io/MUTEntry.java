@@ -40,7 +40,7 @@ public class MUTEntry extends SNVEntry{
 				break;
 			default:
 				AAF[i-5] = Double.parseDouble(entryParts[i]);
-				if (AAF[i-5] <=  VCFConstants.VALIDATION_THR)
+				if (AAF[i-5] <  VCFConstants.VALIDATION_HARD_THR)
 					genotype[i-5] = "0/0";
 				else 
 					genotype[i-5] = "1/1";
@@ -59,5 +59,19 @@ public class MUTEntry extends SNVEntry{
 		return EOAtag;
 	}
 	
+	public boolean EvidenceOfPresence(int sample){
+		return (AAF[sample] > VCFConstants.VALIDATION_THR );
+	}
+	
+	public void updateGroup(String code){
+		for (int i = 0; i < genotype.length; i++){
+			
+			if (genotype[i].equals("0/0") && code.charAt(i) =='1') {
+				genotype[i] = "0/1";
+			}else if (!genotype[i].equals("0/0") && code.charAt(i) =='0') {
+				genotype[i] = "0/0";
+			}
+		}
+	}
 	
 }

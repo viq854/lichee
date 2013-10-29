@@ -60,10 +60,8 @@ public class TreeBuilder {
 	public static String path;
 	public static String testName;
 	public static int normalSample;
-	
-		
+			
 	private static CommandLine cmdLineArgs;
-	
 	
 	private DirectedGraph<Integer, Integer> graph;
 	
@@ -100,55 +98,52 @@ public class TreeBuilder {
 
 		//for (Samples s: Samples.values())
 		{
-		testName = "tree_4_01";//s.toString();
+		testName = "tree_5_01";//s.toString();
 		normalSample = 0;//s.normal - 1;
 		//path =  "/Users/rahelehs/Work/ash/"+testName+"/"
 		//path =  "/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/"+testName+"/";
 		path =  "/Users/rahelehs/Work/cancerTree/simulation_vcfs/RECOMB2013/";
 		String inputFile = path+testName+".raw.vcf";
 		SNVDatabase vcfDB = new SNVDatabase(inputFile, normalSample);
-		vcfDB.generateMatrix("output.txt");
 		vcfDB.generateGATKFile(path+testName + ".GATK-output.txt");
-		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree("output.txt");
-		//matrixPrime = TreeChecker.getMatrixPrime("output.txt");
+		ArrayList<ArrayList<Integer>> matrixPrime = TreeChecker.checkIfTree(vcfDB);
 		if (matrixPrime != null) {
 			System.out.println("This can be a PhyTree!");
 			TreeChecker.printMatrix(matrixPrime);
 			TreeBuilder tb = new TreeBuilder();
 			HashMap<Integer, Integer> LColFuncMap = tb.getLColFuncMap(matrixPrime);
 			Map<String, Integer> mutMap = TreeChecker.getMutMap();
-			printSNVs(mutMap,vcfDB);
+			vcfDB.printSNVs(path+testName+".validSNVs.txt");
 			//System.out.println(LColFuncMap.toString());
 			tb.buildTree(matrixPrime, mutMap, LColFuncMap,vcfDB);
 		} else {
 			System.out.println("This cannot be a PhyTree!");
-			matrixPrime = TreeChecker.getMatrixPrime("output.txt");
-			ArrayList<ArrayList<Integer>> noConflictMatrixPrime = TreeChecker.getCFMatrixPrime("output.txt");
+			matrixPrime = TreeChecker.getMatrixPrime(vcfDB);
+			ArrayList<ArrayList<Integer>> noConflictMatrixPrime = TreeChecker.getCFMatrixPrime(vcfDB);
 			Set<ArrayList<Integer>> conflicts = TreeChecker.getConflicts(matrixPrime, noConflictMatrixPrime);
 			Map<String, Integer> mutMap = TreeChecker.getMutMap();
-			updateMutMap(mutMap, matrixPrime.size());
 			/*
-			 * while tree not satisfiable
 			 * -->mutMap update - Add in all 1's as legit code
 			 * -->Edit SNVs
 			 * -->Subpopulation Replacement
 			 */
-			for (int i = 0; i < 1; i++){
-				editSNV(conflicts, mutMap, vcfDB, i);
-				SPBuilder spb = new SPBuilder(mutMap, noConflictMatrixPrime, conflicts, testName, vcfDB);
-				TreeBuilder tb = new TreeBuilder();	
-			 tb.graph = spb.getTree();
+			vcfDB.editSNV(conflicts);
+			vcfDB.printSNVs(path+testName+".validSNVs.txt");
+
+			SPBuilder spb = new SPBuilder(mutMap, noConflictMatrixPrime, conflicts, testName, vcfDB);
+			TreeBuilder tb = new TreeBuilder();	
+			tb.graph = spb.getTree();
 				//HashMap<Integer, Integer> LColFuncMap = tb.getLColFuncMap(noConflictMatrixPrime);
 				//tb.graph = tb.buildNetwork(matrixPrime, mutMap, LColFuncMap,vcfDB);
 				
 				/**/
-				new TreeVisualizer(tb.graph, spb.getNodeLabels(),spb.getEdgeLabels(),vcfDB);
+			new TreeVisualizer(tb.graph, spb.getNodeLabels(),spb.getEdgeLabels(),vcfDB);
 				
 //				TreeBuilder tb = new TreeBuilder();
 //				HashMap<Integer, Integer> LColFuncMap = tb.getLColFuncMap(noConflictMatrixPrime);
 //				System.out.println(LColFuncMap.toString());
 //				tb.buildTree(matrixPrime, LColFuncMap);
-			}
+
 			
 			/*
 			 * For conflicts: 
@@ -165,11 +160,6 @@ public class TreeBuilder {
 		}
 	}
 
-	private static void updateMutMap(Map<String, Integer> mutMap, int size) {
-		String all1s = "";
-		for (int i = 0; i < size; i++) all1s += "1";
-		mutMap.put(all1s, 0);
-	}
 
 	/**
 	 * Function: setOptions(String[] args)
@@ -192,214 +182,8 @@ public class TreeBuilder {
 		}
 		return cmd;
 	}
+
 	
-	private static void printSNVs(Map<String, Integer> mutMap, SNVDatabase vcfDB) {
-		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
-		Collections.sort(codes);
-		Collections.reverse(codes);
-		PrintWriter pwv = null;//, pwh=null;
-		try{
-			/*pwh = new PrintWriter(new FileWriter(path+testName+".LOH.txt"));
-			vcfDB.printLOH(pwh);
-			pwh.close();
-			*/
-			pwv = new PrintWriter(new FileWriter(path+testName+".validSNVs.txt"));
-			pwv.write(vcfDB.getHeader()+"\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		for (int i = 0; i < codes.size(); i++){
-			if (mutMap.get(codes.get(i)) == 0)
-				continue;
-			System.out.println(codes.get(i) + ": " + mutMap.get(codes.get(i)));
-			try {
-				vcfDB.printEntriesByGATK(pwv, codes.get(i));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}	
-		pwv.close();
-	}
-	
-	/**
-	 * Function: editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Double> mutMap, VCFDatabase vcfDB)
-	 * Usage: editSNV(conflicts, mutMap, vcfDB)
-	 * ----
-	 * @param conflicts	The set of conflicting binary codes in the original music
-	 * @param mutMap	The map of codes to number of mutations with that GATK code
-	 * @param vcfDB		The VCFDatabse corresponding to the VCF file for this run of matrix building
-	 * @param iterCounter Which iteration of editSNV this is
-	 * @param testName 
-	 */
-	private static void editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Integer> mutMap, SNVDatabase vcfDB, int iterCounter) {
-		System.out.println("Original Mutation Map");
-		printSNVs(mutMap,vcfDB);
-		ArrayList<String> codes = new ArrayList<String>(mutMap.keySet());
-		Collections.sort(codes);
-		Collections.reverse(codes);
-
-		PrintWriter pw = null;
-		try{
-			pw = new PrintWriter(new FileWriter(path+testName+".edit.txt"));
-			pw.write("#CHROM\tPOS\tOriginal Code\tNew Code\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		//System.out.append("CONFLICTS: "+conflicts.toString());
-		for (ArrayList<Integer> conflict: conflicts){
-			String conflictStr = "";
-			for (int i = 0; i < conflict.size(); i++){
-				conflictStr += ("" + conflict.get(i));
-			}
-			if (conflictStr.equals("111001001")){
-				int i = 1;
-				i++;
-			}
-			ArrayList<VCFEntry> failCodes = null;
-			Set<String> allCodes = new HashSet<String>(mutMap.keySet());
-			//Remove all conflicts
-			for (ArrayList<Integer> currConflict: conflicts){
-				String currConflictStr = "";
-				for (int i = 0; i < currConflict.size(); i++){
-					currConflictStr += ("" + currConflict.get(i));
-				}
-				allCodes.remove(currConflictStr);
-			}
-
-			Map<String, Integer> editDistMap = getEditDistMap(conflictStr, allCodes);
-			//System.out.println(editDistMap.toString());
-			allCodes = filterEditDistance(allCodes, editDistMap, VCFConstants.EDIT_DISTANCE);
-			//get edit distances between conflict str and all codes
-			//get all possible by iterating through all int from 1 to desired dist
-			Set<String> conflictMatches = allCodes;
-			//System.out.println("--POSSIBLE ALL CODES--");
-			//System.out.println(allCodes.toString());
-			
-			//If conflictMatches is empty, no possible things can be moved,
-			//should write the relevant codes to EditSNV, and continue
-			if (conflictMatches.isEmpty()){
-				ArrayList<SNVEntry> entries = vcfDB.getEntriesByGATK(conflictStr);
-				for (SNVEntry entry : entries){
-					//System.out.println("**"+entry.toString());
-					pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictStr + "T\n");
-			//		System.out.println("Counter: " + counter++);
-				}
-			}
-			
-			ArrayList<String> conflictMatchesList = new ArrayList<String>(conflictMatches);
-			//int mutConverted = 0;
-			Map<String, ArrayList<VCFEntry>> conflictToPossMutMap = new HashMap<String, ArrayList<VCFEntry>>();
-			for (String conflictMatch: conflictMatchesList){
-				ArrayList<VCFEntry> possMutations = new ArrayList<VCFEntry>();
-				ArrayList<VCFEntry> currFailCodes = new ArrayList<VCFEntry>();
-				//boolean is0to1 = checkIf0to1(conflictStr, conflictMatch);
-				int currMutConverted =
-					vcfDB.getValidEntries(conflictStr, conflictMatch, VCFConstants.EDIT_DISTANCE, possMutations, currFailCodes, null);
-				//System.out.println("For code " + conflictStr + " and dest " + conflictMatch + " we can convert " +
-					//	currMutConverted + " and cannot convert " + currFailCodes.size() + ".");
-				conflictToPossMutMap.put(conflictMatch, possMutations);
-				if (failCodes == null && !currFailCodes.isEmpty()) failCodes = new ArrayList<VCFEntry>(currFailCodes);
-				else if (!currFailCodes.isEmpty()) failCodes.retainAll(currFailCodes);
-				//mutMap.put(conflictMatch, mutMap.get(conflictMatch) + currMutConverted);
-				//mutConverted += currMutConverted;
-				//System.out.println("Intermediate Mutation Map");
-				//System.out.println(mutMap.toString());
-			}
-			ArrayList<VCFEntry> movedEntries = new ArrayList<VCFEntry>();
-			for (int i = 0; i < conflictMatchesList.size(); i++){
-				String conflictMatch = findLargestUncoveredSet(conflictToPossMutMap, movedEntries);
-				if (conflictMatch == null) break;
-				ArrayList<VCFEntry> matchEntries = conflictToPossMutMap.get(conflictMatch);
-				matchEntries.removeAll(movedEntries);
-				int numMoved = matchEntries.size();
-				for (int j = 0; j < matchEntries.size(); j++){
-					VCFEntry entry = matchEntries.get(j);
-					pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictMatch + "\n");
-					entry.updateGATK(conflictMatch);
-				}
-				mutMap.put(conflictStr, mutMap.get(conflictStr) - numMoved);
-				mutMap.put(conflictMatch, mutMap.get(conflictMatch) + numMoved);
-				//System.out.println("We converted " + numMoved + " entries with GATK code [" + conflictStr + "] to GATK code [" + conflictMatch + "].");
-				conflictToPossMutMap.remove(conflictMatch);
-				movedEntries.addAll(matchEntries);
-			}
-			//System.out.println("Total Converted: " + mutConverted);
-			/*
-			 * 1. Find all possible 1-edit distance changes
-			 * 2. See which ones are valid; discard rest
-			 * 3. 
-			 */
-			if (failCodes != null){
-				failCodes.removeAll(movedEntries);
-				for (int j = 0; j < failCodes.size(); j++){
-					VCFEntry entry = failCodes.get(j);
-					//pw.write("FAILED\n");
-					pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictStr + "\n");
-				}
-			}
-		}
-		pw.close();
-		System.out.println("Final Mutation Map");
-		printSNVs(mutMap,vcfDB);
-
-}
-
-	private static Set<String> filterEditDistance(Set<String> allCodes,
-			Map<String, Integer> editDistMap, double editDistance) {
-		// TODO Auto-generated method stub
-		Set<String> resultCodes = new HashSet<String>();
-		for (String code : allCodes){
-			if (editDistMap.get(code) <= editDistance && editDistMap.get(code) != 0)
-				resultCodes.add(code);
-		}
-		return resultCodes;
-	}
-
-	private static Map<String, Integer> getEditDistMap(String conflictStr,
-			Set<String> allCodes) {
-		// TODO Auto-generated method stub
-		Map<String, Integer> edMap = new HashMap<String, Integer>();
-		for (String code: allCodes){
-			edMap.put(code, getEditDist(conflictStr, code));
-		}
-		return edMap;
-	}
-
-	private static Integer getEditDist(String conflictStr, String code) {
-		// TODO Auto-generated method stub
-		int dist = 0;
-		for (int i = 0; i < conflictStr.length(); i++)
-			if (conflictStr.charAt(i) != code.charAt(i)) dist++;
-		return dist;
-	}
-
-	/**
-	 * Function: findLargestUncovered(Map<String, ArrayList<VCFEntry>> conflictToPossMutMap, ArrayList<VCFEntry> movedEntries)
-	 * Usage: String largestConflict = findLargestUncoveredSet(conflictToPossMutMap, movedEntries)
-	 * ----
-	 * This algorithm finds the set with the most "uncovered" objects (or entries) in this case.
-	 * This is the brunt of the set cover algorithm. 
-	 * 
-	 * @param conflictToPossMutMap	The map of a conflict to all possible codes it could be moved to
-	 * @param movedEntries			All entries that have been moved already
-	 * @return	The binary code where the maximal number of entries can be moved
-	 */
-	private static String findLargestUncoveredSet(
-			Map<String, ArrayList<VCFEntry>> conflictToPossMutMap,
-			ArrayList<VCFEntry> movedEntries) {
-		String bestMatch = null;
-		int maxEntries = 0;
-		ArrayList<String> conflictMatchesList = new ArrayList<String>(conflictToPossMutMap.keySet());
-		for (String conflictMatch: conflictMatchesList){
-			ArrayList<VCFEntry> matchEntries = conflictToPossMutMap.get(conflictMatch);
-			matchEntries.removeAll(movedEntries);
-			if (matchEntries.size() > maxEntries) {
-				bestMatch = conflictMatch;
-				maxEntries = matchEntries.size();
-			}
-		}
-		return bestMatch;
-	}
 
 	/**
 	 * Function: getPossibleCodes(String conflictStr, int k)
@@ -552,62 +336,6 @@ public class TreeBuilder {
 		return colFuncMap;
 	}
 	
-	
-	/**
-	 * Builds the PhyTree when given M' and the LColFuncMap
-	 * 
-	 * Uses Gusfield's 1991 phylogenetic tree algorithm to construct
-	 * a PhyTree. The graph data structures are taken from the JUNG
-	 * library, a graph package for Java.
-	 * 
-	 * @param matrixPrime	M'
-	 * @param lColFuncMap	The LColFuncMap made from getLColFuncMap
-	 */
-	private void buildNetwork(ArrayList<ArrayList<Integer>> matrixPrime, Map<String, Integer> mutMap,
-			HashMap<Integer, Integer> lColFuncMap, SNVDatabase db) {
-		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
-		int numGroups = matrixPrime.size();
-		int numSamples = matrixPrime.get(0).size();
-		
-		HashMap<Integer, String> edgeLabels = new HashMap<Integer, String>();
-		//Add root
-		g.addVertex((Integer) 0);
-		for (int i = 0; i < numSamples; i++){
-			Integer nodeNum = i + 1;
-			g.addVertex(nodeNum);
-			if (lColFuncMap.get(i + 1) > 0){
-				//g.addEdge(i + 1, lColFuncMap.get(nodeNum), nodeNum, EdgeType.DIRECTED);
-			} else {
-				//g.addEdge(i + 1, 0, nodeNum, EdgeType.DIRECTED);
-			}
-		}
-		for (int i = 0; i < numGroups; i++){
-			int maxIndex = 0;
-				
-			for (int j = numSamples - 1; j >= 0; j--){
-				if (matrixPrime.get(i).get(j) == 1){
-					maxIndex = j + 1;
-					break;
-				}
-				
-				
-				
-			}
-			Integer currParent = g.getDest(maxIndex);
-			if (maxIndex == 0) currParent = 0;
-			g.addVertex(-1 * (i + 1));
-			g.addEdge(-1 * (i + 1), currParent, -1 * (i + 1), EdgeType.DIRECTED);
-			
-		}/*
-		for (int i = 0; i < numSamples; i++){
-			String edgeStr = "";  
-			for (int j = 0; j < numGroups ; j++)
-				edgeStr += matrixPrime.get(j).get(i);
-			if (mutMap.get(edgeStr).intValue() > 0)
-				edgeLabels.put(new Integer(i+1), mutMap.get(edgeStr).toString());
-		}*/
-		graph = g;
-		new TreeVisualizer(g, null,edgeLabels,db);
-	}
+
 	
 }

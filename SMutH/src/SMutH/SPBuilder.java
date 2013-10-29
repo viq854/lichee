@@ -1,8 +1,7 @@
 package SMutH;
 
-import io.VCFConstants;
-import io.SNVDatabase;
-import io.VCFEntry;
+import io.*;
+
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -353,10 +352,10 @@ public class SPBuilder {
 		}
 		System.out.println("ConflictCode: " + conflictCodeStr);
 		System.out.println("Testing extending currNode: " + currNodeCode.toString() + " to: " + conflictCodeStr.toString());
-		ArrayList<VCFEntry> possMutations = new ArrayList<VCFEntry>();
-		ArrayList<VCFEntry> currFailCodes = new ArrayList<VCFEntry>();
+		ArrayList<SNVEntry> possMutations = new ArrayList<SNVEntry>();
+		ArrayList<SNVEntry> currFailCodes = new ArrayList<SNVEntry>();
 		Integer totalMut = vcfDB.getEntriesByGATK(currNodeStr).size();
-		int currMutConverted = vcfDB.getValidEntries(currNodeStr, conflictCodeStr, EDIT_DISTANCE, possMutations, currFailCodes, totalMut);
+		int currMutConverted = vcfDB.getValidEntries(currNodeStr, conflictCodeStr, possMutations, currFailCodes);
 		double conversionRate = (currMutConverted + 0.0) / totalMut;
 		System.out.println("We were able to convert " + currMutConverted + " for subpop C-Extension for a rate of " + 
 				(conversionRate));
@@ -368,11 +367,11 @@ public class SPBuilder {
 				pw = new PrintWriter(new FileWriter("../editSNV/" + testName + "_editSNV.txt", true));
 				//pw.write("SUBPOPULATION MOVEMENTS\n-----\n");
 				for (int i = 0; i < possMutations.size(); i++){
-					VCFEntry entry = possMutations.get(i);
+					SNVEntry entry = possMutations.get(i);
 					pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + currNodeStr + "\t" + conflictCodeStr + "\n");
 				}
 				for (int i = 0; i < currFailCodes.size(); i++){
-					VCFEntry entry = currFailCodes.get(i);
+					SNVEntry entry = currFailCodes.get(i);
 					pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + currNodeStr + "\t" + currNodeStr + "\n");
 				}
 				pw.close();
@@ -393,8 +392,8 @@ public class SPBuilder {
 			//Need to output for each generation
 			//1) Codes which were successfully converted
 			//2) Codes which failed
-			Map<Integer, ArrayList<VCFEntry>> nodesToPossMutMap = new HashMap<Integer, ArrayList<VCFEntry>>();
-			Map<Integer, ArrayList<VCFEntry>> nodesToFailCodes = new HashMap<Integer, ArrayList<VCFEntry>>();
+			Map<Integer, ArrayList<SNVEntry>> nodesToPossMutMap = new HashMap<Integer, ArrayList<SNVEntry>>();
+			Map<Integer, ArrayList<SNVEntry>> nodesToFailCodes = new HashMap<Integer, ArrayList<SNVEntry>>();
 			Map<Integer, String> nodesToSuccStr = new HashMap<Integer, String>();
 			Map<Integer, String> nodesToConflictStr = new HashMap<Integer, String>();
 			for (int i = 0; i < currSuccessors.size(); i++){
@@ -415,10 +414,10 @@ public class SPBuilder {
 					conflictCodeStr = "0" + conflictCodeStr;
 				}
 				System.out.println("ConflictCode: " + conflictCodeStr);
-				possMutations = new ArrayList<VCFEntry>();
-				currFailCodes = new ArrayList<VCFEntry>();
+				possMutations = new ArrayList<SNVEntry>();
+				currFailCodes = new ArrayList<SNVEntry>();
 				totalMut = vcfDB.getEntriesByGATK(succCodeStr).size();
-				currMutConverted = vcfDB.getValidEntries(succCodeStr, conflictCodeStr, EDIT_DISTANCE, possMutations, currFailCodes, totalMut);
+				currMutConverted = vcfDB.getValidEntries(succCodeStr, conflictCodeStr, possMutations, currFailCodes);
 				int totalMutConverted = currMutConverted;
 				if (mutMap.containsKey(conflictCodeStr)) {
 					totalMutConverted = currMutConverted + mutMap.get(conflictCodeStr).intValue();
@@ -454,11 +453,11 @@ public class SPBuilder {
 					String succCodeStr = nodesToSuccStr.get(currNode);
 					conflictCodeStr = nodesToConflictStr.get(currNode);
 					for (int i = 0; i < possMutations.size(); i++){
-						VCFEntry entry = possMutations.get(i);
+						SNVEntry entry = possMutations.get(i);
 						pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + succCodeStr + "\t" + conflictCodeStr + "\n");
 					}
 					for (int i = 0; i < currFailCodes.size(); i++){
-						VCFEntry entry = currFailCodes.get(i);
+						SNVEntry entry = currFailCodes.get(i);
 						pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + succCodeStr + "\t" + succCodeStr + "\n");
 					}
 					pw.close();
@@ -484,8 +483,8 @@ public class SPBuilder {
 	String ACodeStr = "", CCodeStr = "";
 	for (int i = 0; i < codeA.size(); i++) ACodeStr += codeA.get(i);
 	for (int i = 0; i < codeC.size(); i++) CCodeStr += codeC.get(i);
-	ArrayList<VCFEntry> possMutations = new ArrayList<VCFEntry>();
-	ArrayList<VCFEntry> currFailCodes = new ArrayList<VCFEntry>();
+	ArrayList<SNVEntry> possMutations = new ArrayList<SNVEntry>();
+	ArrayList<SNVEntry> currFailCodes = new ArrayList<SNVEntry>();
 	int valueA = Integer.valueOf(ACodeStr, 2).intValue();
 	int valueC = Integer.valueOf(CCodeStr, 2).intValue();
 	int conflictCode = valueA | valueC;
@@ -496,7 +495,7 @@ public class SPBuilder {
 	}
 	System.out.println("ConflictCode: " + conflictCodeStr);
 	Integer totalMut = vcfDB.getEntriesByGATK(CCodeStr).size();
-	int currMutConverted = vcfDB.getValidEntries(CCodeStr, conflictCodeStr, EDIT_DISTANCE, possMutations, currFailCodes, totalMut);
+	int currMutConverted = vcfDB.getValidEntries(CCodeStr, conflictCodeStr, possMutations, currFailCodes);
 	System.out.println("We were able to convert " + currMutConverted + " for subpop C-Extension for a rate of " + 
 			((currMutConverted + 0.0) / totalMut ));
 	}

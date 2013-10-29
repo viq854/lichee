@@ -1,5 +1,6 @@
 package SMutH;
 
+import io.SNVDatabase;
 import io.VCFConstants;
 
 import java.io.*;
@@ -23,7 +24,6 @@ public class TreeChecker {
 	/* Private Instance Variables */
 	private static int numRows;
 	private static int numCols;
-	private static int totalMut;
 	private static Map<Integer, Integer> rowToMutRateMap;
 	private static Map<String, Integer> codeToMutRateMap;	
 	private static Set<Integer> minCover;
@@ -31,24 +31,7 @@ public class TreeChecker {
 	/*===============================================================
 	 * Public Methods
 	 */
-	
-	/**
-	 * Function: main(String[] args)
-	 * Usage: (Main Method)
-	 * ----
-	 * Wrapper for running the main program. What is called
-	 * when TreeChecker is called from command line.
-	 * 
-	 * @param args	Input arguments from command line
-	 */
-	public static void main(String[] args) {
-		if (args.length == 0) System.out.println("Must pass in an input matrix file!");
-		else {
-			ArrayList<ArrayList<Integer>> matrixPrime = checkIfTree(args[0]);
-			if (matrixPrime != null) System.out.println("This can be a PhyTree!");
-			else System.out.println("This cannot be a PhyTree!");
-		}
-	}
+
 
 	/**
 	 * Function: checkIfTree(String matrixFile)
@@ -65,9 +48,9 @@ public class TreeChecker {
 	 * @param	matrixFile	A file consisting of 0s and 1s which define the input matrix
 	 * @return 				true if file can be made into a matrix, false otherwise 
 	 */
-	public static ArrayList<ArrayList<Integer>> checkIfTree(String matrixFile) {
+	public static ArrayList<ArrayList<Integer>> checkIfTree(SNVDatabase db) {
 		TreeChecker treeCheckInstance = new TreeChecker();
-		ArrayList<ArrayList<Integer>> matrix = treeCheckInstance.processMatrixFile(matrixFile);
+		ArrayList<ArrayList<Integer>> matrix = treeCheckInstance.processMatrixFile(db);
 		//Can probably just put the static method inside one another
 		ArrayList<ArrayList<Integer>> transMatrix = transposeMatrix(matrix);
 		ArrayList<Integer> binaryCodeList = generateBinaryCodeList(transMatrix);
@@ -190,8 +173,8 @@ public class TreeChecker {
 	 * @param matrixFile	The pathname to the text file containing the matrix
 	 * @return	matrixPrime with conflicts removed
 	 */
-	public static ArrayList<ArrayList<Integer>> getCFMatrixPrime(String matrixFile){
-		ArrayList<ArrayList<Integer>> matrixPrime = getMatrixPrime(matrixFile);
+	public static ArrayList<ArrayList<Integer>> getCFMatrixPrime(SNVDatabase db){
+		ArrayList<ArrayList<Integer>> matrixPrime = getMatrixPrime(db);
 		ArrayList<ArrayList<Integer>> matrixPrimeTrans = transposeMatrix(matrixPrime);
 		ArrayList<Integer> conflicts = findConflicts(matrixPrime);
 		Collections.sort(conflicts);
@@ -216,9 +199,9 @@ public class TreeChecker {
 	 * @param matrixFile	Input matrix file
 	 * @return				matrixPrime (M')
 	 */
-	public static ArrayList<ArrayList<Integer>> getMatrixPrime(String matrixFile){
+	public static ArrayList<ArrayList<Integer>> getMatrixPrime(SNVDatabase db){
 		TreeChecker treeCheckInstance = new TreeChecker();
-		ArrayList<ArrayList<Integer>> matrix = treeCheckInstance.processMatrixFile(matrixFile);
+		ArrayList<ArrayList<Integer>> matrix = treeCheckInstance.processMatrixFile(db);
 		ArrayList<ArrayList<Integer>> transMatrix = TreeChecker.transposeMatrix(matrix);
 		ArrayList<Integer> binaryCodeList = TreeChecker.generateBinaryCodeList(transMatrix);
 		HashMap<Integer, ArrayList<Integer>> codeToColumnHash = treeCheckInstance.getHashFromTransMatrix(transMatrix);
@@ -236,34 +219,7 @@ public class TreeChecker {
 		return new HashMap<String, Integer>(codeToMutRateMap);
 	}
 	
-	/**
-	 * Function: getNumTotalEdges()
-	 * Usage: int numEdges = getNumTotalEdges()
-	 * ----
-	 * Returns the number of edges in the matrix. This is equivalent to 
-	 * the number of binary codes in the map.
-	 * @return Number of edges in the matrix
-	 */
-	
-	public static int getTotalMutations(){
-		/*Map<String, Integer> mutMap = getMutMap();
-		int counter = 0;
-		for (Integer value: mutMap.values()){
-			counter += value;
-		}
-		return counter;*/
-		return totalMut;
-	}
-	
-	public static void addTotalMutations(int newMut){
-		/*Map<String, Integer> mutMap = getMutMap();
-		int counter = 0;
-		for (Integer value: mutMap.values()){
-			counter += value;
-		}
-		return counter;*/
-		totalMut += newMut;
-	}
+
 	
 	/**
 	 * Returns the minimum size for a group to be considered significant
@@ -306,7 +262,7 @@ public class TreeChecker {
 		Set<Integer> allNodes = new HashSet<Integer>(nodes);
 		
 		int numEdgesInTree = numCols;//getNumTotalEdges();
-		totalMut = 0;
+		int totalMut = 0;
 		
 		// remove single groups from node list
 		Set<Integer> singleCols = new HashSet<Integer>();
@@ -808,86 +764,33 @@ public class TreeChecker {
 	 * @param inputFile	Matrix input file
 	 * @return 			A 2D ArrayList which contains the input matrix
 	 */
-	private ArrayList<ArrayList<Integer>> processMatrixFile(String inputFile){
+	private ArrayList<ArrayList<Integer>> processMatrixFile(SNVDatabase db){
 		ArrayList<ArrayList<Integer>> matrix = new ArrayList<ArrayList<Integer>>();
 		rowToMutRateMap = new HashMap<Integer, Integer>();
 		codeToMutRateMap = new HashMap<String, Integer>();
-		BufferedReader input = null;
-		try{
-			input = new BufferedReader(new FileReader(inputFile));
-			processFirstLine(input.readLine());
-			String currLine;
-			int counter = 0;
-			while ((currLine = input.readLine()) != null) {
-				matrix.add(processLine(currLine, counter));
-				counter++;
-			}
-		} catch (IOException e) {
-			System.out.println("Unforeseen IOException!");
-		} finally {
-			try {
-				if (input != null) input.close();
-			} catch (IOException e){
-				System.out.println("Unforeseen IOException when closing file!");
-			}
+	
+		List<String> keys = new ArrayList(db.getTAG2SNVsMap().keySet());
+		Collections.sort(keys);
+		Collections.reverse(keys);
+		
+		numCols = db.getNumofSamples();
+		numRows = keys.size();
+		
+		for (int i = 0; i < keys.size(); i++){
+			rowToMutRateMap.put(i+ 1, db.getTAG2SNVsMap().get(keys.get(i)).size());
+			codeToMutRateMap.put(keys.get(i), db.getTAG2SNVsMap().get(keys.get(i)).size());
+			
+			ArrayList<Integer> newRow = new ArrayList<Integer>();
+            for (int j = 0; j < numCols; j++){
+                    newRow.add(Character.getNumericValue(keys.get(i).charAt(j))); 
+            }
+            matrix.add(newRow);
+			
 		}
-		//Transposed for the new type of input. CHECK FOR DOUBLE TRANSPOSITIONS.
 		matrix = transposeMatrix(matrix);
-		//printMatrix(matrix);
-		//System.out.println(rowToMutRateMap.toString());
-		return matrix;
-	}
-	
-	/**
-	 * Function: processFirstLine(String line)
-	 * Usage: processFirstLine(line)
-	 * ----
-	 * Parses the first line from the matrix text file to set the
-	 * numRows and numCols
-	 * @param line	First line of the matrix text file
-	 */
-	private void processFirstLine(String line) {
-		String[] numsAsStr = line.split(" ");
-		numRows = Integer.parseInt(numsAsStr[0]);
-		numCols = Integer.parseInt(numsAsStr[1]);
-		System.out.println("Rows: " + numRows + " Cols: " + numCols);
-	}
-
-//	/**
-//	 * Process a single line from input matrix text file
-//	 * 
-//	 * Takes in a string line of boolean values separated by spaces
-//	 * and converts it into an ArrayList of the values as Integers.
-//	 * 
-//	 * @param currLine	Input of a single string line
-//	 * @return			An ArrayList of the input values
-//	 */
-//	private ArrayList<Integer> processLine(String currLine){
-//		ArrayList<Integer> newRow = new ArrayList<Integer>();
-//		String[] numsAsStr = currLine.split(" ");
-//		for (int i = 0; i < numsAsStr.length; i++) 
-//			newRow.add(Integer.valueOf(numsAsStr[i]));
-//		return newRow;
-//	}
-	
-	/**
-	 * Function: processLine(String currLine, int counter)
-	 * Usage: processLine(currLine, counter)
-	 * ----
-	 * Parses each line of the matrix text file and returns
-	 * a row of the matrix
-	 */
-	private ArrayList<Integer> processLine(String currLine, int counter){
-		ArrayList<Integer> newRow = new ArrayList<Integer>();
-		for (int i = 0; i < numCols; i++){
-			newRow.add(Character.getNumericValue(currLine.charAt(i))); 
-		}
-		//System.out.println(currLine);
-		String[] numsAsStr = currLine.split(" ");
-		int mutRate = Integer.parseInt(numsAsStr[1]);
-		//System.out.println(mutRate);
-		rowToMutRateMap.put(counter + 1, mutRate);
-		codeToMutRateMap.put(numsAsStr[0], mutRate);
-		return newRow;
+        //printMatrix(matrix);
+        //System.out.println(rowToMutRateMap.toString());
+        return matrix;
+        
 	}
 }
