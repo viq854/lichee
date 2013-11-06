@@ -3,6 +3,8 @@ package lineage;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
@@ -37,17 +39,14 @@ public class PHYGraph {
 	/** Total number of cancer samples */
 	private int numSamples;
 	
-	/** Error margin used for comparing AAF centroid data */
-	private static final double AAF_ERROR_MARGIN = 0.08;
+	/** Debugging-only */
+	protected int nodeCounter = 0;
 	
-	/** Maximum AAF */
+	/** Maximum AAF (used for the root node) */
 	private static final double AAF_MAX = 0.5;
 	
-	/** Debugging-only */
-	protected static int nodeCounter = 0;
-	
 	/**
-	 * Constructs a PHYGraph from the sub-populations of the SNP groups
+	 * Constructs a PHYGraph from the sub-populations of the SNV groups
 	 */
 	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples, int[] sampleMutationMask) {
 		numSamples = totalNumSamples;
@@ -162,7 +161,7 @@ public class PHYGraph {
 		int comp = 0;
 		for(int i = 0; i < numSamples; i++) {
 			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
-			comp += (n1.getAAF(i) >= (n2.getAAF(i) - AAF_ERROR_MARGIN)) ? 1 : 0;
+			comp += (n1.getAAF(i) >= (n2.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
 		}
 		
 		if(comp == numSamples) {
@@ -172,7 +171,7 @@ public class PHYGraph {
 			comp = 0;
 			for(int i = 0; i < numSamples; i++) {
 				if((n2.getAAF(i) == 0) && (n1.getAAF(i) != 0)) break;
-				comp += (n2.getAAF(i) >= (n1.getAAF(i) - AAF_ERROR_MARGIN)) ? 1 : 0;
+				comp += (n2.getAAF(i) >= (n1.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
 			}
 			if(comp == numSamples) {
 				addEdge(n2, n1);
@@ -199,8 +198,15 @@ public class PHYGraph {
 		if(nbrs == null) {
 			edges.put(from, new ArrayList<PHYNode>());
 		}
-		edges.get(from).add(to);
-		numEdges++;
+		if(!edges.get(from).contains(to)) {
+			edges.get(from).add(to);
+			numEdges++;
+		}
+	}
+	
+	/** Removes a node from the graph */
+	public void removeNode(PHYNode n) {
+		
 	}
 	
 	/** Removes an edge from the graph */
@@ -214,6 +220,43 @@ public class PHYGraph {
 				}
 			}
 		}
+	}
+	
+	/** Adds all the inter-level edges */
+	public void addAllHiddenEdges() {
+		// add all inter-level edges
+		for(int i = numSamples + 1; i > 0; i--) {
+			ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
+			if(fromLevelNodes == null) continue;
+			for(int j = i-1; j > 0; j--) {
+				ArrayList<PHYNode> toLevelNodes = nodes.get(j);
+				if(toLevelNodes == null) continue;
+				for(PHYNode n1 : fromLevelNodes) {
+					for(PHYNode n2: toLevelNodes) {
+						checkAndAddEdge(n1, n2);
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * The network needs to be adjusted when no valid spanning trees are found.
+	 * Adjustments include: 
+	 * - removing nodes corresponding to groups that are less robust
+	 * - adding hidden edges
+	 */
+	public PHYGraph fixNetwork() {
+		// reconstruct the network from robust groups only
+		Set<SNPGroup> filteredGroups = new HashSet<SNPGroup>();
+		for(PHYNode n : nodesById.values()) {
+			SNPGroup group = n.snpGroup;
+			if((group != null) && group.isRobust()) {
+				filteredGroups.add(n.snpGroup);
+			}
+		}
+		
+		return new PHYGraph(new ArrayList<SNPGroup>(filteredGroups), numSamples, null);
 	}
 	
 	/** Displays the constraint network graph */
@@ -260,6 +303,9 @@ public class PHYGraph {
 		if(t.treeNodes.size() == numNodes) {
 			L = t;
 			spanningTrees.add(L.clone());
+			if(spanningTrees.size() % 10000 == 0) {
+				System.out.println("Found " + spanningTrees.size() + " trees so far");
+			}
 		} else {
 			// list used to reconstruct the original F
 			ArrayList<PHYEdge> ff = new ArrayList<PHYEdge>();
@@ -338,7 +384,6 @@ public class PHYGraph {
 		}
 	}
 	
-	
 	/**
 	 * Generates all the spanning trees from the constraint network
 	 * that pass the AAF constraints
@@ -363,10 +408,11 @@ public class PHYGraph {
 	/**
 	 * Apply the AAF constraints
 	 */
+	
 	public void filterSpanningTrees() {
 		ArrayList<Tree> toBeRemoved = new ArrayList<Tree>();
 		for(Tree t : spanningTrees) {
-			if(!checkAndFixAAFConstraints(t)) {
+			if(!checkAAFConstraints(t)) {
 				toBeRemoved.add(t);
 			}
 		}
@@ -377,7 +423,7 @@ public class PHYGraph {
 	 * Returns true if the tree passes the AAF constraints
 	 * @param t - spanning tree
 	 */
-	public boolean checkAndFixAAFConstraints(Tree t) {
+	public boolean checkAAFConstraints(Tree t) {
 		for(PHYNode n : t.treeEdges.keySet()) {
 			ArrayList<PHYNode> nbrs = t.treeEdges.get(n);			
 			for(int i = 0; i < numSamples; i++) {
@@ -385,7 +431,7 @@ public class PHYGraph {
 				for(PHYNode n2 : nbrs) {
 					affSum += n2.getAAF(i);
 				}
-				if(affSum >= n.getAAF(i) + AAF_ERROR_MARGIN) {
+				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN) {
 					return false;
 				}
 			}
@@ -394,14 +440,54 @@ public class PHYGraph {
 	}
 	
 	/**
-	 * Adds "hidden edges" s.t. the constraint is not violated
+	 * Adds back "hidden edges" s.t. the constraint is not violated
 	 */
 	public boolean fixTree(Tree t) {
 		// traverse the tree starting at the root
-		ArrayList<PHYNode> nodes = t.treeEdges.get(nodesById.get(0));
+		PHYNode root = nodesById.get(0);
+		root.ancestorsWithCapacity = new PHYNode[numSamples];
+		
+		ArrayList<PHYNode> nodes = new ArrayList<PHYNode>();
+		nodes.add(root);
 
 		while(nodes.size() > 0) {
 			PHYNode n = nodes.remove(0);
+			ArrayList<PHYNode> nbrs = t.treeEdges.get(n);			
+			
+			// initialize ancestor pointers
+			for(PHYNode n2 : nbrs) {
+				n2.ancestorsWithCapacity = new PHYNode[numSamples];
+			}
+
+			// check the AAF constraint
+			for(int i = 0; i < numSamples; i++) {
+				double affSum = 0;
+				for(PHYNode n2 : nbrs) {
+					n2.ancestorsWithCapacity = new PHYNode[numSamples];
+					affSum += n2.getAAF(i);
+				}
+				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN) {
+					// violation, try to find an ancestor with capacity
+					if(n.ancestorsWithCapacity[i] == null) {
+						return false;
+					} else {
+						
+					}
+					
+				} else {
+					for(PHYNode n2 : nbrs) {
+						if (affSum < n.getAAF(i)) {
+							// there is remaining capacity
+							n2.ancestorsWithCapacity[i] = n;
+						} else {
+							// set the pointer to an ancestor with capacity
+							n2.ancestorsWithCapacity[i] = n.ancestorsWithCapacity[i];
+						}
+					}
+					
+				}
+			}
+			
 			if(t.treeEdges.get(n) != null) {
 				nodes.addAll(t.treeEdges.get(n));
 			}
@@ -496,6 +582,9 @@ public class PHYGraph {
 		
 		/** Level in the constraint network */
 		private int level;
+		
+		/** Pointer to an ancestor in the tree that has remaining AAF capacity */
+		protected PHYNode[] ancestorsWithCapacity;
 		
 		/** 
 		 * Internal node constructor
@@ -604,7 +693,7 @@ public class PHYGraph {
 			if(!isLeaf && !isRoot) {
 				node += nodeId + ": \n";
 				node += snpGroup.getTag() + "\n";
-				//node += cluster.toString();
+				node += cluster.toString();
 			} else if(isLeaf) {
 				node += "sample " + leafSampleId;
 			} else {
@@ -764,6 +853,22 @@ public class PHYGraph {
 				}
 			}
 			return false;
+		}
+		
+		public boolean checkConstraint(PHYNode n) {
+			ArrayList<PHYNode> nbrs = treeEdges.get(n);			
+			if(nbrs == null) return true;
+			for(int i = 0; i < numSamples; i++) {
+				double affSum = 0;
+				for(PHYNode n2 : nbrs) {
+					affSum += n2.getAAF(i);
+				}
+				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN) {
+					return false;
+				}
+			}
+			
+			return true;
 		}
 		
 		public String toString() {

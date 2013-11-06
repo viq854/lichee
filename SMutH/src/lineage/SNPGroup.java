@@ -36,8 +36,16 @@ public class SNPGroup {
 	/** SNPs assigned to this group */
 	private ArrayList<SNVEntry> snps;
 	
-	public SNPGroup(String groupTag, ArrayList<SNVEntry> groupSNPs) {
+	/** Number of solid/robust mutations in the group */
+	private int numRobustSNPs;
+	
+	/** Flag indicating whether this group is robust */
+	private boolean isRobust;
+	
+	public SNPGroup(String groupTag, ArrayList<SNVEntry> groupSNPs, int groupNumRobustSNPs, boolean isGroupRobust) {
 		tag = groupTag;
+		numRobustSNPs = groupNumRobustSNPs;
+		isRobust = isGroupRobust;
 		numSamples = 0;		
 		sampleIndex = new int[tag.length()];
 		for(int i = 0; i < tag.length(); i++) {
@@ -100,6 +108,14 @@ public class SNPGroup {
 		return tag;
 	}
 	
+	public int getNumRobustSNPs() {
+		return numRobustSNPs;
+	}
+	
+	public boolean isRobust() {
+		return isRobust;
+	}
+	
 	/**
 	 * Returns the index of this sample in the centroid/AAF data of the group
 	 * @return -1 if this sample is not represented in the group
@@ -120,13 +136,19 @@ public class SNPGroup {
 		return (getSampleIndex(sampleId) != -1);
 	}
 	
+	public boolean equals(Object o) {
+		if(!(o instanceof SNPGroup)) {
+			return false;
+		}
+		SNPGroup g = (SNPGroup) o;
+		if(this.tag == g.tag) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	// --- Sub-population Cluster Filtering / Collapse ---
-	
-	/** Minimum size a sub-population cluster must have to be valid */
-	private static final int MIN_CLUSTER_SIZE = 10;
-	
-	/** Maximum difference up to which two clusters can be collapsed */
-	private static final double MAX_COLLAPSE_CLUSTER_DIFF = 0;
 	
 	/** Entry in the cluster centroid distance minimum priority queue */
 	protected class ClusterPairDistance {
@@ -155,7 +177,7 @@ public class SNPGroup {
 		// 1. filter out clusters that are too small
 		ArrayList<Cluster> filteredClusters = new ArrayList<Cluster>();
 		for(Cluster c : clusters) {
-			if(c.getMembership().size() > MIN_CLUSTER_SIZE) {
+			if(c.getMembership().size() >= Parameters.MIN_CLUSTER_SIZE) {
 				filteredClusters.add(c);
 			}
 		}
@@ -191,7 +213,7 @@ public class SNPGroup {
 			}
 		}
 		
-		while((minDistQueue.size() > 0) && (minDistQueue.get(0).distance < MAX_COLLAPSE_CLUSTER_DIFF)) {
+		while((minDistQueue.size() > 0) && (minDistQueue.get(0).distance < Parameters.MAX_COLLAPSE_CLUSTER_DIFF)) {
 			ClusterPairDistance pd = minDistQueue.remove(0);
 			Cluster c1 = clusters[pd.clusterId1];
 			Cluster c2 = clusters[pd.clusterId2];

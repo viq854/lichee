@@ -36,7 +36,7 @@ public class LineageEngine {
 		// create the appropriate SNP group objects
 		ArrayList<SNPGroup> groups = new ArrayList<SNPGroup>();
 		for(String groupTag : snpsByTag.keySet()) {
-			SNPGroup group = new SNPGroup(groupTag, snpsByTag.get(groupTag));
+			SNPGroup group = new SNPGroup(groupTag, snpsByTag.get(groupTag), db.getNumRobustSNVs(groupTag), db.isRobust(groupTag));
 			groups.add(group);
 		}
 		
@@ -65,7 +65,18 @@ public class LineageEngine {
 		// 7. apply AAF constraints and other filters to prune out trees
 		//constrNetwork.testSpanningTrees();
 		constrNetwork.filterSpanningTrees();
-		System.out.println("Spanning trees: " + spanningTrees.size() + " trees after *filtering*");	
+		System.out.println("Spanning trees: " + spanningTrees.size() + " trees after AAF constraint *filtering*");	
+
+		if(spanningTrees.size() < Parameters.SPANNING_TREE_MIN_NUMBER) {
+			System.out.println("Fixing the network");	
+			// if the number of filtered spanning trees is less than acceptable,
+			// fix the network (e.g. remove group nodes that are not robust)
+			constrNetwork = constrNetwork.fixNetwork();
+			spanningTrees = constrNetwork.getLineageTrees();  
+			System.out.println("Spanning trees: " + spanningTrees.size() + " trees total");
+			constrNetwork.filterSpanningTrees();
+			System.out.println("Spanning trees: " + spanningTrees.size() + " trees after AAF constraint *filtering*");	
+		}
 		if(spanningTrees.size() > 0) {
 			System.out.println(spanningTrees.get(0));
 		}
