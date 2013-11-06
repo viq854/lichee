@@ -68,7 +68,7 @@ public class SNVDatabase {
 		//SNVs which did not passed filters to be called in any group are conflicts
 		conflicts.add(all0s);
 		//Germline as valid group
-		TAG2SNVs.put(all1s, new ArrayList<SNVEntry>());	
+		//TAG2SNVs.put(all1s, new ArrayList<SNVEntry>());	
 		Set<String> codes = new HashSet<String>(TAG2SNVs.keySet());
 			
 		//small groups are conflicts
@@ -84,11 +84,13 @@ public class SNVDatabase {
 				conflicts.add(code);
 			}
 		}	
+		codes.add(all1s);
 		
 		//Edit conflicts to robust groups
 		for (String conflict: conflicts){
 			codes.remove(conflict);
 		}
+		
 				
 		codes.add(all1s);
 		editSNVs(conflicts, codes);
@@ -617,7 +619,7 @@ public class SNVDatabase {
 			ArrayList<SNVEntry> failCodes){
 		//ArrayList<VCFEntry> entries = getSortedEntriesByGATK(inputCode, destCode, pw);
 		ArrayList<SNVEntry> entries = TAG2SNVs.get(inputCode);
-		System.out.println("Edit code " + inputCode + " to dest " + destCode);//+", for " + entries.size() + " entries.");
+		//System.out.println("Edit code " + inputCode + " to dest " + destCode);//+", for " + entries.size() + " entries.");
 		//For each mismatch in an entry 
 		//boolean is0to1 = checkIf0to1(inputCode, destCode);
 		Map<Integer, Boolean> mismatchMap = new HashMap<Integer, Boolean>();
@@ -812,8 +814,11 @@ public class SNVDatabase {
 			/*if (TAG2SNVs.get(codes.get(i)).size() == 0){
 				continue;
 			}*/
-			System.out.println(codes.get(i) + ": " + TAG2SNVs.get(codes.get(i)).size());
-			
+			System.out.print(codes.get(i) + ": " + TAG2SNVs.get(codes.get(i)).size());
+			if (TAG2RobustSNVNum.containsKey(codes.get(i))){
+				System.out.print(": " + TAG2RobustSNVNum.get(codes.get(i)).intValue());
+				}
+			System.out.println();
 		}	
 	}
 	
@@ -831,7 +836,7 @@ public class SNVDatabase {
 		for (int i = 0; i < codes.size(); i++){
 			if (TAG2SNVs.get(codes.get(i)).size() == 0)
 				continue;
-			System.out.println(codes.get(i) + ": " + TAG2SNVs.get(codes.get(i)).size());
+			System.out.println(codes.get(i) + "\t" + TAG2SNVs.get(codes.get(i)).size());
 			try {
 				printEntriesByGATK(pwv, codes.get(i));
 			} catch (IOException e) {

@@ -43,6 +43,11 @@ public class VCFEntry extends SNVEntry{
 		genotype = new String[numofSamples];
 		refCount = new int[numofSamples];
 		altCount = new int[numofSamples];
+		/**TODO
+		 * how to define robustness here!!!!!
+		 */
+		robust = true;
+
 		
 		for (int i = 0; i < entryParts.length; i++){
 			switch(i){
