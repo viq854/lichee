@@ -23,14 +23,17 @@ import unmixing.CNVregion;
 public class SNVDatabase {
 	
 	/* Private Instance Variables */
+	private ArrayList<String> names; 
 	private ArrayList<SNVEntry> somaticSNVs;
 	//private ArrayList<VCFEntry> hgSNVs;
-	private ArrayList<String> names; 
 	private int allCounter = 0;
 	private	int germlineCounter = 0;
-	private int robustCounter;
+	
 	HashMap<String, ArrayList<SNVEntry>> TAG2SNVs;
+	
 	HashMap<String, Integer> TAG2RobustSNVNum;
+	private int robustCounter;
+	private int robustGroupSizeThreshold;
 	
 	
 	/**
@@ -60,19 +63,17 @@ public class SNVDatabase {
 		/*
 		 *  Trying to resolve some conflicts
 		 */
-		int robustGroupSizeThreshold = TreeChecker.getGroupSizeThreshold(somaticSNVs.size(), TAG2RobustSNVNum.size());	
+		robustGroupSizeThreshold = TreeChecker.getGroupSizeThreshold(robustCounter, TAG2RobustSNVNum.size());	
 		System.out.println("Robust Group Size Threshold is "+ robustGroupSizeThreshold);
 		
 		Set<String> conflicts = new HashSet<String>();
-	
+		Set<String> codes = new HashSet<String>(TAG2SNVs.keySet());
 		
 		String all1s = "", all0s="";
 		for (int i = 0; i < names.size(); i++){ all1s += "1";all0s += "0";}
-		//SNVs which did not passed filters to be called in any group are conflicts
-		if (TAG2SNVs.containsKey(all0s)) conflicts.add(all0s);
-		//Germline as valid group
-		//TAG2SNVs.put(all1s, new ArrayList<SNVEntry>());	
-		Set<String> codes = new HashSet<String>(TAG2SNVs.keySet());
+		//SNVs which did not passed robust filters to be called in any group are conflicts
+		if (TAG2SNVs.containsKey(all0s)) 
+			conflicts.add(all0s);
 			
 		//small groups are conflicts
 		/*for (String code :codes){
@@ -83,19 +84,16 @@ public class SNVDatabase {
 		
 		//non robust groups are conflicts
 		for (String code :codes){
-			if (!TAG2RobustSNVNum.containsKey(code) /*|| TAG2RobustSNVNum.get(code).intValue() < robustGroupSizeThreshold*/){
+			if (!isRobust(code) && !isPrivate(code)){
 				conflicts.add(code);
-				System.out.println("added to conflicts "+ code);
+				//System.out.println("added to conflicts "+ code);
 			}
-		}	
-		codes.add(all1s);
-		
-		System.out.println("conflicts "+ conflicts);
-		
-		
+		}
+				
 		for (String conflict: conflicts){
 			codes.remove(conflict);
 		}			
+		//Germline as valid group	
 		codes.add(all1s);
 		
 		/*
@@ -399,6 +397,7 @@ public class SNVDatabase {
 		HashMap<String, ArrayList<SNVEntry>> filteredTAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
 		
 		int groupSizeThreshold = TreeChecker.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size());
+		System.out.println("Group Size Threshold is "+ somaticSNVs.size()+" "+TAG2SNVs.size() +" "+ groupSizeThreshold);
 		
 		
 		String all1s="", all0s="";
@@ -410,7 +409,7 @@ public class SNVDatabase {
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
 			//Filter bad groups
-			if (code.equals(all1s) || code.equals(all0s) /*|| !robustTAGs.containsKey(code)*/ || TAG2SNVs.get(code).size() <= groupSizeThreshold)
+			if (code.equals(all1s) || code.equals(all0s) || (!isPrivate(code) && TAG2SNVs.get(code).size() <= groupSizeThreshold))
 				continue;
 		
 			//Filter CNV regions
@@ -917,9 +916,39 @@ public class SNVDatabase {
 
 		}
 		
+		ArrayList<SNVEntry> movedEntries = new ArrayList<SNVEntry>();
+		
+		/*
+		 * Anything that can be germline is perhaps a germline mutation.
+		 */
+		String all1s = "";
+		for (int i = 0; i < names.size(); i++) all1s += "1";
+		
+		if (conflictToPossMutMap.containsKey(all1s) && conflictToPossMutMap.get(all1s).size() > 0){
+			TAG2SNVs.put(all1s, new ArrayList<SNVEntry>());	
+			ArrayList<SNVEntry> matchEntries = conflictToPossMutMap.get(all1s);
+			matchEntries.removeAll(movedEntries);
+			for (int j = 0; j < matchEntries.size(); j++){
+				SNVEntry entry = matchEntries.get(j);
+				//pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictMatch + "\n");
+				TAG2SNVs.get(entry.getGroup()).remove(entry);
+				if (TAG2SNVs.get(entry.getGroup()).size() ==0){
+					conflicts.remove(entry.getGroup());
+					TAG2SNVs.remove(entry.getGroup());
+				}
+				TAG2SNVs.get(all1s).add(entry);
+				entry.updateGroup(all1s);
+			}
+			
+			System.out.println("We converted " + matchEntries.size()+ " to germline.");
+			conflictToPossMutMap.remove(all1s);
+			movedEntries.addAll(matchEntries);
+		}
+		
+		
 		
 		//Run set cover algorithm
-		ArrayList<SNVEntry> movedEntries = new ArrayList<SNVEntry>();
+		
 		for (int i = 0; i < conflictToPossMutMap.size(); i++){
 			String conflictMatch = findLargestUncoveredSet(conflictToPossMutMap, movedEntries);
 			if (conflictMatch == null) break;
@@ -1111,12 +1140,20 @@ public class SNVDatabase {
 	}
 
 	public int getNumRobustSNVs(String group){
-		return TAG2RobustSNVNum.get(group);
+		return TAG2RobustSNVNum.get(group).intValue();
 	}
 	
 	public boolean isRobust(String group){
-		int robustGroupSizeThreshold = TreeChecker.getGroupSizeThreshold(robustCounter, TAG2RobustSNVNum.size());	
-		return (TAG2RobustSNVNum.get(group) >= robustGroupSizeThreshold);
+		return (TAG2RobustSNVNum.containsKey(group) && TAG2RobustSNVNum.get(group).intValue() >= robustGroupSizeThreshold);
+	}
+	
+	public boolean isPrivate(String group){
+		int num1s = 0;
+		for (int i = 0; i < names.size(); i++){ 
+			if (group.charAt(i) == '1') 
+				num1s++;
+		}
+		return num1s == 1;
 	}
 /******************************* END of editing functions **********************************/	
 	

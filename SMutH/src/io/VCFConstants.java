@@ -5,7 +5,7 @@ public final class VCFConstants {
 	private VCFConstants(){}
 	
 	// for validation SNVs
-	public static final double VALIDATION_HARD_THR = 0.05;
+	public static final double VALIDATION_HARD_THR = 0.04;
 	public static final double VALIDATION_THR = 0.02;
 	
 	// for WGS SNVs
