@@ -20,6 +20,7 @@ public class MUTEntry extends SNVEntry{
 		String[] entryParts = entry.split("\t");
 		AAF = new double[numofSamples];
 		genotype = new String[numofSamples];
+		robust = true;
 		
 		for (int i = 0; i < entryParts.length; i++){
 			switch(i){
@@ -40,9 +41,12 @@ public class MUTEntry extends SNVEntry{
 				break;
 			default:
 				AAF[i-5] = Double.parseDouble(entryParts[i]);
-				if (AAF[i-5] <  VCFConstants.VALIDATION_HARD_THR)
+				if (AAF[i-5] <  VCFConstants.VALIDATION_HARD_THR){
 					genotype[i-5] = "0/0";
-				else 
+					if (AAF[i-5] >=  VCFConstants.VALIDATION_THR)
+						robust = false;
+						
+				}else 
 					genotype[i-5] = "1/1";
 				
 				break;

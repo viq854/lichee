@@ -29,6 +29,7 @@ public class SNVDatabase {
 	private int allCounter = 0;
 	private	int germlineCounter = 0;
 	HashMap<String, ArrayList<SNVEntry>> TAG2SNVs;
+	HashMap<String, Integer> TAG2RobustSNVNum;
 	
 	
 	/**
@@ -51,26 +52,54 @@ public class SNVDatabase {
 			loadMUT(inputFile,normalSample);
 			
 		generateMap();
-		// Trying to edit small groups
-		int groupSizeThreshold = TreeChecker.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size());
-		System.out.println("Group Size Threshold is "+ groupSizeThreshold);
-		Set<ArrayList<Integer>> conflicts = new HashSet<ArrayList<Integer>>();
 		
-		ArrayList<String> codes = new ArrayList<String>(TAG2SNVs.keySet());
+		System.out.println("Original Mutation Map");
+		reportGroups();
 		
-		for (int i = 0; i < codes.size(); i++){
-			if (TAG2SNVs.get(codes.get(i)).size() <= groupSizeThreshold){
-				ArrayList<Integer> conflict = new ArrayList<Integer>();
-				for (int j = 0; j < getNumofSamples(); j++)
-					conflict.add(Character.getNumericValue(codes.get(i).charAt(j)));
-				conflicts.add(conflict);
+		// Trying to resolve some conflicts
+		int robustGroupSizeThreshold = TreeChecker.getGroupSizeThreshold(TAG2RobustSNVNum.values().size(), TAG2RobustSNVNum.size());	
+		System.out.println("Group Size Threshold is "+ robustGroupSizeThreshold);
+		
+		Set<String> conflicts = new HashSet<String>();
+	
+		
+		String all1s = "", all0s="";
+		for (int i = 0; i < names.size(); i++){ all1s += "1";all0s += "0";}
+		//SNVs which did not passed filters to be called in any group are conflicts
+		conflicts.add(all0s);
+		//Germline as valid group
+		TAG2SNVs.put(all1s, new ArrayList<SNVEntry>());	
+		Set<String> codes = new HashSet<String>(TAG2SNVs.keySet());
+			
+		//small groups are conflicts
+		/*for (String code :codes){
+			if (TAG2SNVs.get(code).size() <= groupSizeThreshold){
+				conflicts.add(code);
 			}
-		}
-			
-			
-			
-		editSNV(conflicts);
+		}*/
 		
+		//non robust groups are conflicts
+		for (String code :codes){
+			if (!TAG2RobustSNVNum.containsKey(code) /*|| TAG2RobustSNVNum.get(code).intValue() < robustGroupSizeThreshold*/){
+				conflicts.add(code);
+			}
+		}	
+		
+		//Edit conflicts to robust groups
+		for (String conflict: conflicts){
+			codes.remove(conflict);
+		}
+				
+		codes.add(all1s);
+		editSNVs(conflicts, codes);
+		System.out.println("Mutation Map after editing to solid groups!");
+		reportGroups();
+		
+		
+		//Merge conflicts
+		editSNVs(conflicts,conflicts);
+		System.out.println("Mutation Map after merging conflict groups!");
+		reportGroups();
 		
 	}
 	
@@ -366,9 +395,11 @@ public class SNVDatabase {
 		int cnvID = 0;
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
-			if (code.equals(all1s) || code.equals(all0s) || TAG2SNVs.get(code).size() <= groupSizeThreshold)
+			//Filter bad groups
+			if (code.equals(all1s) || code.equals(all0s) /*|| !robustTAGs.containsKey(code)*/ || TAG2SNVs.get(code).size() <= groupSizeThreshold)
 				continue;
 		
+			//Filter CNV regions
 			if (CNVs != null && cnvID < CNVs.size()){
 				int loc = CNVs.get(cnvID).compareLocation(entry);
 				if (loc == 0) break;
@@ -582,11 +613,11 @@ public class SNVDatabase {
 	 * @param pw 
 	 * @return	The number of validEntries found as an int
 	 */
-	public int getValidEntries(String inputCode, String destCode, ArrayList<SNVEntry> validEntries, ArrayList<SNVEntry> failCodes){
+	public int getValidEntries(String inputCode, String destCode, ArrayList<SNVEntry> validEntries, 
+			ArrayList<SNVEntry> failCodes){
 		//ArrayList<VCFEntry> entries = getSortedEntriesByGATK(inputCode, destCode, pw);
-		ArrayList<SNVEntry> entries = getEntriesByGATK(inputCode);
-		//System.out.println("For code " + inputCode + " and dest " + destCode + " we found " + entries.size() + " entries.");
-		//System.out.println("For code " + inputCode + " we found " + entries.size() + " entries.");
+		ArrayList<SNVEntry> entries = TAG2SNVs.get(inputCode);
+		System.out.println("Edit code " + inputCode + " to dest " + destCode);//+", for " + entries.size() + " entries.");
 		//For each mismatch in an entry 
 		//boolean is0to1 = checkIf0to1(inputCode, destCode);
 		Map<Integer, Boolean> mismatchMap = new HashMap<Integer, Boolean>();
@@ -599,6 +630,7 @@ public class SNVDatabase {
 		boolean isAll0to1 = true;
 		for (Boolean is0to1 : mismatchMap.values()) if (!is0to1) isAll0to1 = false;
 		int counter = 0;
+		
 		for (int i = 0; i < entries.size(); i++){
 			
 			//int sampleIndex = mismatchIndex(inputCode, destCode);
@@ -726,15 +758,20 @@ public class SNVDatabase {
 	 */
 	private void generateMap(){
 		TAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
-
-		int codeLength = -1;
+		TAG2RobustSNVNum = new HashMap<String, Integer>();
+		
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
-			if (codeLength == -1) codeLength = code.length();
 			if (!TAG2SNVs.containsKey(code)){
 				TAG2SNVs.put(code, new ArrayList<SNVEntry>());				
 			}
 			TAG2SNVs.get(code).add(entry); 
+			if (entry.isRobust()){
+				if (!TAG2RobustSNVNum.containsKey(code)){
+					TAG2RobustSNVNum.put(code, new Integer(1));				
+				}else
+					TAG2RobustSNVNum.put(code, new Integer(TAG2RobustSNVNum.get(code).intValue()+1));	
+			}
 		}
 		//Quick-fix to remove the entry for all 1's
 		/*String imposCode = "";
@@ -772,8 +809,9 @@ public class SNVDatabase {
 		Collections.reverse(codes);
 		
 		for (int i = 0; i < codes.size(); i++){
-			if (TAG2SNVs.get(codes.get(i)).size() == 0)
+			/*if (TAG2SNVs.get(codes.get(i)).size() == 0){
 				continue;
+			}*/
 			System.out.println(codes.get(i) + ": " + TAG2SNVs.get(codes.get(i)).size());
 			
 		}	
@@ -808,6 +846,88 @@ public class SNVDatabase {
 	/******************************* Beginning of editing functions **********************************/	
 	
 	
+	/**
+	 * Function: editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Double> mutMap, VCFDatabase vcfDB)
+	 * Usage: editSNV(conflicts, mutMap, vcfDB)
+	 * ----
+	 * @param conflicts	The set of conflicting binary codes in the original music
+	 * @param mutMap	The map of codes to number of mutations with that GATK code
+	 * @param vcfDB		The VCFDatabse corresponding to the VCF file for this run of matrix building
+	 * @param iterCounter Which iteration of editSNV this is
+	 * @param testName 
+	 */
+	public void editSNVs(Set<String> conflicts, Set<String> destCodes) {
+		
+		System.out.append("CONFLICTS: "+conflicts.toString());
+		Map<String, ArrayList<SNVEntry>> conflictToPossMutMap = new HashMap<String, ArrayList<SNVEntry>>();
+
+		
+		for (String conflict: conflicts){
+			
+			ArrayList<SNVEntry> failCodes = null;	
+			
+			//int mutConverted = 0;
+			for (String conflictMatch: destCodes){
+				if (getEditDist(conflict, conflictMatch) > VCFConstants.EDIT_DISTANCE || conflict.equals(conflictMatch)) 
+					continue;
+				ArrayList<SNVEntry> possMutations = new ArrayList<SNVEntry>();
+				ArrayList<SNVEntry> currFailCodes = new ArrayList<SNVEntry>();
+				//boolean is0to1 = checkIf0to1(conflictStr, conflictMatch);
+				int currMutConverted =
+					getValidEntries(conflict, conflictMatch, possMutations, currFailCodes);
+				if (currMutConverted > 0) System.out.println("For code " + conflict + " and dest " + conflictMatch + " we can convert " +
+						currMutConverted + ".");
+				if (conflictToPossMutMap.containsKey(conflictMatch)) conflictToPossMutMap.get(conflictMatch).addAll(possMutations);
+				else
+					conflictToPossMutMap.put(conflictMatch,possMutations);
+					
+				if (failCodes == null && !currFailCodes.isEmpty()) failCodes = new ArrayList<SNVEntry>(currFailCodes);
+				else if (!currFailCodes.isEmpty()) failCodes.retainAll(currFailCodes);
+				//mutMap.put(conflictMatch, mutMap.get(conflictMatch) + currMutConverted);
+				//mutConverted += currMutConverted;
+				//System.out.println("Intermediate Mutation Map");
+				//System.out.println(mutMap.toString());
+			}
+			
+			//System.out.println("Total Converted: " + mutConverted);
+			/*
+			 * 1. Find all possible 1-edit distance changes
+			 * 2. See which ones are valid; discard rest
+			 * 3. 
+			 */
+
+		}
+		
+		
+		//Run set cover algorithm
+		ArrayList<SNVEntry> movedEntries = new ArrayList<SNVEntry>();
+		for (int i = 0; i < conflictToPossMutMap.size(); i++){
+			String conflictMatch = findLargestUncoveredSet(conflictToPossMutMap, movedEntries);
+			if (conflictMatch == null) break;
+			ArrayList<SNVEntry> matchEntries = conflictToPossMutMap.get(conflictMatch);
+			matchEntries.removeAll(movedEntries);
+			for (int j = 0; j < matchEntries.size(); j++){
+				SNVEntry entry = matchEntries.get(j);
+				//pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictMatch + "\n");
+				TAG2SNVs.get(entry.getGroup()).remove(entry);
+				if (TAG2SNVs.get(entry.getGroup()).size() ==0){
+					conflicts.remove(entry.getGroup());
+					TAG2SNVs.remove(entry.getGroup());
+				}
+				TAG2SNVs.get(conflictMatch).add(entry);
+				entry.updateGroup(conflictMatch);
+			}
+			
+			System.out.println("We converted " + matchEntries.size()+ " to GATK code [" + conflictMatch + "].");
+			conflictToPossMutMap.remove(conflictMatch);
+			movedEntries.addAll(matchEntries);
+		}
+		
+		
+
+}
+	
+
 	
 	/**
 	 * Function: editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Double> mutMap, VCFDatabase vcfDB)
@@ -832,11 +952,13 @@ public class SNVDatabase {
 		
 		
 		reportGroups();
+		
 		ArrayList<String> codes = new ArrayList<String>(TAG2SNVs.keySet());
 		Collections.sort(codes);
 		Collections.reverse(codes);
 
 		//System.out.append("CONFLICTS: "+conflicts.toString());
+		
 		for (ArrayList<Integer> conflict: conflicts){
 			String conflictStr = "";
 			for (int i = 0; i < conflict.size(); i++){
@@ -854,14 +976,13 @@ public class SNVDatabase {
 				allCodes.remove(currConflictStr);
 			}
 
-			Map<String, Integer> editDistMap = getEditDistMap(conflictStr, allCodes);
 			//System.out.println(editDistMap.toString());
-			allCodes = filterEditDistance(allCodes, editDistMap, VCFConstants.EDIT_DISTANCE);
+			allCodes = filterEditDistance(conflictStr, allCodes);
 			//get edit distances between conflict str and all codes
 			//get all possible by iterating through all int from 1 to desired dist
 			Set<String> conflictMatches = allCodes;
-			//System.out.println("--POSSIBLE ALL CODES--");
-			//System.out.println(allCodes.toString());
+			System.out.println("For code "+conflictStr+" POSSIBLE target CODES");
+			System.out.println(allCodes.toString());
 			
 			
 			ArrayList<String> conflictMatchesList = new ArrayList<String>(conflictMatches);
@@ -883,6 +1004,7 @@ public class SNVDatabase {
 				//System.out.println("Intermediate Mutation Map");
 				//System.out.println(mutMap.toString());
 			}
+			//Run set cover algorithm
 			ArrayList<SNVEntry> movedEntries = new ArrayList<SNVEntry>();
 			for (int i = 0; i < conflictMatchesList.size(); i++){
 				String conflictMatch = findLargestUncoveredSet(conflictToPossMutMap, movedEntries);
@@ -917,7 +1039,7 @@ public class SNVDatabase {
 				}
 			}
 		}
-		System.out.println("Final Mutation Map");
+		System.out.println("Final Mutation Map after merging");
 		reportGroups();
 		
 
@@ -943,36 +1065,25 @@ public class SNVDatabase {
 		for (String conflictMatch: conflictMatchesList){
 			ArrayList<SNVEntry> matchEntries = conflictToPossMutMap.get(conflictMatch);
 			matchEntries.removeAll(movedEntries);
-			if (matchEntries.size() > maxEntries) {
+			if (matchEntries.size() !=0 && matchEntries.size()+TAG2SNVs.get(conflictMatch).size() > maxEntries) {
 				bestMatch = conflictMatch;
-				maxEntries = matchEntries.size();
+				maxEntries = matchEntries.size()+TAG2SNVs.get(conflictMatch).size();
 			}
 		}
 		return bestMatch;
 	}
 
-	private  Set<String> filterEditDistance(Set<String> allCodes,
-			Map<String, Integer> editDistMap, double editDistance) {
+	private  Set<String> filterEditDistance(String conflictCode, Set<String> allCodes) {
 		// TODO Auto-generated method stub
 		Set<String> resultCodes = new HashSet<String>();
 		for (String code : allCodes){
-			if (editDistMap.get(code) <= editDistance && editDistMap.get(code) != 0)
+			if (getEditDist(conflictCode, code) <= VCFConstants.EDIT_DISTANCE && !conflictCode.equals(code))
 				resultCodes.add(code);
 		}
 		return resultCodes;
 	}
 
-	private  Map<String, Integer> getEditDistMap(String conflictStr,
-			Set<String> allCodes) {
-		// TODO Auto-generated method stub
-		Map<String, Integer> edMap = new HashMap<String, Integer>();
-		for (String code: allCodes){
-			edMap.put(code, getEditDist(conflictStr, code));
-		}
-		return edMap;
-	}
-
-	private  Integer getEditDist(String conflictStr, String code) {
+	private  int getEditDist(String conflictStr, String code) {
 		// TODO Auto-generated method stub
 		int dist = 0;
 		for (int i = 0; i < conflictStr.length(); i++)
@@ -980,12 +1091,9 @@ public class SNVDatabase {
 		return dist;
 	}
 
-	
- 
-	public static void getNonSigGroups(){
-		
+	public int getNumRobustSNVs(String group){
+		return TAG2RobustSNVNum.get(group);
 	}
-	
 /******************************* END of editing functions **********************************/	
 	
 	

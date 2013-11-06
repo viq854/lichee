@@ -20,7 +20,7 @@ public abstract class  SNVEntry {
 	 protected char alt;	
 		
 	 protected String[] genotype;
-
+	 protected boolean robust;
 	
 	public String getChromosome(){
 		return chrom;
@@ -82,6 +82,9 @@ public abstract class  SNVEntry {
 		return genotype[sample];
 	}
 	
+	public boolean isRobust(){
+		return robust;
+	}
 	/**
 	 * Function: getGATK(int sample)
 	 * Usage: String gatk = entry.getGATK(sample)
