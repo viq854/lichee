@@ -431,7 +431,7 @@ public class PHYGraph {
 				for(PHYNode n2 : nbrs) {
 					affSum += n2.getAAF(i);
 				}
-				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN) {
+				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN * nbrs.size()) {
 					return false;
 				}
 			}
