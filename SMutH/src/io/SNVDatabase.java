@@ -28,6 +28,7 @@ public class SNVDatabase {
 	private ArrayList<String> names; 
 	private int allCounter = 0;
 	private	int germlineCounter = 0;
+	private int robustCounter;
 	HashMap<String, ArrayList<SNVEntry>> TAG2SNVs;
 	HashMap<String, Integer> TAG2RobustSNVNum;
 	
@@ -56,7 +57,9 @@ public class SNVDatabase {
 		System.out.println("Original Mutation Map");
 		reportGroups();
 		
-		// Trying to resolve some conflicts
+		/*
+		 *  Trying to resolve some conflicts
+		 */
 		int robustGroupSizeThreshold = TreeChecker.getGroupSizeThreshold(somaticSNVs.size(), TAG2RobustSNVNum.size());	
 		System.out.println("Robust Group Size Threshold is "+ robustGroupSizeThreshold);
 		
@@ -89,19 +92,25 @@ public class SNVDatabase {
 		
 		System.out.println("conflicts "+ conflicts);
 		
-		//Edit conflicts to robust groups
+		
 		for (String conflict: conflicts){
 			codes.remove(conflict);
-		}
-		
-				
+		}			
 		codes.add(all1s);
+		
+		/*
+		 * Edit conflicts to robust groups
+		 */
+		if (conflicts.size() < 1) return;
 		editSNVs(conflicts, codes);
 		System.out.println("Mutation Map after editing to solid groups!");
 		reportGroups();
 		
 		
-		//Merge conflicts
+		/*
+		 * Merge conflicts
+		 */
+		if (conflicts.size() < 2) return;
 		editSNVs(conflicts,conflicts);
 		System.out.println("Mutation Map after merging conflict groups!");
 		reportGroups();
@@ -764,6 +773,7 @@ public class SNVDatabase {
 	private void generateMap(){
 		TAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
 		TAG2RobustSNVNum = new HashMap<String, Integer>();
+		robustCounter = 0;
 		
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
@@ -772,6 +782,7 @@ public class SNVDatabase {
 			}
 			TAG2SNVs.get(code).add(entry); 
 			if (entry.isRobust()){
+				robustCounter++;
 				if (!TAG2RobustSNVNum.containsKey(code)){
 					TAG2RobustSNVNum.put(code, new Integer(1));				
 				}else
@@ -865,8 +876,6 @@ public class SNVDatabase {
 	 * @param testName 
 	 */
 	public void editSNVs(Set<String> conflicts, Set<String> destCodes) {
-		
-		if (conflicts == null || conflicts.size() == 0) return;
 		
 		System.out.append("CONFLICTS: "+conflicts.toString());
 		Map<String, ArrayList<SNVEntry>> conflictToPossMutMap = new HashMap<String, ArrayList<SNVEntry>>();
@@ -1103,6 +1112,11 @@ public class SNVDatabase {
 
 	public int getNumRobustSNVs(String group){
 		return TAG2RobustSNVNum.get(group);
+	}
+	
+	public boolean isRobust(String group){
+		int robustGroupSizeThreshold = TreeChecker.getGroupSizeThreshold(robustCounter, TAG2RobustSNVNum.size());	
+		return (TAG2RobustSNVNum.get(group) >= robustGroupSizeThreshold);
 	}
 /******************************* END of editing functions **********************************/	
 	
