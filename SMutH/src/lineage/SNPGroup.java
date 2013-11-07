@@ -196,8 +196,9 @@ public class SNPGroup {
 		// is less than MAX_COLLAPSE_CLUSTER_DIFF), collapse clusters with smallest distance first
 		
 		ArrayList<ClusterPairDistance> minDistQueue = new ArrayList<ClusterPairDistance>();
-		for(int i = 0; i < filteredClusters.size(); i++) {
-			for(int j = i+1; j < filteredClusters.size(); j++) {
+		int numClusters = filteredClusters.size();
+		for(int i = 0; i < numClusters; i++) {
+			for(int j = i+1; j < numClusters; j++) {
 				Cluster c1 = filteredClusters.get(i);
 				Cluster c2 = filteredClusters.get(j);
 				double dist = c1.getDistanceToCluster(c2.getCentroid(), DistanceMetric.EUCLIDEAN);
@@ -213,7 +214,8 @@ public class SNPGroup {
 			}
 		}
 		
-		while((minDistQueue.size() > 0) && (minDistQueue.get(0).distance < Parameters.MAX_COLLAPSE_CLUSTER_DIFF)) {
+		while((minDistQueue.size() > 0) && 
+				((minDistQueue.get(0).distance < Parameters.MAX_COLLAPSE_CLUSTER_DIFF) || (numClusters > Parameters.MAX_CLUSTER_NUM))) {
 			ClusterPairDistance pd = minDistQueue.remove(0);
 			Cluster c1 = clusters[pd.clusterId1];
 			Cluster c2 = clusters[pd.clusterId2];
@@ -222,6 +224,8 @@ public class SNPGroup {
 			for(Integer obs : c2.getMembership()) {
 				c1.addMember(obs);
 			}
+			numClusters--;
+			
 			c1.recomputeCentroid(alleleFreqBySample, snps.size(), numSamples);
 			filteredClusters.remove(c2);
 			System.out.println("Collapse clusters: group = " + tag + " cluster " + pd.clusterId1 + " and " + pd.clusterId2 + 
