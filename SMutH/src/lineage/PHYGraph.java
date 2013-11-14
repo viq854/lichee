@@ -839,17 +839,18 @@ public class PHYGraph {
 		 * Returns true if w is a descendant of v in this tree
 		 */
 		public boolean isDescendent(PHYNode v, PHYNode w) {
-			ArrayList<PHYNode> nodes = treeEdges.get(v);
-			if(nodes == null) {
+			ArrayList<PHYNode> nbrs = treeEdges.get(v);
+			if(nbrs == null) {
 				return false;
 			}
-			while(nodes.size() > 0) {
-				PHYNode n = nodes.remove(0);
+			ArrayList<PHYNode> q = new ArrayList<PHYNode>(nbrs);
+			while(q.size() > 0) {
+				PHYNode n = q.remove(0);
 				if(n.equals(w)) {
 					return true;
 				}
 				if(treeEdges.get(n) != null) {
-					nodes.addAll(treeEdges.get(n));
+					q.addAll(treeEdges.get(n));
 				}
 			}
 			return false;
@@ -883,7 +884,7 @@ public class PHYGraph {
 		}
 		
 		/** Displays the tree */
-		public void displayTree() {
+		public void displayTree() {			
 			DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 			HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
 				
@@ -909,14 +910,25 @@ public class PHYGraph {
 				
 				// find a parent in the closest higher level		 
 				boolean found = false;
+				ArrayList<PHYNode> parents = new ArrayList<PHYNode>();
 				for(int j = n.getLevel() + 1; j <= numSamples; j++) {
 					ArrayList<PHYNode> fromLevelNodes = nodes.get(j);
 					if(fromLevelNodes == null) continue;
 					for(PHYNode n2 : fromLevelNodes) {
 						if(n2.getAAF(i) > 0) {
-							g.addEdge(edgeId, n2.getNodeId(), -n.getNodeId());
-							edgeId++;
-							found = true;
+							boolean addEdge = true;
+							for(PHYNode p : parents) {
+								if(this.isDescendent(n2, p)) {
+									addEdge = false;
+									break;
+								}
+							}
+							if(addEdge) {
+								g.addEdge(edgeId, n2.getNodeId(), -n.getNodeId());
+								parents.add(n2);
+								edgeId++;
+								found = true;
+							}
 						}
 					}
 				}
@@ -924,8 +936,7 @@ public class PHYGraph {
 					g.addEdge(edgeId, 0, -n.getNodeId());
 					edgeId++;
 				}
-			}
-			
+			}			
 			new TreeVisualizer(g, nodeLabels);	
 		}
 		
