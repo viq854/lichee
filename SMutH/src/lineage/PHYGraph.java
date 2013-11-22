@@ -1044,10 +1044,10 @@ public class PHYGraph {
 		/**
 		 * Returns the sub-populations of a given sample
 		 */
-		public String getLineage(int sampleId) {
+		public String getLineage(int sampleId, String sampleName) {
 			StringBuilder lineage = new StringBuilder();
 			String indent = "";
-			lineage.append("SAMPLE " + sampleId + ":\n");
+			lineage.append(sampleName + ":\n");
 			lineage.append("GERMLINE\n");
 			
 			// traverse the tree starting from the root in DFS order

@@ -98,7 +98,7 @@ public class LineageEngine {
 			spanningTrees.get(0).displayTree(names);
 			//spanningTrees.get(spanningTrees.size()-1).displayTree();
 			for(int i = 0; i < db.getNumofSamples(); i++) {
-				System.out.println(spanningTrees.get(0).getLineage(i));
+				System.out.println(spanningTrees.get(0).getLineage(i, names[i]));
 			}
 		}
 		
