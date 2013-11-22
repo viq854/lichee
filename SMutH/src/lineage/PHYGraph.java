@@ -2,6 +2,7 @@ package lineage;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -48,7 +49,7 @@ public class PHYGraph {
 	/**
 	 * Constructs a PHYGraph from the sub-populations of the SNV groups
 	 */
-	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples, int[] sampleMutationMask) {
+	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples) {
 		numSamples = totalNumSamples;
 		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
 		nodesById = new HashMap<Integer, PHYNode>();
@@ -144,6 +145,7 @@ public class PHYGraph {
 	/**
 	 * Checks if an edge should be added between two nodes in the network based on the AAF data.
 	 * If yes, it adds the edge in the appropriate direction.
+	 * The edge is added in the direction that minimizes the error
 	 * @requires n1 to be at an equal or higher level than n2
 	 * @param n1 - node 1
 	 * @param n2 - node 2
@@ -158,26 +160,44 @@ public class PHYGraph {
 			return -1;
 		}
 		
-		int comp = 0;
+		int comp_12 = 0;
+		int comp_21 = 0;
+		double err_12 = 0;
+		double err_21 = 0;
+		
 		for(int i = 0; i < numSamples; i++) {
 			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
-			comp += (n1.getAAF(i) >= (n2.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
+			comp_12 += (n1.getAAF(i) >= (n2.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
+			if(n1.getAAF(i) < n2.getAAF(i)) {
+				err_12 += n2.getAAF(i) - n1.getAAF(i);
+			}
+		}
+		for(int i = 0; i < numSamples; i++) {
+			if((n2.getAAF(i) == 0) && (n1.getAAF(i) != 0)) break;
+			comp_21 += (n2.getAAF(i) >= (n1.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
+			if(n2.getAAF(i) < n1.getAAF(i)) {
+				err_21 += n1.getAAF(i) - n2.getAAF(i);
+			}
 		}
 		
-		if(comp == numSamples) {
-			addEdge(n1, n2);
-			return 0;
-		} else {
-			comp = 0;
-			for(int i = 0; i < numSamples; i++) {
-				if((n2.getAAF(i) == 0) && (n1.getAAF(i) != 0)) break;
-				comp += (n2.getAAF(i) >= (n1.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
+		if(comp_12 == numSamples) {
+			if (comp_21 == numSamples) {
+				if(err_12 < err_21) {
+					addEdge(n1, n2);
+					return 0;
+				} else {
+					addEdge(n2, n1);
+					return 1;
+				}
+			} else {
+				addEdge(n1, n2);
+				return 0;
 			}
-			if(comp == numSamples) {
-				addEdge(n2, n1);
-				return 1;
-			}
-		} 
+		} else if(comp_21 == numSamples) {
+			addEdge(n2, n1);
+			return 1;
+		}
+		
 		return -1;
 	}
 	
@@ -244,7 +264,7 @@ public class PHYGraph {
 	 * The network needs to be adjusted when no valid spanning trees are found.
 	 * Adjustments include: 
 	 * - removing nodes corresponding to groups that are less robust
-	 * - adding hidden edges
+	 * - adding hidden edges (to do)
 	 */
 	public PHYGraph fixNetwork() {
 		// reconstruct the network from robust groups only
@@ -256,7 +276,7 @@ public class PHYGraph {
 			}
 		}
 		
-		return new PHYGraph(new ArrayList<SNPGroup>(filteredGroups), numSamples, null);
+		return new PHYGraph(new ArrayList<SNPGroup>(filteredGroups), numSamples);
 	}
 	
 	/** Displays the constraint network graph */
@@ -405,10 +425,18 @@ public class PHYGraph {
 		return spanningTrees;
 	}
 	
+	/** 
+	 * Evaluate the spanning trees
+	 * by computing their error score
+	 * and ranking them by this score (lowest error first)
+	 */
+	public void evaluateSpanningTrees() {
+		Collections.sort(spanningTrees);
+	}
+	
 	/**
 	 * Apply the AAF constraints
 	 */
-	
 	public void filterSpanningTrees() {
 		ArrayList<Tree> toBeRemoved = new ArrayList<Tree>();
 		for(Tree t : spanningTrees) {
@@ -675,6 +703,25 @@ public class PHYGraph {
 			return cluster.getCentroid()[sampleIndex];
 		}
 		
+		/**
+		 * Returns the cluster standard deviation for the given sample ID
+		 * Returns 0 if the sample is not represented
+		 */
+		public double getStdDev(int sampleId) {
+			if(isRoot) {
+				return 0;
+			} 
+			if(isLeaf) {
+				return 0;
+			}
+			
+			int sampleIndex = snpGroup.getSampleIndex(sampleId);
+			if(sampleIndex == -1) {
+				return 0;
+			}
+			return cluster.getStdDev()[sampleIndex];
+		}
+		
 		public String toString() {
 			String node = "Node " + nodeId + ": ";
 			if(!isLeaf && !isRoot) {
@@ -693,7 +740,8 @@ public class PHYGraph {
 			if(!isLeaf && !isRoot) {
 				node += nodeId + ": \n";
 				node += snpGroup.getTag() + "\n";
-				node += cluster.toString();
+				node += "("+cluster.getMembership().size()+")";
+				//node += cluster.toString();
 			} else if(isLeaf) {
 				node += "sample " + leafSampleId;
 			} else {
@@ -744,10 +792,11 @@ public class PHYGraph {
 	/**
 	 * Spanning tree of the phylogenetic constraint network
 	 */
-	protected class Tree {
+	protected class Tree implements Comparable<Tree> {
 		ArrayList<PHYNode> treeNodes;
 		HashMap<PHYNode, ArrayList<PHYNode>> treeEdges;
 		PHYNode[] parents;
+		private double errorScore = -1;
 		
 		
 		public Tree() {
@@ -884,7 +933,7 @@ public class PHYGraph {
 		}
 		
 		/** Displays the tree */
-		public void displayTree() {			
+		public void displayTree(String[] sampleNames) {			
 			DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 			HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
 				
@@ -906,11 +955,12 @@ public class PHYGraph {
 			for(int i = 0; i < numSamples; i++) {
 				PHYNode n = new PHYNode(i);
 				g.addVertex(-n.getNodeId());
-				nodeLabels.put(-n.getNodeId(), n.getLabel());
+				nodeLabels.put(-n.getNodeId(), sampleNames[i]);
 				
 				// find a parent in the closest higher level		 
 				boolean found = false;
 				ArrayList<PHYNode> parents = new ArrayList<PHYNode>();
+				ArrayList<PHYNode> sameLevelParents = new ArrayList<PHYNode>();
 				for(int j = n.getLevel() + 1; j <= numSamples; j++) {
 					ArrayList<PHYNode> fromLevelNodes = nodes.get(j);
 					if(fromLevelNodes == null) continue;
@@ -924,13 +974,31 @@ public class PHYGraph {
 								}
 							}
 							if(addEdge) {
-								g.addEdge(edgeId, n2.getNodeId(), -n.getNodeId());
+								sameLevelParents.add(n2);
 								parents.add(n2);
-								edgeId++;
 								found = true;
 							}
 						}
 					}
+					
+					// remove nodes that are in same level that are connected
+					ArrayList<PHYNode> toRemove = new ArrayList<PHYNode>();
+					for(PHYNode n1 : sameLevelParents) {
+						for(PHYNode n2 : sameLevelParents) {
+							if(this.isDescendent(n1, n2)) {
+								toRemove.add(n1);
+							}
+						}
+					}
+					sameLevelParents.removeAll(toRemove);
+					
+					for(PHYNode n2 : sameLevelParents) {
+						g.addEdge(edgeId, n2.getNodeId(), -n.getNodeId());
+						edgeId++;
+					}
+					
+					sameLevelParents.clear();
+					
 				}
 				if(!found) {
 					g.addEdge(edgeId, 0, -n.getNodeId());
@@ -938,6 +1006,39 @@ public class PHYGraph {
 				}
 			}			
 			new TreeVisualizer(g, nodeLabels);	
+		}
+		
+		/** 
+		 * Returns the error score associated with the tree, 
+		 * which is the sqrt of the sum of the children AAF sum deviation from the parent AAF
+		 */
+		public double getErrorScore() {
+			if(errorScore == -1) {
+				computeErrorScore();
+			}
+			return errorScore;
+		}
+		
+		public double computeErrorScore() {
+			double err = 0;
+			for(PHYNode n : treeEdges.keySet()) {
+				ArrayList<PHYNode> nbrs = treeEdges.get(n);			
+				for(int i = 0; i < numSamples; i++) {
+					double affSum = 0;
+					for(PHYNode n2 : nbrs) {
+						affSum += n2.getAAF(i);
+					}
+					if(affSum > n.getAAF(i)) {
+						err += Math.pow(affSum - n.getAAF(i), 2);
+					}
+				}
+			}
+			errorScore = Math.sqrt(err);
+			return errorScore;
+		}
+		
+		public int compareTo(Tree t) {
+			return new Double(this.getErrorScore()).compareTo(t.getErrorScore());
 		}
 		
 		/**
@@ -951,21 +1052,21 @@ public class PHYGraph {
 			
 			// traverse the tree starting from the root in DFS order
 			for(PHYNode n : treeEdges.get(treeNodes.get(0))) {
-				getLinearHelper(lineage, indent, n, sampleId);
+				getLineageHelper(lineage, indent, n, sampleId);
 			}
 			return lineage.toString();
 		}
 		
-		private void getLinearHelper(StringBuilder lineage, String indent, PHYNode n, int sampleId) {
+		private void getLineageHelper(StringBuilder lineage, String indent, PHYNode n, int sampleId) {
 			indent += "\t";			
 			
 			DecimalFormat df = new DecimalFormat("#.##");
 			if(n.getSNPGroup().containsSample(sampleId)) {
-				lineage.append(indent + n.getSNPGroup().getTag() + ": " + df.format(n.getAAF(sampleId)) + "\n");
+				lineage.append(indent + n.getSNPGroup().getTag() + ": " + df.format(n.getAAF(sampleId)) + " [" + df.format(n.getStdDev(sampleId)) + "]\n");
 			}
 			if(treeEdges.get(n) != null) {
 				for(PHYNode nbr : treeEdges.get(n)) {
-					getLinearHelper(lineage, indent, nbr, sampleId);
+					getLineageHelper(lineage, indent, nbr, sampleId);
 				}
 			}
 		}

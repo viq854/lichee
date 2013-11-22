@@ -121,14 +121,14 @@ public class AAFClusterer {
 			int numClusters = eval.getNumClusters();
 			
 			// output predictions
-		    for (int i = 0; i < ds.numInstances(); i++) {
+		    /*for (int i = 0; i < ds.numInstances(); i++) {
 		    	Instance inst = ds.instance(i);
 		    	double[] mean = new double[inst.numAttributes()];
 				for(int j = 0; j < mean.length; j++) {
 					mean[j] = inst.value(j);
 				}
 		    	//double[] dist = clusterer.distributionForInstance(ds.instance(i));
-		    }
+		    }*/
 			
 			Cluster[] clusters = new Cluster[numClusters];
 			double[][] clusterCentroids = new double[numClusters][numFeatures];
@@ -152,9 +152,22 @@ public class AAFClusterer {
 				clusters[i] = new Cluster(mean, i);
 			}
 			
-			// cluster members
+			// cluster members & std dev
+			double[][] clusterStdDev = new double[numClusters][numFeatures];
 			for(int i = 0; i < ds.numInstances(); i++) {
-				clusters[(int)assignments[i]].addMember(i);
+				int clusterId = (int)assignments[i];
+				clusters[clusterId].addMember(i);
+				for(int j = 0; j < numFeatures; j++) {
+					clusterStdDev[clusterId][j] += Math.pow(ds.instance(i).value(j) - clusters[clusterId].getCentroid()[j], 2);
+				}
+			}
+			
+			for(int i = 0; i < numClusters; i++) {
+				double[] dev = new double[numFeatures];
+				for(int j = 0; j < numFeatures; j++) {
+					dev[j] = Math.sqrt(clusterStdDev[i][j]/clusterCount[i]);
+				}
+				clusters[i].setStdDev(dev);
 			}
 			
 			return clusters;
@@ -334,6 +347,9 @@ public class AAFClusterer {
 		/** Cluster centroid */
 		private double[] centroid;
 		
+		/** Cluster standard deviation */
+		private double[] stdDev = null;
+		
 		/** List of observations assigned to this cluster */
 		private ArrayList<Integer> members;
 		
@@ -347,11 +363,12 @@ public class AAFClusterer {
 			centroid = clusterCentroid;
 			members = assignments;
 			id = clusterId;
+			
 		}
 		
 		/**
 		 * Compute the distance of a given observation to this cluster
-		 * Currently the method computed the distance to the centroid
+		 * Currently the method computes the distance to the centroid
 		 * @param x - observation point
 		 * @param d - distance function to be used (e.g. Euclidean)
 		 * @return distance of observation to cluster
@@ -386,8 +403,24 @@ public class AAFClusterer {
 			centroid = newCentroid;
 		}
 		
+		/**
+		 * Returns the cluster centroid (mean) per sample
+		 */
 		public double[] getCentroid() {
 			return centroid;
+		}
+		
+		/**
+		 * Returns the standard deviation per sample
+		 * @requires setStdDev() method to have been called (currently implemented for EM only),
+		 * will return null otherwise
+		 */
+		public double[] getStdDev() {
+			return stdDev;
+		}
+		
+		public void setStdDev(double[] dev) {
+			stdDev = dev;
 		}
 		
 		public ArrayList<Integer> getMembership() {
@@ -406,6 +439,13 @@ public class AAFClusterer {
 				c += " " + df.format(centroid[i]) + " ";
 			}
 			c += "] " + members.size();
+			if(stdDev != null) {
+				c += " [";
+				for(int i = 0; i < stdDev.length; i++) {
+					c += " " + df.format(stdDev[i]) + " ";
+				}
+				c += "]";
+			}
 			return c;
 		}
 	}

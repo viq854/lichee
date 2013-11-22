@@ -182,7 +182,7 @@ public class SNPGroup {
 			}
 		}
 		
-		if(filteredClusters.size() <= 1) {
+		if(filteredClusters.size() < 1) {
 			System.out.println("Warning: All clusters in group " + tag + " have been filtered out");
 			subPopulations = new Cluster[filteredClusters.size()];
 			subPopulations = filteredClusters.toArray(subPopulations);

@@ -20,8 +20,8 @@ public class LineageEngine {
 	 */
 	public static void buildLineage(String path, String sampleName, int normalSample) {
 		// 1. load VCF data
-		SNVDatabase db = new SNVDatabase(path+sampleName+".vcf", normalSample);
-		//SNVDatabase db = new SNVDatabase(path+sampleName+".validation.txt", normalSample);
+		//SNVDatabase db = new SNVDatabase(path+sampleName+".vcf", normalSample);
+		SNVDatabase db = new SNVDatabase(path+sampleName+".validation.txt", normalSample);
 		
 		
 		// 2. handle normal cell contamination, CNVs, 
@@ -53,9 +53,7 @@ public class LineageEngine {
 		}
 		
 		// 5. construct constraint network
-		int[] sampleMutationMask = new int[db.getNumofSamples()];
-		sampleMutationMask[0] = 1; // sample 0 has no mutations
-		PHYGraph constrNetwork = new PHYGraph(groups, db.getNumofSamples(), sampleMutationMask);
+		PHYGraph constrNetwork = new PHYGraph(groups, db.getNumofSamples());
 		System.out.println(constrNetwork.toString());
 		
 		// 6. find all the spanning trees
@@ -77,16 +75,28 @@ public class LineageEngine {
 			constrNetwork.filterSpanningTrees();
 			System.out.println("Spanning trees: " + spanningTrees.size() + " trees after AAF constraint *filtering*");	
 		}
-		if(spanningTrees.size() > 0) {
-			System.out.println(spanningTrees.get(0));
-		}
 		
 		// 8. evaluate/rank the trees
+		constrNetwork.evaluateSpanningTrees();
+		if(spanningTrees.size() > 0) {
+			System.out.println("Best tree error score: " + spanningTrees.get(0).getErrorScore());
+			System.out.println("Worst tree error score: " + spanningTrees.get(spanningTrees.size()-1).getErrorScore());
+			System.out.println(spanningTrees.get(0));
+			//System.out.println(spanningTrees.get(spanningTrees.size()-1));
+		}
 		
 		// 9. result visualization
+		
+		//retrieve sample names
+		String[] names = new String[db.getNumofSamples()];
+		for(int i = 0; i < db.getNumofSamples(); i++) {
+			names[i] = db.getName(i);
+		}
+		
 		constrNetwork.displayNetwork();
 		if(spanningTrees.size() > 0) {
-			spanningTrees.get(0).displayTree();
+			spanningTrees.get(0).displayTree(names);
+			//spanningTrees.get(spanningTrees.size()-1).displayTree();
 			for(int i = 0; i < db.getNumofSamples(); i++) {
 				System.out.println(spanningTrees.get(0).getLineage(i));
 			}
@@ -95,8 +105,8 @@ public class LineageEngine {
 	}
 	
 	public static void main(String[] args) {
-		buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
-		//buildLineage("/Users/viq/smuth/SMutH/data/","Patient_1", 0);
+		//buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
+		buildLineage("/Users/viq/smuth/SMutH/data/","Patient_1", 0);
 		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/","Patient_2", 0);
 
 	}
