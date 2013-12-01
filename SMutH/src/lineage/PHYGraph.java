@@ -447,10 +447,12 @@ public class PHYGraph {
 			ArrayList<PHYNode> nbrs = t.treeEdges.get(n);			
 			for(int i = 0; i < numSamples; i++) {
 				double affSum = 0;
+				double errMargin = 0.0;
 				for(PHYNode n2 : nbrs) {
 					affSum += n2.getAAF(i);
+					errMargin += getAAFErrorMargin(n, n2);
 				}
-				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN * nbrs.size()) {
+				if(affSum >= n.getAAF(i) + errMargin) {
 					return false;
 				}
 			}
