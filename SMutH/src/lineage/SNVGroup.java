@@ -8,14 +8,14 @@ import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.DistanceMetric;
 
 /**
- * A SNP group is a set of SNPs occurring in a given subset of samples.
- * All SNPs are partitioned into SNP groups based on their occurrence across samples.
+ * An SNV group is a set of SNVs occurring in a given subset of samples.
+ * All SNVs are partitioned into SNV groups based on their occurrence across samples.
  * Given S samples, there can be at most 2^S different groups.
- * A SNP group is uniquely identified by an S-bit binary tag (each bit corresponding to
- * a given sample), where a bit is set if that sample contains the SNPs in this group.
+ * An SNV group is uniquely identified by an S-bit binary tag (each bit corresponding to
+ * a given sample), where a bit is set if that sample contains the SNVs in this group.
  *
  */
-public class SNPGroup {
+public class SNVGroup {
 
 	/** Binary tag identifying the group 
 	 * (the length of the tag is equal to the number of input samples) */
@@ -27,24 +27,24 @@ public class SNPGroup {
 	/** Indices of the samples represented in this group (from 0 to |tag|-1 MSF order) */
 	private int[] sampleIndex;
 	
-	/** Alternative allele frequency data matrix (numSNPs x numSamples) */
+	/** Alternative allele frequency data matrix (numSNVs x numSamples) */
 	private double[][] alleleFreqBySample;
 	
 	/** SubPopulation clusters */
 	private Cluster[] subPopulations;
 	
-	/** SNPs assigned to this group */
-	private ArrayList<SNVEntry> snps;
+	/** SNVs assigned to this group */
+	private ArrayList<SNVEntry> snvs;
 	
 	/** Number of solid/robust mutations in the group */
-	private int numRobustSNPs;
+	private int numRobustSNVs;
 	
 	/** Flag indicating whether this group is robust */
 	private boolean isRobust;
 	
-	public SNPGroup(String groupTag, ArrayList<SNVEntry> groupSNPs, int groupNumRobustSNPs, boolean isGroupRobust) {
+	public SNVGroup(String groupTag, ArrayList<SNVEntry> groupSNVs, int groupNumRobustSNVs, boolean isGroupRobust) {
 		tag = groupTag;
-		numRobustSNPs = groupNumRobustSNPs;
+		numRobustSNVs = groupNumRobustSNVs;
 		isRobust = isGroupRobust;
 		numSamples = 0;		
 		sampleIndex = new int[tag.length()];
@@ -54,36 +54,16 @@ public class SNPGroup {
 				numSamples++;
 			}
 		}
-		snps = groupSNPs;
-		alleleFreqBySample = new double[snps.size()][numSamples];
-		for(int i = 0; i < snps.size(); i++) {
-			SNVEntry snp = snps.get(i);
+		snvs = groupSNVs;
+		alleleFreqBySample = new double[snvs.size()][numSamples];
+		for(int i = 0; i < snvs.size(); i++) {
+			SNVEntry snv = snvs.get(i);
 			for(int j = 0; j < numSamples; j++) {
-				alleleFreqBySample[i][j] = snp.getAAF(sampleIndex[j]);
+				alleleFreqBySample[i][j] = snv.getAAF(sampleIndex[j]);
 			}
 		}
 		
 		System.out.println("Created group: " + this.toString());
-	}
-	
-	/**
-	 * TODO
-	 * Insert additional SNPs into the group
-	 * This method will add the SNP to the sub-population that is more likely 
-	 * to contain the SNP
-	 * The sub-population is picked by finding the closest centroid to the scaled
-	 * AAF of the SNP 
-	 */
-	public void addSNPsFromCNVs(ArrayList<VCFEntry> cnvs, int[] scale) {
-		snps.addAll(cnvs);		
-		for(VCFEntry snp : cnvs) {
-			double[] aaf = new double[numSamples];
-			for(int j = 0; j < numSamples; j++) {
-				aaf[j] = snp.getAAF(sampleIndex[j]);
-				
-				// scale AAF and find the cluster to which this point has the smallest distance to
-			}
-		}
 	}
 	
 	// Getters/Setters
@@ -96,8 +76,8 @@ public class SNPGroup {
 		return numSamples;
 	}
 	
-	public int getNumSNPs() {
-		return snps.size();
+	public int getNumSNVs() {
+		return snvs.size();
 	}
 	
 	public Cluster[] getSubPopulations() {
@@ -108,8 +88,8 @@ public class SNPGroup {
 		return tag;
 	}
 	
-	public int getNumRobustSNPs() {
-		return numRobustSNPs;
+	public int getNumRobustSNVs() {
+		return numRobustSNVs;
 	}
 	
 	public boolean isRobust() {
@@ -137,10 +117,10 @@ public class SNPGroup {
 	}
 	
 	public boolean equals(Object o) {
-		if(!(o instanceof SNPGroup)) {
+		if(!(o instanceof SNVGroup)) {
 			return false;
 		}
-		SNPGroup g = (SNPGroup) o;
+		SNVGroup g = (SNVGroup) o;
 		if(this.tag == g.tag) {
 			return true;
 		} else {
@@ -226,7 +206,7 @@ public class SNPGroup {
 			}
 			numClusters--;
 			
-			c1.recomputeCentroid(alleleFreqBySample, snps.size(), numSamples);
+			c1.recomputeCentroid(alleleFreqBySample, snvs.size(), numSamples);
 			filteredClusters.remove(c2);
 			System.out.println("Collapse clusters: group = " + tag + " cluster " + pd.clusterId1 + " and " + pd.clusterId2 + 
 					" distance = " + pd.distance);
@@ -267,7 +247,7 @@ public class SNPGroup {
 		String group = "";
 		group += "tag = " + this.tag + ", ";
 		group += "numSamples = " + this.numSamples + ", ";
-		group += "numSNPs = " + this.snps.size() + ", ";
+		group += "numSNVs = " + this.snvs.size() + ", ";
 		if(this.subPopulations != null) group += "numSubPopulations = " + this.subPopulations.length;
 		return group;
 	}

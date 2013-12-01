@@ -31,19 +31,19 @@ public class LineageEngine {
 		//Unmixing um = new Unmixing(path+sampleName+".BP.txt",normalSample);
 
 		
-		// 3. get the SNPs partitioned by group tag
-		HashMap<String, ArrayList<SNVEntry>> snpsByTag = db.generateFilteredTAG2SNVsMap(null);
-		// create the appropriate SNP group objects
-		ArrayList<SNPGroup> groups = new ArrayList<SNPGroup>();
-		for(String groupTag : snpsByTag.keySet()) {
-			SNPGroup group = new SNPGroup(groupTag, snpsByTag.get(groupTag), db.getNumRobustSNVs(groupTag), db.isRobust(groupTag));
+		// 3. get the SNVs partitioned by group tag
+		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
+		// create the appropriate SNV group objects
+		ArrayList<SNVGroup> groups = new ArrayList<SNVGroup>();
+		for(String groupTag : snvsByTag.keySet()) {
+			SNVGroup group = new SNVGroup(groupTag, snvsByTag.get(groupTag), db.getNumRobustSNVs(groupTag), db.isRobust(groupTag));
 			groups.add(group);
 		}
 		
 		
-		// 4. cluster SNPs in each group
+		// 4. cluster SNVs in each group
 		AAFClusterer clusterer = new AAFClusterer();
-		for(SNPGroup group : groups) {
+		for(SNVGroup group : groups) {
 			System.out.println("Clustering results group: " + group.getTag());
 			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 1);
 			for(Cluster c : clusters) {
@@ -108,7 +108,6 @@ public class LineageEngine {
 		//buildLineage("/Users/viq/smuth/SMutH/data/","patient1", 0);
 		buildLineage("/Users/viq/smuth/SMutH/data/","Patient_1", 0);
 		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/","Patient_2", 0);
-
 	}
 	
 }
