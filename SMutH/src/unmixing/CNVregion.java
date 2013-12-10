@@ -1,6 +1,6 @@
 package unmixing;
 
-import io.*;
+import util.*;
 
 public class CNVregion {
 

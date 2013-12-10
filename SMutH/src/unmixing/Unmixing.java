@@ -1,8 +1,6 @@
 package unmixing;
 
-import io.VCFConstants;
-import io.SNVDatabase;
-import io.VCFEntry;
+import util.*;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
