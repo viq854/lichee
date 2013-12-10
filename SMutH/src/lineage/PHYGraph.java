@@ -23,7 +23,7 @@ import lineage.AAFClusterer.Cluster;
  */
 public class PHYGraph {
 
-	/** Nodes in the graph divided by levels (number of samples node SNPs occurred in) */
+	/** Nodes in the graph divided by levels (number of samples node SNVs occurred in) */
 	private HashMap<Integer, ArrayList<PHYNode>> nodes;
 	/** Nodes in the graph indexed by ID */
 	private HashMap<Integer, PHYNode> nodesById;
@@ -49,7 +49,7 @@ public class PHYGraph {
 	/**
 	 * Constructs a PHYGraph from the sub-populations of the SNV groups
 	 */
-	public PHYGraph(ArrayList<SNPGroup> groups, int totalNumSamples) {
+	public PHYGraph(ArrayList<SNVGroup> groups, int totalNumSamples) {
 		numSamples = totalNumSamples;
 		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
 		nodesById = new HashMap<Integer, PHYNode>();
@@ -60,7 +60,7 @@ public class PHYGraph {
 		addNode(root, numSamples+1);
 				
 		// add group sub-population nodes
-		for(SNPGroup g : groups) {
+		for(SNVGroup g : groups) {
 			PHYNode[] groupNodes = new PHYNode[g.getSubPopulations().length];
 			for(int i = 0; i < groupNodes.length; i++) {
 				PHYNode node = new PHYNode(g, i, g.getNumSamples());
@@ -74,18 +74,6 @@ public class PHYGraph {
 				}
 			}
 		}
-		
-		// add sample leaf nodes
-		/*for(int i = 0; i < numSamples; i++) {
-			PHYNode sampleLeaf = new PHYNode(i);
-			addNode(sampleLeaf, 0);
-			// add edges from the root to the samples without any mutations
-			// in order to have a connected graph
-			if(sampleMutationMask[i] == 1) {
-				addEdge(root, sampleLeaf);
-			}
-		}*/
-	
 		
 		// add inter-level edges
 		for(int i = numSamples + 1; i > 0; i--) {
@@ -143,6 +131,14 @@ public class PHYGraph {
 	// ---- Graph Construction ----
 	
 	/**
+	 * Returns the AAF error margin on the edge 
+	 * between the from and to nodes
+	 */
+	private double getAAFErrorMargin(PHYNode from, PHYNode to) {
+		return Parameters.AAF_ERROR_MARGIN;
+	}
+	
+	/**
 	 * Checks if an edge should be added between two nodes in the network based on the AAF data.
 	 * If yes, it adds the edge in the appropriate direction.
 	 * The edge is added in the direction that minimizes the error
@@ -167,14 +163,14 @@ public class PHYGraph {
 		
 		for(int i = 0; i < numSamples; i++) {
 			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
-			comp_12 += (n1.getAAF(i) >= (n2.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
+			comp_12 += (n1.getAAF(i) >= (n2.getAAF(i) - getAAFErrorMargin(n1, n2))) ? 1 : 0;
 			if(n1.getAAF(i) < n2.getAAF(i)) {
 				err_12 += n2.getAAF(i) - n1.getAAF(i);
 			}
 		}
 		for(int i = 0; i < numSamples; i++) {
 			if((n2.getAAF(i) == 0) && (n1.getAAF(i) != 0)) break;
-			comp_21 += (n2.getAAF(i) >= (n1.getAAF(i) - Parameters.AAF_ERROR_MARGIN)) ? 1 : 0;
+			comp_21 += (n2.getAAF(i) >= (n1.getAAF(i) - getAAFErrorMargin(n2, n1))) ? 1 : 0;
 			if(n2.getAAF(i) < n1.getAAF(i)) {
 				err_21 += n1.getAAF(i) - n2.getAAF(i);
 			}
@@ -224,11 +220,6 @@ public class PHYGraph {
 		}
 	}
 	
-	/** Removes a node from the graph */
-	public void removeNode(PHYNode n) {
-		
-	}
-	
 	/** Removes an edge from the graph */
 	public void removeEdge(PHYNode from, PHYNode to) {
 		ArrayList<PHYNode> nbrs = edges.get(from);
@@ -244,7 +235,6 @@ public class PHYGraph {
 	
 	/** Adds all the inter-level edges */
 	public void addAllHiddenEdges() {
-		// add all inter-level edges
 		for(int i = numSamples + 1; i > 0; i--) {
 			ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
 			if(fromLevelNodes == null) continue;
@@ -264,19 +254,20 @@ public class PHYGraph {
 	 * The network needs to be adjusted when no valid spanning trees are found.
 	 * Adjustments include: 
 	 * - removing nodes corresponding to groups that are less robust
+	 * - increasing the error margin (to do)
 	 * - adding hidden edges (to do)
 	 */
 	public PHYGraph fixNetwork() {
 		// reconstruct the network from robust groups only
-		Set<SNPGroup> filteredGroups = new HashSet<SNPGroup>();
+		Set<SNVGroup> filteredGroups = new HashSet<SNVGroup>();
 		for(PHYNode n : nodesById.values()) {
-			SNPGroup group = n.snpGroup;
+			SNVGroup group = n.snvGroup;
 			if((group != null) && group.isRobust()) {
-				filteredGroups.add(n.snpGroup);
+				filteredGroups.add(n.snvGroup);
 			}
 		}
 		
-		return new PHYGraph(new ArrayList<SNPGroup>(filteredGroups), numSamples);
+		return new PHYGraph(new ArrayList<SNVGroup>(filteredGroups), numSamples);
 	}
 	
 	/** Displays the constraint network graph */
@@ -456,10 +447,12 @@ public class PHYGraph {
 			ArrayList<PHYNode> nbrs = t.treeEdges.get(n);			
 			for(int i = 0; i < numSamples; i++) {
 				double affSum = 0;
+				double errMargin = 0.0;
 				for(PHYNode n2 : nbrs) {
 					affSum += n2.getAAF(i);
+					errMargin += getAAFErrorMargin(n, n2);
 				}
-				if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN * nbrs.size()) {
+				if(affSum >= n.getAAF(i) + errMargin) {
 					return false;
 				}
 			}
@@ -593,8 +586,8 @@ public class PHYGraph {
 		/** Sub-population cluster that the node represents */
 		private Cluster cluster;		
 		
-		/** SNP group the node belongs to */
-		private SNPGroup snpGroup;
+		/** SNV group the node belongs to */
+		private SNVGroup snvGroup;
 		
 		/** Flag indicating if the node is a sample leaf*/
 		private boolean isLeaf;
@@ -616,12 +609,12 @@ public class PHYGraph {
 		
 		/** 
 		 * Internal node constructor
-		 * @param g - SNP group the node belongs to
+		 * @param g - SNV group the node belongs to
 		 * @param nodeClusterId
 		 */
-		public PHYNode(SNPGroup g, int nodeClusterId, int networkLevel) {
-			snpGroup = g;
-			cluster = snpGroup.getSubPopulations()[nodeClusterId];
+		public PHYNode(SNVGroup g, int nodeClusterId, int networkLevel) {
+			snvGroup = g;
+			cluster = snvGroup.getSubPopulations()[nodeClusterId];
 			isLeaf = false;
 			nodeId = nodeCounter;
 			nodeCounter++;
@@ -651,7 +644,7 @@ public class PHYGraph {
 		}
 		
 		/**
-		 * Returns the SNP cluster that this node represents
+		 * Returns the SNV cluster that this node represents
 		 */
 		public Cluster getCluster() {
 			return cluster;
@@ -680,8 +673,8 @@ public class PHYGraph {
 			return level;
 		}
 		
-		public SNPGroup getSNPGroup() {
-			return snpGroup;
+		public SNVGroup getSNVGroup() {
+			return snvGroup;
 		}
 		
 		/**
@@ -696,7 +689,7 @@ public class PHYGraph {
 				return 0;
 			}
 			
-			int sampleIndex = snpGroup.getSampleIndex(sampleId);
+			int sampleIndex = snvGroup.getSampleIndex(sampleId);
 			if(sampleIndex == -1) {
 				return 0;
 			}
@@ -715,7 +708,7 @@ public class PHYGraph {
 				return 0;
 			}
 			
-			int sampleIndex = snpGroup.getSampleIndex(sampleId);
+			int sampleIndex = snvGroup.getSampleIndex(sampleId);
 			if(sampleIndex == -1) {
 				return 0;
 			}
@@ -725,7 +718,7 @@ public class PHYGraph {
 		public String toString() {
 			String node = "Node " + nodeId + ": ";
 			if(!isLeaf && !isRoot) {
-				node += "group tag = " + snpGroup.getTag() + ", ";
+				node += "group tag = " + snvGroup.getTag() + ", ";
 				node += cluster.toString();
 			} else if(isLeaf) {
 				node += "leaf sample id = " + leafSampleId;
@@ -739,7 +732,7 @@ public class PHYGraph {
 			String node = "";
 			if(!isLeaf && !isRoot) {
 				node += nodeId + ": \n";
-				node += snpGroup.getTag() + "\n";
+				node += snvGroup.getTag() + "\n";
 				node += "("+cluster.getMembership().size()+")";
 				//node += cluster.toString();
 			} else if(isLeaf) {
@@ -1061,8 +1054,8 @@ public class PHYGraph {
 			indent += "\t";			
 			
 			DecimalFormat df = new DecimalFormat("#.##");
-			if(n.getSNPGroup().containsSample(sampleId)) {
-				lineage.append(indent + n.getSNPGroup().getTag() + ": " + df.format(n.getAAF(sampleId)) + " [" + df.format(n.getStdDev(sampleId)) + "]\n");
+			if(n.getSNVGroup().containsSample(sampleId)) {
+				lineage.append(indent + n.getSNVGroup().getTag() + ": " + df.format(n.getAAF(sampleId)) + " [" + df.format(n.getStdDev(sampleId)) + "]\n");
 			}
 			if(treeEdges.get(n) != null) {
 				for(PHYNode nbr : treeEdges.get(n)) {

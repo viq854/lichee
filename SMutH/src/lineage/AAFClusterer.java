@@ -41,20 +41,20 @@ public class AAFClusterer {
 	
 	/**
 	 * Clustering dispatcher
-	 * @requires the number of SNPs in a group to be bigger than 1
-	 * @param group - SNP group to cluster based on AAF data
+	 * @requires the number of SNVs in a group to be bigger than 1
+	 * @param group - SNV group to cluster based on AAF data
 	 * @param alg - algorithm to use for clustering
 	 */
-	public Cluster[] clusterSubPopulations(SNPGroup group, ClusteringAlgorithms alg, int minNumClusters) {		
+	public Cluster[] clusterSubPopulations(SNVGroup group, ClusteringAlgorithms alg, int minNumClusters) {		
 		switch(alg) {
 		case FUZZYCMEANS:
-			return fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNPs(), 
+			return fuzzyCMeans(group.getAlleleFreqBySample(), group.getNumSNVs(), 
 					group.getNumSamples(), minNumClusters, 
 					AAFClusterer.DEFAULT_FUZZIFIER, DistanceMetric.EUCLIDEAN);
 		case KMEANS:
-			return kmeans(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters);
+			return kmeans(group.getAlleleFreqBySample(), group.getNumSNVs(), group.getNumSamples(), minNumClusters);
 		case EM:
-			return em(group.getAlleleFreqBySample(), group.getNumSNPs(), group.getNumSamples(), minNumClusters);
+			return em(group.getAlleleFreqBySample(), group.getNumSNVs(), group.getNumSamples(), minNumClusters);
 		default:
 			return null;	
 		}
