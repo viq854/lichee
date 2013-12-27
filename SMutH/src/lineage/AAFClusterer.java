@@ -1,5 +1,6 @@
 package lineage;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
@@ -18,8 +19,10 @@ import weka.core.Instances;
  * representing the allele frequency values of the samples in the application.
  *
  */
-public class AAFClusterer {
+public class AAFClusterer implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	/** Convergence threshold [0,1] (will converge if the change from one iteration to the next
 	 *  is smaller than this value) */
 	private static final double CONVERGENCE_THRESHOLD = 0.00001;
@@ -339,8 +342,10 @@ public class AAFClusterer {
 	 * Cluster of observation points
 	 * Each cluster has an associated centroid point and a list of members
 	 */
-	protected class Cluster {
+	protected class Cluster implements Serializable {
 		
+		private static final long serialVersionUID = 1L;
+
 		/** Cluster id, unique per group */
 		private int id;
 		

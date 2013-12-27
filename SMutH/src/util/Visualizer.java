@@ -2,7 +2,6 @@ package util;
 
 import ppt.*;
 
-
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -10,11 +9,11 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Paint;
-import java.awt.Rectangle;
+import java.awt.Panel;
 import java.awt.Shape;
 import java.awt.Stroke;
+import java.awt.TextArea;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.geom.Ellipse2D;
@@ -34,7 +33,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
-import lineage.LineageEngine;
+import lineage.PHYNode;
+import lineage.PHYTree;
 
 import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.functors.ConstantTransformer;
@@ -56,6 +56,7 @@ import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.decorators.AbstractEdgeShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
+import edu.uci.ics.jung.visualization.picking.PickedState;
 import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import edu.uci.ics.jung.visualization.util.Animator;
 import edu.uci.ics.jung.graph.util.Context;
@@ -63,29 +64,24 @@ import edu.uci.ics.jung.graph.util.Context;
 public class Visualizer {
 
 	
-	
-	public static void NetworkVisualizer(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels, HashMap<Integer, String> edgeLabels) {
-		
-		VisualizationViewer<Integer, Integer> visServer;
-		TreeLayout<Integer, Integer> treeLayout;
-		RadialTreeLayout<Integer, Integer> radialLayout;
-		
-		final HashMap<Integer, String> nodeLabelsFinal = new HashMap<Integer, String>(nodeLabels);
-		
-		JFrame frame = new JFrame(Configs.testName+" Network View");
-		//DAGLayout<Integer, Integer> dagLayout = new DAGLayout<Integer, Integer>(g);
-		
+	/**
+	 * Displays the constraint network (used by the lineage package)
+	 */
+	public static void showNetwork(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels) {
+		JFrame frame = new JFrame("Constraint Network");		
 		FRLayout<Integer, Integer> dagLayout = new FRLayout<Integer, Integer>(g);
 		dagLayout.setRepulsionMultiplier(0.4);
-		visServer = new VisualizationViewer<Integer, Integer>(dagLayout);
+		VisualizationViewer<Integer, Integer> visServer = new VisualizationViewer<Integer, Integer>(dagLayout);
 		visServer.setPreferredSize(new Dimension(600, 500));
 		
-		//Creating graph mouse
-		DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+		// mouse
+		DefaultModalGraphMouse<Integer, Integer> graphMouse = new DefaultModalGraphMouse<Integer, Integer>();
 		graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 		visServer.setGraphMouse(graphMouse);
 		
-		Transformer<Integer, String> PhyVertexLabelTransformer = new Transformer<Integer, String>(){
+		// node labels
+		final HashMap<Integer, String> nodeLabelsFinal = new HashMap<Integer, String>(nodeLabels);
+		Transformer<Integer, String> lt = new Transformer<Integer, String>(){
 			public String transform(Integer num) {
 				if (nodeLabelsFinal != null && nodeLabelsFinal.containsKey(num)) {
 					return nodeLabelsFinal.get(num);
@@ -94,26 +90,124 @@ public class Visualizer {
 			}
 		};
 		
-		Transformer<Integer, Paint> PhyVertexPaintTransformer = new Transformer<Integer, Paint>() {
+		// node colors
+		Transformer<Integer, Paint> ct = new Transformer<Integer, Paint>() {
 			public Paint transform(Integer num){
 				return new Color(178, 34, 34);
 			}
 		};
 		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Transformer<Integer,Font> vt = new ConstantTransformer(new Font("Helvetica", Font.BOLD, 12));
-		
 		visServer.getRenderContext().setVertexFontTransformer(vt);
-		visServer.getRenderContext().setVertexFillPaintTransformer(PhyVertexPaintTransformer);
-		visServer.getRenderContext().setVertexLabelTransformer(PhyVertexLabelTransformer);
+		visServer.getRenderContext().setVertexFillPaintTransformer(ct);
+		visServer.getRenderContext().setVertexLabelTransformer(lt);
 		Transformer<Context<Graph<Integer,Integer>,Integer>,Shape> et = new EdgeShape.Line<Integer,Integer>();		
-		
 		visServer.getRenderContext().setEdgeShapeTransformer(et);
 		
+		// content
 		Container content = frame.getContentPane();
 		content.add(visServer);
-		
 		JPanel controls = new JPanel();
 		content.add(controls, BorderLayout.SOUTH);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.pack();
+		frame.setVisible(true);
+		
+		Dimension size = frame.getSize();
+	    BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
+	    Graphics gr = image.getGraphics();
+	    frame.paint(gr);
+	    gr.dispose();
+	}
+	
+	/**
+	 * Displays the lineage tree
+	 * The tree nodes can be interacted with to obtain more information
+	 */
+	public static void showLineageTree(DirectedGraph<Integer, Integer> g, final HashMap<Integer, String> nodeLabels, 
+			String fileOutputName, final HashMap<Integer, PHYNode> nodeInfo, final PHYTree t) {	
+		JFrame frame = new JFrame("Best Lineage Tree");
+		DelegateTree<Integer, Integer> tree = new DelegateTree<Integer, Integer>(g);
+		tree.setRoot(0);
+		TreeLayout<Integer, Integer> treeLayout = new TreeLayout<Integer, Integer>((Forest<Integer, Integer>) tree,100,70);
+		VisualizationViewer<Integer, Integer> visServer = new VisualizationViewer<Integer, Integer>(treeLayout);
+		visServer.setPreferredSize(new Dimension(1500, 600));
+		
+		DefaultModalGraphMouse<Integer, Integer> graphMouse = new DefaultModalGraphMouse<Integer, Integer>();
+		graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
+		visServer.setGraphMouse(graphMouse);
+		
+		// node click listeners
+		JPanel console = new JPanel();
+		final TextArea info = new TextArea();
+		info.setEditable(false);
+		console.add(info);
+		final PickedState<Integer> pickedState = visServer.getPickedVertexState();
+		pickedState.addItemListener(new ItemListener() { 
+		    @Override
+		    public void itemStateChanged(ItemEvent e) {
+		    Object o = e.getItem();
+		        if (o instanceof Integer) {
+		            Integer node = (Integer) o;
+		            if (pickedState.isPicked(node)) {
+		                if(node < 0) { // sample
+		                	info.setText(t.getLineage(nodeInfo.get(node).getLeafSampleId(), nodeLabels.get(node)));
+		                } else {
+		                	info.setText(nodeInfo.get(node).getLongLabel());
+		                }
+		            }
+		        }
+		    }
+		});
+		
+		// node labels
+		Transformer<Integer, String> vlt = new Transformer<Integer, String>(){
+			public String transform(Integer num) {
+				if (nodeLabels != null && nodeLabels.containsKey(num)) {
+					return nodeLabels.get(num);
+				}
+				else return null;
+			}
+		};
+		// node colors
+		Transformer<Integer, Paint> vpt = new Transformer<Integer, Paint>() {
+			public Paint transform(Integer num){
+				if (nodeLabels != null && nodeLabels.containsKey(num)) {
+					if(num < 0) {
+						return new Color(0, 191, 255);
+					} else {
+						return new Color(60, 179, 113);
+					}
+				} 
+				else return Color.ORANGE;
+			}
+		};
+		// node shapes
+		Transformer<Integer, Shape> vts = new Transformer<Integer, Shape>() {
+			public Shape transform(Integer num){
+				if(num < 0) {
+					return new Rectangle2D.Float(-10, -10, 20, 20);
+				} 
+				return new Ellipse2D.Float(-10, -10, 20, 20);
+			}
+		};
+		
+		Transformer<Context<Graph<Integer,Integer>,Integer>,Shape> et = new EdgeShape.Line<Integer,Integer>();		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Transformer<Integer,Font> vt = new ConstantTransformer(new Font("Helvetica", Font.BOLD, 12));
+		
+		visServer.getRenderer().getVertexLabelRenderer().setPosition(Position.S);
+		visServer.getRenderContext().setVertexShapeTransformer(vts);
+		visServer.getRenderContext().setVertexFontTransformer(vt);
+		visServer.getRenderContext().setEdgeShapeTransformer(et);
+		visServer.getRenderContext().setVertexLabelTransformer(vlt);
+		visServer.getRenderContext().setVertexFillPaintTransformer(vpt);
+		
+		// frame content
+		Container content = frame.getContentPane();
+		content.add(visServer);
+		content.add(console, BorderLayout.SOUTH);
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.pack();
@@ -125,7 +219,15 @@ public class Visualizer {
 	    frame.paint(gr);
 	    gr.dispose();
       
-	    
+	    if(fileOutputName != null) {
+	    	try {
+	    		ImageIO.write(image, "jpg", new File(fileOutputName));
+	    	}
+	    	catch (IOException e) {
+	    		e.printStackTrace();
+	    		System.err.println("Failed to save tree to the file: " + fileOutputName);
+	    	}
+	    }
 	}
 	
 	public static void TreeVisualizer(DirectedGraph<Integer, Integer> g, HashMap<Integer, String> nodeLabels) {

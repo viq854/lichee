@@ -1,8 +1,11 @@
 package lineage;
 
-import io.*;
+import util.*;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.DistanceMetric;
@@ -15,7 +18,9 @@ import lineage.AAFClusterer.DistanceMetric;
  * a given sample), where a bit is set if that sample contains the SNVs in this group.
  *
  */
-public class SNVGroup {
+public class SNVGroup implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/** Binary tag identifying the group 
 	 * (the length of the tag is equal to the number of input samples) */
@@ -28,19 +33,21 @@ public class SNVGroup {
 	private int[] sampleIndex;
 	
 	/** Alternative allele frequency data matrix (numSNVs x numSamples) */
-	private double[][] alleleFreqBySample;
+	private transient double[][] alleleFreqBySample;
 	
 	/** SubPopulation clusters */
 	private Cluster[] subPopulations;
 	
 	/** SNVs assigned to this group */
-	private ArrayList<SNVEntry> snvs;
+	private transient ArrayList<SNVEntry> snvs;
 	
 	/** Number of solid/robust mutations in the group */
-	private int numRobustSNVs;
+	private transient int numRobustSNVs;
 	
 	/** Flag indicating whether this group is robust */
-	private boolean isRobust;
+	private transient boolean isRobust;
+	
+	private static Logger logger = Logger.getLogger("lineage.snvgroup");
 	
 	public SNVGroup(String groupTag, ArrayList<SNVEntry> groupSNVs, int groupNumRobustSNVs, boolean isGroupRobust) {
 		tag = groupTag;
@@ -63,7 +70,9 @@ public class SNVGroup {
 			}
 		}
 		
-		System.out.println("Created group: " + this.toString());
+		logger.addHandler(LineageEngine.logger.getHandlers()[0]);
+		logger.setLevel(LineageEngine.logger.getLevel());
+		logger.log(Level.FINE, "Created group: " + this.toString());
 	}
 	
 	// Getters/Setters
@@ -74,6 +83,10 @@ public class SNVGroup {
 	
 	public int getNumSamples() {
 		return numSamples;
+	}
+	
+	public int getNumSamplesTotal() {
+		return tag.length();
 	}
 	
 	public int getNumSNVs() {
@@ -163,7 +176,8 @@ public class SNVGroup {
 		}
 		
 		if(filteredClusters.size() < 1) {
-			System.out.println("Warning: All clusters in group " + tag + " have been filtered out");
+			logger.log(Level.WARNING, "All subpopulation clusters in group " + tag + " have been filtered out. "
+					+ "The group is now empty.");
 			subPopulations = new Cluster[filteredClusters.size()];
 			subPopulations = filteredClusters.toArray(subPopulations);
 			return;
@@ -208,7 +222,7 @@ public class SNVGroup {
 			
 			c1.recomputeCentroid(alleleFreqBySample, snvs.size(), numSamples);
 			filteredClusters.remove(c2);
-			System.out.println("Collapse clusters: group = " + tag + " cluster " + pd.clusterId1 + " and " + pd.clusterId2 + 
+			logger.log(Level.FINE, "Collapse clusters: group = " + tag + " cluster " + pd.clusterId1 + " and " + pd.clusterId2 + 
 					" distance = " + pd.distance);
 			
 			// remove distances from c1 and c2 from the queue
@@ -245,9 +259,9 @@ public class SNVGroup {
 	
 	public String toString() {
 		String group = "";
-		group += "tag = " + this.tag + ", ";
+		group += "(tag = " + this.tag + ", ";
 		group += "numSamples = " + this.numSamples + ", ";
-		group += "numSNVs = " + this.snvs.size() + ", ";
+		group += "numSNVs = " + this.snvs.size() + ") ";
 		if(this.subPopulations != null) group += "numSubPopulations = " + this.subPopulations.length;
 		return group;
 	}
