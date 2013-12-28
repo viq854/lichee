@@ -10,6 +10,7 @@ import java.util.Set;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
+import util.SNVEntry;
 import util.Visualizer;
 
 /**
@@ -484,7 +485,7 @@ public class PHYNetwork implements Serializable {
 	}
 	
 	/** Displays a spanning tree of the network */
-	public void displayTree(PHYTree t, String[] sampleNames, String fileOutputName) {			
+	public void displayTree(PHYTree t, String[] sampleNames, HashMap<String, ArrayList<SNVEntry>> snvsByTag, String fileOutputName) {			
 		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 		HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
 		HashMap<Integer, PHYNode> nodeObj = new HashMap<Integer, PHYNode>();
@@ -557,7 +558,7 @@ public class PHYNetwork implements Serializable {
 				edgeId++;
 			}
 		}			
-		Visualizer.showLineageTree(g, nodeLabels, fileOutputName, nodeObj, t);	
+		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
 	}
 	/**
 	 * Returns a string representation of the graph

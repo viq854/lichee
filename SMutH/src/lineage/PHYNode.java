@@ -1,7 +1,9 @@
 package lineage;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
+import util.SNVEntry;
 import lineage.AAFClusterer.Cluster;
 import lineage.PHYNetwork;
 
@@ -147,6 +149,19 @@ public class PHYNode implements Serializable {
 			return 0;
 		}
 		return cluster.getStdDev()[sampleIndex];
+	}
+	
+	/**
+	 * Returns the SNV entries in the cluster
+	 * corresponding to this node
+	 */
+	public ArrayList<SNVEntry> getSNVs(ArrayList<SNVEntry> groupSNVs) {
+		ArrayList<Integer> ids = cluster.getMembership();
+		ArrayList<SNVEntry> nodeSNVs = new ArrayList<SNVEntry>();
+		for(int i : ids) {
+			nodeSNVs.add(groupSNVs.get(i));
+		}
+		return nodeSNVs;
 	}
 	
 	public String toString() {

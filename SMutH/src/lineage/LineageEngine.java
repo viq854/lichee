@@ -101,9 +101,9 @@ public class LineageEngine {
 		}
 		if(args.showBest && (spanningTrees.size() > 0)) {
 			if(args.persist) {
-				constrNetwork.displayTree(spanningTrees.get(0), sampleNames, args.outputFilePrefix + TREE_JPG_FILE_EXTENSION);
+				constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, args.outputFilePrefix + TREE_JPG_FILE_EXTENSION);
 			} else {
-				constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null);
+				constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, null);
 			}
 			//for(int i = 0; i < db.getNumofSamples(); i++) {
 				//System.out.println(spanningTrees.get(0).getLineage(i, sampleNames[i]));
@@ -127,15 +127,18 @@ public class LineageEngine {
 		String netFileName = args.showFileNamePrefix + NET_FILE_EXTENSION;
 		String treeFileName = args.showFileNamePrefix + TREE_FILE_EXTENSION;
 		
+		SNVDatabase db = new SNVDatabase(args.inputFileName, args.normalSampleId);
+		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
+		
 		PHYNetwork net = readNetworkFromFile(netFileName);
 		String[] sampleNames = new String[net.numSamples];
 		ArrayList<PHYTree> trees = readTreesFromFile(treeFileName, sampleNames);
 		if(args.numShow == 1) {
-			net.displayTree(trees.get(0), sampleNames, null);
+			net.displayTree(trees.get(0), sampleNames, snvsByTag, null);
 		} else if(args.numShow > 1) {
 			for(int i = 0; i < args.numShow; i++) {
 				if(trees.size() < i) {
-					net.displayTree(trees.get(i), sampleNames, null);
+					net.displayTree(trees.get(i), sampleNames, snvsByTag, null);
 				} else {
 					break;
 				}

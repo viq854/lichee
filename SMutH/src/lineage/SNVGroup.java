@@ -77,6 +77,10 @@ public class SNVGroup implements Serializable {
 	
 	// Getters/Setters
 	
+	public ArrayList<SNVEntry> getSNVs() {
+		return snvs;
+	}
+	
 	public double[][] getAlleleFreqBySample() {
 		return alleleFreqBySample;
 	}

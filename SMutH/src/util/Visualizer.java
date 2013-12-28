@@ -22,6 +22,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -126,6 +127,7 @@ public class Visualizer {
 	 * The tree nodes can be interacted with to obtain more information
 	 */
 	public static void showLineageTree(DirectedGraph<Integer, Integer> g, final HashMap<Integer, String> nodeLabels, 
+			final HashMap<String, ArrayList<SNVEntry>> snvsByTag, 
 			String fileOutputName, final HashMap<Integer, PHYNode> nodeInfo, final PHYTree t) {	
 		JFrame frame = new JFrame("Best Lineage Tree");
 		DelegateTree<Integer, Integer> tree = new DelegateTree<Integer, Integer>(g);
@@ -151,10 +153,26 @@ public class Visualizer {
 		        if (o instanceof Integer) {
 		            Integer node = (Integer) o;
 		            if (pickedState.isPicked(node)) {
-		                if(node < 0) { // sample
-		                	info.setText(t.getLineage(nodeInfo.get(node).getLeafSampleId(), nodeLabels.get(node)));
+		            	PHYNode n = nodeInfo.get(node);
+		                if(node < 0) { // sample 
+		                	info.setText(t.getLineage(n.getLeafSampleId(), nodeLabels.get(node)));
+		                	
 		                } else {
-		                	info.setText(nodeInfo.get(node).getLongLabel());
+		                	String s = n.getLongLabel();
+		                	s += "\nSNVs: \n";
+		                	ArrayList<SNVEntry> snvs;
+		                	if(snvsByTag == null) {
+		                		snvs = n.getSNVs(n.getSNVGroup().getSNVs());
+		                	} else {
+		                		snvs = n.getSNVs(snvsByTag.get(n.getSNVGroup().getTag()));
+		                	}
+		                	for(SNVEntry snv : snvs) {
+		                		s += snv.getChromosome() + " ";
+		                		s += snv.getPosition() + " ";
+		                		s += snv.alt + "/" + snv.ref;
+		                		s += "\n";
+		                	}
+		                	info.setText(s);
 		                }
 		            }
 		        }
