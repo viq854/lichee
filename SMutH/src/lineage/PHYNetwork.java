@@ -1,6 +1,7 @@
 package lineage;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -588,5 +589,31 @@ public class PHYNetwork implements Serializable {
 		}
 		
 		return graph;
+	}
+	
+	/**
+	 * Returns a string representation of the graph
+	 */
+	public String getNodesAsString() {
+		String s = "";
+		
+		// print nodes by level
+		for(int i = numSamples + 1; i >= 0; i--) {
+			ArrayList<PHYNode> levelNodes = nodes.get(i);
+			if(levelNodes != null) {
+				for(PHYNode n : levelNodes) {
+					if(n.isRoot()) continue;
+					s += n.getSNVGroup().getTag() + "\t";
+					s += n.getCluster().getMembership().size() + "\t";
+					double[] c = n.getCluster().getCentroid();
+					DecimalFormat df = new DecimalFormat("#.##");
+					for(int j = 0; j < c.length; j++) {
+						s += " " + df.format(c[j]) + " ";
+					}
+					s += "\n";
+				}
+			}
+		}
+		return s;
 	}
 }

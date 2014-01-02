@@ -438,12 +438,13 @@ public class AAFClusterer implements Serializable {
 		
 		public String toString() {
 			String c = "";
+			c += members.size();
 			DecimalFormat df = new DecimalFormat("#.##");
-			c += "[";
+			c += " [";
 			for(int i = 0; i < centroid.length; i++) {
 				c += " " + df.format(centroid[i]) + " ";
 			}
-			c += "] " + members.size();
+			c += "] ";
 			if(stdDev != null) {
 				c += " [";
 				for(int i = 0; i < stdDev.length; i++) {

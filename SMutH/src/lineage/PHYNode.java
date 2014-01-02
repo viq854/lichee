@@ -85,6 +85,13 @@ public class PHYNode implements Serializable {
 	}
 	
 	/**
+	 * Returns true if the node is a root
+	 */
+	public boolean isRoot() {
+		return isRoot;
+	}
+	
+	/**
 	 * Returns the ID of the sample 
 	 * @requires node is a leaf
 	 */

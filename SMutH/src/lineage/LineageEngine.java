@@ -71,6 +71,7 @@ public class LineageEngine {
 		// 5. construct the constraint network
 		PHYNetwork constrNetwork = new PHYNetwork(groups, db.getNumofSamples());
 		logger.log(Level.FINE, constrNetwork.toString());
+		logger.log(Level.FINE, constrNetwork.getNodesAsString());
 		
 		// 6. find all the lineage trees that pass the AAF constraints
 		ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
