@@ -73,6 +73,20 @@ public class LineageEngine {
 		logger.log(Level.FINE, constrNetwork.toString());
 		logger.log(Level.FINE, constrNetwork.getNodesAsString());
 		
+		// -- temporary -- evaluating results
+		String nodesFileName = args.outputFilePrefix + ".nodes";
+		try {
+			FileWriter fw = new FileWriter(nodesFileName);
+			fw.write(constrNetwork.getNodesAsString());
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Failed to write to the file: " + nodesFileName);
+			System.exit(-1);
+		}
+		
+		
+		
 		// 6. find all the lineage trees that pass the AAF constraints
 		ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
 		logger.log(Level.FINE, "Found " + spanningTrees.size() + " valid trees");
