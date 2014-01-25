@@ -47,47 +47,33 @@ public class VCFEntry extends SNVEntry{
 		 * how to define robustness here!!!!!
 		 */
 		robust = true;
-
 		
-		for (int i = 0; i < entryParts.length; i++){
-			switch(i){
-			case 0:
-				chrom = entryParts[i];
-				break;
-			case 1:
-				pos = new Integer(entryParts[i]).intValue();
-				break;
-			case 2:
-				id = entryParts[i];
-				break;
-			case 3:
-				ref = entryParts[i].charAt(0);
-				break;
-			case 4:
-				alt = entryParts[i].charAt(0);
-				break;
-			case 5:
-				qual = Double.valueOf(entryParts[i]);
-				break;
-			case 6:
-				filter = entryParts[i];
-				break;
-			case 7:
-				info = entryParts[i];
-				break;
-			case 8:
-				format = entryParts[i];
-				break;
-			default:
-				alleleFreqList.add(entryParts[i]);
-				String[] freqParts = entryParts[i].split(":");
-				genotype[i-9] = freqParts[0];
-				if (!freqParts[0].equals("./.")){
-					String[] alleleDepths = freqParts[1].split(",");
-					refCount[i-9] = Integer.parseInt(alleleDepths[0]);
-					altCount[i-9] = Integer.parseInt(alleleDepths[1]);
-				}
-				break;
+		chrom = entryParts[0];
+
+		pos = new Integer(entryParts[1]).intValue();
+
+		id = entryParts[2];
+
+		ref = entryParts[3].charAt(0);
+
+		alt = entryParts[4].charAt(0);
+
+		qual = Double.valueOf(entryParts[5]);
+	
+		filter = entryParts[6];
+
+		info = entryParts[7];
+
+		format = entryParts[8];
+		
+		for (int i = 9; i < entryParts.length; i++){
+			alleleFreqList.add(entryParts[i]);
+			String[] freqParts = entryParts[i].split(":");
+			genotype[i-9] = freqParts[0];
+			if (!freqParts[0].equals("./.")){
+				String[] alleleDepths = freqParts[1].split(",");
+				refCount[i-9] = Integer.parseInt(alleleDepths[0]);
+				altCount[i-9] = Integer.parseInt(alleleDepths[1]);
 			}
 		}
 

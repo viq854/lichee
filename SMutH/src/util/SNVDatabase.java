@@ -319,12 +319,11 @@ public class SNVDatabase {
 		try{
 			BufferedReader rd = new BufferedReader(new FileReader(inputFile));
 			String currLine = rd.readLine();
-			String lastLine = "";
-			while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
+			//while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
 			//System.out.println(lastLine+"\n");
-			getNames(lastLine);
+			getNames(currLine);
 			int numSamples = names.size();
-			
+			currLine = rd.readLine();
 			while (currLine != null){
 				MUTEntry entry = new MUTEntry(currLine,numSamples);
 				//System.out.println(currLine);
@@ -335,6 +334,7 @@ public class SNVDatabase {
 				//boolean isLegitimate = false;
 				boolean isGermline = true;
 				//int totalCoverage = 0;
+				
 				
 				for (int i = 0; i < numSamples; i++){
 					/* TO FILTER OUT SNVs with very low coverage in some SAMPLES*/
@@ -348,11 +348,16 @@ public class SNVDatabase {
 					}*/
 					
 					/* Germline mutations - soft filtering */
-					if(entry.getGenotype(i).equals("0/0")){
+					if( entry.getGenotype(i).equals("0/0")){
 						isGermline = false;
 					}
+					
+					
 				}
-
+				/* Germline mutations - hard filtering */
+					if( entry.getGenotype(Configs.normalSample).equals("1/1")){
+						isGermline = true;
+				}
 				//if (!isLegitimate) continue;
 				
 				
@@ -430,7 +435,7 @@ public class SNVDatabase {
 				names = new ArrayList<String>(Arrays.asList(header).subList(9, header.length));
 				break;
 			case MUT :
-				names = new ArrayList<String>(Arrays.asList(header).subList(5, header.length));
+				names = new ArrayList<String>(Arrays.asList(header).subList(1, header.length));
 				break;
 			case FL :
 				names = new ArrayList<String>(Arrays.asList(header).subList(4, header.length));
@@ -475,7 +480,7 @@ public class SNVDatabase {
 	public HashMap<String,ArrayList<SNVEntry>> generateFilteredTAG2SNVsMap(ArrayList<CNVregion> CNVs){
 		HashMap<String, ArrayList<SNVEntry>> filteredTAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
 		
-		int groupSizeThreshold = Configs.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size(),Configs.GROUP_PVALUE/10);
+		int groupSizeThreshold = Configs.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size(),Configs.GROUP_PVALUE);
 		System.out.println("Group Size Threshold is "+ somaticSNVs.size()+" "+TAG2SNVs.size() +" "+ groupSizeThreshold);
 		
 		String all1s="", all0s="";
@@ -487,7 +492,7 @@ public class SNVDatabase {
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
 			//Filter bad groups
-			if (code.equals(all1s) || code.equals(all0s) || (!isPrivate(code) && TAG2SNVs.get(code).size() <= groupSizeThreshold))
+			if (code.equals(all1s) || code.equals(all0s) || (!isPrivate(code) && TAG2SNVs.get(code).size() < groupSizeThreshold))
 				continue;
 		
 			//Filtering non-robust SNVs
@@ -1027,20 +1032,20 @@ public class SNVDatabase {
 	 * Function: editSNV(Set<ArrayList<Integer>> conflicts, Map<String, Double> mutMap, VCFDatabase vcfDB)
 	 * Usage: editSNV(conflicts, mutMap, vcfDB)
 	 * ----
-	 * @param conflicts	The set of conflicting binary codes in the original music
+	 * @param sourceCodes	The set of conflicting binary codes in the original music
 	 * @param mutMap	The map of codes to number of mutations with that GATK code
 	 * @param vcfDB		The VCFDatabse corresponding to the VCF file for this run of matrix building
 	 * @param iterCounter Which iteration of editSNV this is
 	 * @param testName 
 	 */
-	public void editSNVs(Set<String> conflicts, Set<String> destCodes) {
+	public void editSNVs(Set<String> sourceCodes, Set<String> destCodes) {
 		
-		System.out.println("CONFLICTS: "+conflicts.toString());
+		System.out.println("CONFLICTS: "+sourceCodes.toString());
 		//System.out.append("DESTS: "+destCodes.toString());
 		Map<String, ArrayList<SNVEntry>> conflictToPossMutMap = new HashMap<String, ArrayList<SNVEntry>>();
 
 		
-		for (String conflict: conflicts){
+		for (String conflict: sourceCodes){
 			
 			ArrayList<SNVEntry> failCodes = null;	
 			
@@ -1093,7 +1098,7 @@ public class SNVDatabase {
 				//pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictMatch + "\n");
 				TAG2SNVs.get(entry.getGroup()).remove(entry);
 				if (TAG2SNVs.get(entry.getGroup()).size() ==0){
-					conflicts.remove(entry.getGroup());
+					sourceCodes.remove(entry.getGroup());
 					TAG2SNVs.remove(entry.getGroup());
 				}
 				/*if (entry.isRobust()){
@@ -1123,7 +1128,7 @@ public class SNVDatabase {
 				//pw.write(entry.getChromosome() + "\t" + entry.getPosition() + "\t" + conflictStr + "\t" + conflictMatch + "\n");
 				TAG2SNVs.get(entry.getGroup()).remove(entry);
 				if (TAG2SNVs.get(entry.getGroup()).size() ==0){
-					conflicts.remove(entry.getGroup());
+					sourceCodes.remove(entry.getGroup());
 					TAG2SNVs.remove(entry.getGroup());
 					conflictToPossMutMap.remove(entry.getGroup());
 				}

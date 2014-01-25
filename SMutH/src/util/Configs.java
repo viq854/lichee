@@ -9,6 +9,8 @@ public final class Configs {
 	public static String testName;
 	public static int normalSample;
 	
+	public static boolean IGNORE_GERMLINE = Boolean.FALSE;
+	
 	// Type of input
 	public enum format { VCF, MUT, FL}
 	public static format INFORMAT = format.MUT;
@@ -24,9 +26,9 @@ public final class Configs {
 	public static final double MIN_COVERAGE = 14;
 	public static final double MIN_QUAL = 30;
 	
-	// For group size
-	public static final double GROUP_PVALUE = 0.01;
-	public static final double ROBUSTGROUP_PVALUE = 0.001;
+	// For group size; 1 == any size is acceptable
+	public static final double GROUP_PVALUE = 0.1; 
+	public static final double ROBUSTGROUP_PVALUE = 0.01;
 
 	
 	// to edit SNV 
