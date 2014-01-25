@@ -638,7 +638,7 @@ public class PHYNetwork implements Serializable {
 					double[] c = n.getCluster().getCentroid();
 					DecimalFormat df = new DecimalFormat("#.##");
 					for(int j = 0; j < c.length; j++) {
-						s += " " + df.format(c[j]) + " ";
+						s += df.format(c[j]) + "\t";
 					}
 					s += "\n";
 				}
