@@ -438,19 +438,20 @@ public class AAFClusterer implements Serializable {
 		
 		public String toString() {
 			String c = "";
-			c += members.size();
+			c += "Size: " + members.size() + "\n";
 			DecimalFormat df = new DecimalFormat("#.##");
-			c += " [";
+			c += "AAF Mean: [";
 			for(int i = 0; i < centroid.length; i++) {
 				c += " " + df.format(centroid[i]) + " ";
 			}
-			c += "] ";
+			c += "] \n";
+			c += "    Stdev:";
 			if(stdDev != null) {
 				c += " [";
 				for(int i = 0; i < stdDev.length; i++) {
 					c += " " + df.format(stdDev[i]) + " ";
 				}
-				c += "]";
+				c += "]\n";
 			}
 			return c;
 		}

@@ -156,14 +156,14 @@ public class PHYNetwork implements Serializable {
 		
 		for(int i = 0; i < numSamples; i++) {
 			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
-			comp_12 += (n1.getAAF(i) >= (n2.getAAF(i) - getAAFErrorMargin(n1, n2))) ? 1 : 0;
+			comp_12 += (n1.getAAF(i) >= (n2.getAAF(i) - getAAFErrorMargin(n1, n2, i))) ? 1 : 0;
 			if(n1.getAAF(i) < n2.getAAF(i)) {
 				err_12 += n2.getAAF(i) - n1.getAAF(i);
 			}
 		}
 		for(int i = 0; i < numSamples; i++) {
 			if((n2.getAAF(i) == 0) && (n1.getAAF(i) != 0)) break;
-			comp_21 += (n2.getAAF(i) >= (n1.getAAF(i) - getAAFErrorMargin(n2, n1))) ? 1 : 0;
+			comp_21 += (n2.getAAF(i) >= (n1.getAAF(i) - getAAFErrorMargin(n2, n1, i))) ? 1 : 0;
 			if(n2.getAAF(i) < n1.getAAF(i)) {
 				err_21 += n1.getAAF(i) - n2.getAAF(i);
 			}
@@ -194,8 +194,38 @@ public class PHYNetwork implements Serializable {
 	 * Returns the AAF error margin on the edge 
 	 * between the from and to nodes
 	 */
-	private double getAAFErrorMargin(PHYNode from, PHYNode to) {
+	private double getAAFErrorMargin(PHYNode from, PHYNode to, int i) {
+		if(Parameters.STATIC_ERROR_MARGIN) {
+			return Parameters.AAF_ERROR_MARGIN;
+		}
+		
+		double parentStdError;
+		int parentSampleSize = 0;
+		if(from.isRoot()) {
+			parentStdError = Parameters.AAF_ERROR_MARGIN;
+		} else {
+			parentSampleSize = from.getCluster().getMembership().size();
+			parentStdError = 1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
+		}
+		
+		int childSampleSize = to.getCluster().getMembership().size();
+		double childStdError = 1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
+		double standardError = parentStdError + childStdError;
+		
+		if(standardError > Parameters.AAF_ERROR_MARGIN)
+			return standardError;
+		
 		return Parameters.AAF_ERROR_MARGIN;
+		
+		// max std dev of the centroid vector
+		/*double maxStd = Parameters.AAF_ERROR_MARGIN;
+		if(from.getStdDev(i) > maxStd) {
+			maxStd = from.getStdDev(i);
+		}
+		if(to.getStdDev(i) > maxStd) {
+			maxStd = to.getStdDev(i);
+		}
+		return maxStd; */
 	}
 	
 	/** Adds a new node to the graph */
@@ -419,7 +449,7 @@ public class PHYNetwork implements Serializable {
 				double errMargin = 0.0;
 				for(PHYNode n2 : nbrs) {
 					affSum += n2.getAAF(i);
-					errMargin += getAAFErrorMargin(n, n2);
+					errMargin += getAAFErrorMargin(n, n2, i);
 				}
 				if(affSum >= n.getAAF(i) + errMargin) {
 					return false;

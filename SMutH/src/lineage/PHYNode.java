@@ -187,7 +187,7 @@ public class PHYNode implements Serializable {
 	public String getLabel() {
 		String node = "";
 		if(!isLeaf && !isRoot) {
-			node += nodeId + ": \n";
+			//node += nodeId + ": \n";
 			node += snvGroup.getTag() + "\n";
 			node += "("+cluster.getMembership().size()+")";
 			//node += cluster.toString();
@@ -202,7 +202,7 @@ public class PHYNode implements Serializable {
 	public String getLongLabel() {
 		String node = "";
 		if(!isLeaf && !isRoot) {
-			node += "group: " + snvGroup.getTag() + "\n";
+			node += "Group: " + snvGroup.getTag() + "\n";
 			//node += "("+cluster.getMembership().size()+")";
 			node += cluster.toString();
 		} else if(isLeaf) {

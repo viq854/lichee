@@ -47,7 +47,7 @@ public class SNVGroup implements Serializable {
 	/** Flag indicating whether this group is robust */
 	private transient boolean isRobust;
 	
-	private static Logger logger = Logger.getLogger("lineage.snvgroup");
+	private static Logger logger = LineageEngine.logger;
 	
 	public SNVGroup(String groupTag, ArrayList<SNVEntry> groupSNVs, int groupNumRobustSNVs, boolean isGroupRobust) {
 		tag = groupTag;
@@ -70,9 +70,9 @@ public class SNVGroup implements Serializable {
 			}
 		}
 		
-		logger.addHandler(LineageEngine.logger.getHandlers()[0]);
-		logger.setLevel(LineageEngine.logger.getLevel());
-		logger.log(Level.FINE, "Created group: " + this.toString());
+		//logger.addHandler(LineageEngine.logger.getHandlers()[0]);
+		//logger.setLevel(LineageEngine.logger.getLevel());
+		//logger.log(Level.FINE, "Created group: " + this.toString());
 	}
 	
 	// Getters/Setters
@@ -213,7 +213,7 @@ public class SNVGroup implements Serializable {
 		}
 		
 		while((minDistQueue.size() > 0) && 
-				((minDistQueue.get(0).distance < Parameters.MAX_COLLAPSE_CLUSTER_DIFF) || (numClusters > Parameters.MAX_CLUSTER_NUM))) {
+				((minDistQueue.get(0).distance < Parameters.MAX_COLLAPSE_CLUSTER_DIFF))) {// || (numClusters > Parameters.MAX_CLUSTER_NUM))) {
 			ClusterPairDistance pd = minDistQueue.remove(0);
 			Cluster c1 = clusters[pd.clusterId1];
 			Cluster c2 = clusters[pd.clusterId2];

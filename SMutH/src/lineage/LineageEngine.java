@@ -44,6 +44,7 @@ public class LineageEngine {
 				
 		// 1. load validation/VCF data
 		SNVDatabase db = new SNVDatabase(args.inputFileName, args.normalSampleId);
+		db.resolveNonRobustconflicts();
 		
 		// 2. handle normal cell contamination, CNVs, 
 		//    determine the minimum number of clusters using LOH
@@ -55,6 +56,10 @@ public class LineageEngine {
 		for(String groupTag : snvsByTag.keySet()) {
 			groups.add(new SNVGroup(groupTag, snvsByTag.get(groupTag), db.getNumRobustSNVs(groupTag), db.isRobust(groupTag)));
 		}
+		if(groups.size() == 0) {
+			logger.log(Level.WARNING, "All SNV groups have been filtered out.");
+			return;
+		}
 		
 		// 4. cluster SNVs in each group
 		AAFClusterer clusterer = new AAFClusterer();
@@ -62,7 +67,6 @@ public class LineageEngine {
 			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 1);
 			logger.fine("Clustering results for group: " + group.getTag());
 			for(Cluster c : clusters) {
-				logger.fine(c.toString());
 				logger.log(Level.FINE, c.toString());
 			}
 			group.setSubPopulations(clusters);
@@ -84,8 +88,6 @@ public class LineageEngine {
 			System.err.println("Failed to write to the file: " + nodesFileName);
 			System.exit(-1);
 		}
-		
-		
 		
 		// 6. find all the lineage trees that pass the AAF constraints
 		ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
@@ -309,12 +311,13 @@ public class LineageEngine {
 		ConsoleHandler h = new ConsoleHandler();
 		h.setFormatter(new LogFormatter());
 		h.setLevel(Level.INFO);
-		logger.setLevel(Level.INFO);
+		//logger.setLevel(Level.INFO);
 		if(cmdLine.hasOption("v")) {
 			h.setLevel(Level.FINEST);
 			logger.setLevel(Level.FINEST);
 		}
 		logger.addHandler(h);
+		logger.setUseParentHandlers(false);
 		
 		if(cmdLine.hasOption("build")) {
 			// input file
