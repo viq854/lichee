@@ -16,7 +16,6 @@ public class MUTEntry extends SNVEntry{
 	public MUTEntry(String entry, int numofSamples){
 		row = entry;
 		
-		
 		String[] entryParts = entry.split("\t");
 		AAF = new double[numofSamples];
 		genotype = new String[numofSamples];

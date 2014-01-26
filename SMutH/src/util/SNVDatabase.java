@@ -318,10 +318,11 @@ public class SNVDatabase {
 		//"#CHROM\tPOS\tTAG\tREF\tALT\t";
 		try{
 			BufferedReader rd = new BufferedReader(new FileReader(inputFile));
+			String lastLine="";
 			String currLine = rd.readLine();
-			//while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
+			while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
 			//System.out.println(lastLine+"\n");
-			getNames(currLine);
+			getNames(lastLine);
 			int numSamples = names.size();
 			currLine = rd.readLine();
 			while (currLine != null){
@@ -428,21 +429,21 @@ public class SNVDatabase {
 	private void getNames(String inputLine){
 		
 		String[] header = inputLine.split("\t");
-		
+
 		switch (Configs.INFORMAT){
 		
 			case VCF :
 				names = new ArrayList<String>(Arrays.asList(header).subList(9, header.length));
 				break;
 			case MUT :
-				names = new ArrayList<String>(Arrays.asList(header).subList(1, header.length));
+				names = new ArrayList<String>(Arrays.asList(header).subList(5, header.length));
 				break;
 			case FL :
 				names = new ArrayList<String>(Arrays.asList(header).subList(4, header.length));
 				break;
 		}
 		
-		//System.out.println("There are "+names.size()+" samples!");
+		System.out.println("There are "+names.size()+" samples!");
 	}
 	
 	
