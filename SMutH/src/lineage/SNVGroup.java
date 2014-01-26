@@ -171,10 +171,10 @@ public class SNVGroup implements Serializable {
 	 */
 	public void setSubPopulations(Cluster[] clusters) {
 		
-		// 1. filter out clusters that are too small
+		// 1. filter out clusters that are too small (unless there is only one cluster)
 		ArrayList<Cluster> filteredClusters = new ArrayList<Cluster>();
 		for(Cluster c : clusters) {
-			if(c.getMembership().size() >= Parameters.MIN_CLUSTER_SIZE) {
+			if((clusters.length == 1) || (c.getMembership().size() >= Parameters.MIN_CLUSTER_SIZE)) {
 				filteredClusters.add(c);
 			}
 		}
