@@ -96,9 +96,14 @@ public class LineageEngine {
 		if(spanningTrees.size() == 0) {
 			logger.log(Level.INFO, "No valid trees found. Adjusting the constraints...");	
 			// if no valid trees were found, fix the network (e.g. remove group nodes that are not robust)
-			constrNetwork = constrNetwork.fixNetwork();
-			spanningTrees = constrNetwork.getLineageTrees();  
-			logger.log(Level.INFO, "Found " + spanningTrees.size() + " valid trees after constraint adjustment");	
+			int delta = 0;
+			do {
+				int numNodes = constrNetwork.numNodes;
+				constrNetwork = constrNetwork.fixNetwork();
+				spanningTrees = constrNetwork.getLineageTrees();  
+				logger.log(Level.INFO, "Found " + spanningTrees.size() + " valid trees after constraint adjustment");	
+				delta = numNodes - constrNetwork.numNodes; 
+			} while(delta != 0);
 		}
 		
 		// 7. evaluate/rank the trees
@@ -111,6 +116,7 @@ public class LineageEngine {
 		String[] sampleNames = new String[db.getNumofSamples()];
 		for(int i = 0; i < db.getNumofSamples(); i++) {
 			sampleNames[i] = db.getName(i);
+			logger.log(Level.FINE, sampleNames[i]);
 		}
 		
 		if(args.showNetwork) {

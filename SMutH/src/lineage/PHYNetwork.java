@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
@@ -35,7 +37,7 @@ public class PHYNetwork implements Serializable {
 	
 	/** Total number of nodes in the graph.
 	 *  During construction: used as a counter to assign unique IDs to nodes */
-	private int numNodes;
+	protected int numNodes;
 	
 	/** Total number of edges in the graph */
 	private int numEdges;
@@ -46,6 +48,8 @@ public class PHYNetwork implements Serializable {
 	/** Maximum AAF (used for the root node) */
 	protected static final double AAF_MAX = 0.5;
 		
+	private static Logger logger = LineageEngine.logger;
+	
 	// ---- Network Construction ----
 	
 	/**
@@ -293,11 +297,23 @@ public class PHYNetwork implements Serializable {
 	public PHYNetwork fixNetwork() {
 		// reconstruct the network from robust groups only
 		Set<SNVGroup> filteredGroups = new HashSet<SNVGroup>();
+		SNVGroup toRemove = null;
 		for(PHYNode n : nodesById.values()) {
 			SNVGroup group = n.snvGroup;
-			if((group != null) && group.isRobust()) {
+			if(group != null) {
 				filteredGroups.add(n.snvGroup);
+				if((!group.isRobust())) {
+					if (toRemove == null) {
+						toRemove = group;
+					} else if(group.getNumSNVs() < toRemove.getNumSNVs()) {
+						toRemove = group;
+					}
+				}
 			}
+		}
+		if(toRemove != null) {
+			filteredGroups.remove(toRemove);
+			logger.log(Level.INFO, "Removed group " + toRemove.getTag() + " of size " + toRemove.getNumSNVs());
 		}
 		return new PHYNetwork(new ArrayList<SNVGroup>(filteredGroups), numSamples);
 	}
