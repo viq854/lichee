@@ -358,7 +358,7 @@ public class LineageEngine {
 		
 		// flags
 		boolean isVCF = false;
-		boolean showBest = true;
+		boolean showBest = false;
 		boolean showNetwork = false;
 		boolean verbose = false;
 		boolean persist = true;
