@@ -103,7 +103,7 @@ public class LineageEngine {
 				spanningTrees = constrNetwork.getLineageTrees();  
 				logger.log(Level.INFO, "Found " + spanningTrees.size() + " valid trees after constraint adjustment");	
 				delta = numNodes - constrNetwork.numNodes; 
-			} while(delta != 0);
+			} while((delta != 0) && (spanningTrees.size() <= 0));
 		}
 		
 		// 7. evaluate/rank the trees
