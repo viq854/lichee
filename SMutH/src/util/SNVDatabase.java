@@ -92,7 +92,7 @@ public class SNVDatabase {
 		
 		//non robust groups are conflicts
 		for (String code :codes){
-			if (!isRobust(code) && !isPrivate(code)){
+			if (!isRobust(code)){
 				conflicts.add(code);
 			}
 		}
@@ -316,6 +316,7 @@ public class SNVDatabase {
 	
 	private void loadMUT(String inputFile, int normalSample){
 		//"#CHROM\tPOS\tTAG\tREF\tALT\t";
+		System.out.println(normalSample);
 		try{
 			BufferedReader rd = new BufferedReader(new FileReader(inputFile));
 			String lastLine="";
@@ -336,29 +337,29 @@ public class SNVDatabase {
 				boolean isGermline = true;
 				//int totalCoverage = 0;
 				
-				
-				for (int i = 0; i < numSamples; i++){
-					/* TO FILTER OUT SNVs with very low coverage in some SAMPLES*/
-					/*if ( entry.getReadDepth(i) <= Configs.MIN_COVERAGE){
-						isLegitimate = false;
-						break;
-					}*/
-					/* TO FILTER OUT SNVs that has not been called in any samples SAMPLES*/
-					/*if(entry.getGenotype(i).equals("0/1") || entry.getGenotype(i).equals("1/1")){
-						isLegitimate = true; 
-					}*/
-					
-					/* Germline mutations - soft filtering */
-					if( entry.getGenotype(i).equals("0/0")){
-						isGermline = false;
-					}
-					
-					
-				}
 				/* Germline mutations - hard filtering */
-					if( entry.getGenotype(Configs.normalSample).equals("1/1")){
+				if( entry.getGenotype(normalSample).equals("1/1")){
 						isGermline = true;
+				}else{
+					for (int i = 0; i < numSamples; i++){
+						/* TO FILTER OUT SNVs with very low coverage in some SAMPLES*/
+						/*if ( entry.getReadDepth(i) <= Configs.MIN_COVERAGE){
+							isLegitimate = false;
+							break;
+						}*/
+						/* TO FILTER OUT SNVs that has not been called in any samples SAMPLES*/
+						/*if(entry.getGenotype(i).equals("0/1") || entry.getGenotype(i).equals("1/1")){
+							isLegitimate = true; 
+						}*/
+						
+						/* Germline mutations - soft filtering */
+						if( entry.getGenotype(i).equals("0/0")){
+							isGermline = false;
+						}
+						
+					}
 				}
+				
 				//if (!isLegitimate) continue;
 				
 				
@@ -397,7 +398,7 @@ public class SNVDatabase {
 				currLine = rd.readLine();
 				allCounter++;
 				
-				if(entry.getAAF(Configs.normalSample) > 0.1){
+				if(entry.getAAF(normalSample) > 0.1){
 					germlineCounter++;
 					continue;
 				}
@@ -1326,7 +1327,9 @@ public class SNVDatabase {
 	}
 	
 	public boolean isRobust(String group){
-		return (TAG2RobustSNVNum.containsKey(group) && TAG2RobustSNVNum.get(group).intValue() > robustGroupSizeThreshold);
+		return ((TAG2RobustSNVNum.containsKey(group) &&
+				TAG2RobustSNVNum.get(group).intValue() > robustGroupSizeThreshold)||
+				isPrivate(group));
 	}
 	
 	public boolean isPrivate(String group){

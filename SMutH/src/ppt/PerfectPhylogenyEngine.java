@@ -76,12 +76,12 @@ public class PerfectPhylogenyEngine {
 		//for (Samples s: Samples.values())
 		{
 		Configs.testName = "Patient_2";//s.toString();
-		Configs.normalSample = 0;
+		int normalSample = 0;
 		//Configs.path =  "/Users/rahelehs/Work/ash/AllMutations/";
 		Configs.path =  "/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/"+Configs.testName+"/";
 		//path =  "/Users/rahelehs/Work/cancerTree/simulation_vcfs/RECOMB2013/";
 		String inputFile = Configs.path+Configs.testName+".validation.txt";
-		SNVDatabase snvDB = new SNVDatabase(inputFile, Configs.normalSample);
+		SNVDatabase snvDB = new SNVDatabase(inputFile, normalSample);
 		snvDB.resolveNonRobustconflicts();
 
 		TreeChecker tc = new TreeChecker(snvDB);

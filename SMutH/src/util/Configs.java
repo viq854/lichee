@@ -7,10 +7,8 @@ public final class Configs {
 	// general variables!!!
 	public static String path;
 	public static String testName;
-	public static int normalSample;
-	
-	public static boolean IGNORE_GERMLINE = Boolean.FALSE;
-	
+	//public static int normalSample;
+		
 	// Type of input
 	public enum format { VCF, MUT, FL}
 	public static format INFORMAT = format.MUT;
@@ -21,23 +19,21 @@ public final class Configs {
 	
 	// for WGS SNVs
 	//public static final double AVG_COVERAGE = 50;
-	public static final double WG_HARD_THR = 0.2;
+	public static final double WG_HARD_THR = 0.1;
 	public static final double WG_SOFT_THR = 0.01;
 	public static final double MIN_COVERAGE = 14;
 	public static final double MIN_QUAL = 30;
 	
 	// For group size; 1 == any size is acceptable
-	public static final double GROUP_PVALUE = 0.1; 
+	public static final double GROUP_PVALUE = 0.2; 
 	public static final double ROBUSTGROUP_PVALUE = 0.01;
-
+	public static final double SUBPOP_PVALUE = 0.0001;
 	
 	// to edit SNV 
 	public static final double BASE_ERROR = 0.02;
 	public static final double EDIT_PVALUE= 0.01;
 	public static final int EDIT_DISTANCE = 2;
 	
-	// to identify sub-population _
-	public static final double SUBPOP_PVALUE = 0.00001;
 	
 	// LOH analysis
 	public static final double HETEROZYGOUS = 0.2;
