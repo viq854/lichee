@@ -204,16 +204,22 @@ public class PHYNetwork implements Serializable {
 		}
 		
 		double parentStdError;
+		double childStdError;
 		int parentSampleSize = 0;
+		int childSampleSize = 0;
 		if(from.isRoot()) {
 			parentStdError = Parameters.AAF_ERROR_MARGIN;
 		} else {
 			parentSampleSize = from.getCluster().getMembership().size();
 			parentStdError = 1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
+		}	
+		if(to.isRoot()) {
+			childStdError = Parameters.AAF_ERROR_MARGIN;
+		} else {
+			childSampleSize = to.getCluster().getMembership().size();
+			childStdError = 1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
 		}
 		
-		int childSampleSize = to.getCluster().getMembership().size();
-		double childStdError = 1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
 		double standardError = parentStdError + childStdError;
 		
 		if(standardError > Parameters.AAF_ERROR_MARGIN)
