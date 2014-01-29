@@ -306,8 +306,10 @@ public class Visualizer {
 		                	s += "\nSNVs: \n";
 		                	ArrayList<SNVEntry> snvs;
 		                	if(snvsByTag == null) {
+		                		if(n.getSNVGroup() == null) return;
 		                		snvs = n.getSNVs(n.getSNVGroup().getSNVs());
 		                	} else {
+		                		if(n.getSNVGroup() == null) return;
 		                		snvs = n.getSNVs(snvsByTag.get(n.getSNVGroup().getTag()));
 		                	}
 		                	for(SNVEntry snv : snvs) {

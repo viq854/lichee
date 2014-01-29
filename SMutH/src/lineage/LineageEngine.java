@@ -158,6 +158,7 @@ public class LineageEngine {
 		String treeFileName = args.showFileNamePrefix + TREE_FILE_EXTENSION;
 		
 		SNVDatabase db = new SNVDatabase(args.showFileNamePrefix, args.normalSampleId);
+		db.resolveNonRobustconflicts();
 		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
 		
 		PHYNetwork net = readNetworkFromFile(netFileName);

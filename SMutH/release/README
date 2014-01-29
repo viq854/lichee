@@ -46,7 +46,12 @@ EXAMPLES
 ./smuth -build -i ../data/Patient_3.validation.txt -n 1 -minClusterSize 5 
 
 #Display the top 2 previously computed lineage trees
-./smuth -show -i ../data/Patient_3.validation.txt -top 2
+./smuth -show -i ../data/Patient_3.validation.txt -top 2 -n 1
+
+#Reduce/eliminate clusters by increasing the Euclidean distance between cluster AAF centroids 
+#that determines the cluster collapse
+./smuth -build -i ../data/Patient_2.validation.txt -maxClusterDist 5
+
 
 SYSTEM REQUIREMENTS
 -------------------
