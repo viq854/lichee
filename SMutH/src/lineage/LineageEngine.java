@@ -25,9 +25,12 @@ import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
 import lineage.PHYTree;
 import util.*;
+import util.Configs.format;
 
 /**
  * Main cell lineage construction pipeline
+ * 
+ * @autor viq
  */
 public class LineageEngine {
 
@@ -75,7 +78,7 @@ public class LineageEngine {
 		// 5. construct the constraint network
 		PHYNetwork constrNetwork = new PHYNetwork(groups, db.getNumofSamples());
 		logger.log(Level.FINE, constrNetwork.toString());
-		logger.log(Level.FINE, constrNetwork.getNodesAsString());
+		logger.log(Level.INFO, "Nodes:\n" + constrNetwork.getNodesAsString());
 		
 		// -- temporary -- evaluating results
 		String nodesFileName = args.outputFilePrefix + ".nodes";
@@ -91,7 +94,7 @@ public class LineageEngine {
 		
 		// 6. find all the lineage trees that pass the AAF constraints
 		ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
-		logger.log(Level.FINE, "Found " + spanningTrees.size() + " valid trees");
+		logger.log(Level.INFO, "Found " + spanningTrees.size() + " valid trees");
 		
 		if(spanningTrees.size() == 0) {
 			logger.log(Level.INFO, "No valid trees found. Adjusting the constraints...");	
@@ -109,14 +112,14 @@ public class LineageEngine {
 		// 7. evaluate/rank the trees
 		constrNetwork.evaluateLineageTrees();
 		if(spanningTrees.size() > 0) {
-			logger.log(Level.FINE, "Best tree error score: " + spanningTrees.get(0).getErrorScore());
+			logger.log(Level.INFO, "Best tree error score: " + spanningTrees.get(0).getErrorScore());
 		}
 		
 		// 8. result visualization
 		String[] sampleNames = new String[db.getNumofSamples()];
 		for(int i = 0; i < db.getNumofSamples(); i++) {
 			sampleNames[i] = db.getName(i);
-			logger.log(Level.FINE, sampleNames[i]);
+			//logger.log(Level.FINE, sampleNames[i]);
 		}
 		
 		if(args.showNetwork) {
@@ -128,9 +131,13 @@ public class LineageEngine {
 			} else {
 				constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, null);
 			}
-			//for(int i = 0; i < db.getNumofSamples(); i++) {
-				//System.out.println(spanningTrees.get(0).getLineage(i, sampleNames[i]));
-			//}
+			for(int i = 1; i < args.numShow; i++) {
+				if(spanningTrees.size() > i) {
+					constrNetwork.displayTree(spanningTrees.get(i), sampleNames, null, null);
+				} else {
+					break;
+				}
+			}
 		}
 		
 		// 9. persistent storage
@@ -150,7 +157,7 @@ public class LineageEngine {
 		String netFileName = args.showFileNamePrefix + NET_FILE_EXTENSION;
 		String treeFileName = args.showFileNamePrefix + TREE_FILE_EXTENSION;
 		
-		SNVDatabase db = new SNVDatabase(args.inputFileName, args.normalSampleId);
+		SNVDatabase db = new SNVDatabase(args.showFileNamePrefix, args.normalSampleId);
 		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
 		
 		PHYNetwork net = readNetworkFromFile(netFileName);
@@ -160,7 +167,7 @@ public class LineageEngine {
 			net.displayTree(trees.get(0), sampleNames, snvsByTag, null);
 		} else if(args.numShow > 1) {
 			for(int i = 0; i < args.numShow; i++) {
-				if(trees.size() < i) {
+				if(trees.size() > i) {
 					net.displayTree(trees.get(i), sampleNames, snvsByTag, null);
 				} else {
 					break;
@@ -228,12 +235,12 @@ public class LineageEngine {
 			fis.close();
 			return net;
 		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Failed to read to the file: " + netFileName);
+			//e.printStackTrace();
+			System.err.println("Failed to read to the file: " + netFileName + "\nNote: The -build command (with -s option) has to be run before the -show command for the given file.");
 			System.exit(1);
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			System.err.println("Failed to load network from file: " + netFileName);
+			//e.printStackTrace();
+			System.err.println("Failed to load network from file: " + netFileName + "\nNote: The -build command (with -s option) has to be run before the -show command for the given file.");
 			System.exit(1);
 		}
 		return null;
@@ -272,20 +279,31 @@ public class LineageEngine {
 		options.addOption("build", false, "Construct the sample cell lineage trees");
 		options.addOption("show", false, "Display the saved cell lineage tree(s)");
 		options.addOption("i", true, "Input file path");
-		options.addOption("o", true, "Output file path (default: input file path");
+		options.addOption("o", true, "Output file path (default: input file path)");
+		options.addOption("n", "normal", true, "Normal sample id (default: 0)");
+		options.addOption("minAAFHard", true, "Minimum AAF to robustly call an SNV for a sample (default: 0.04)");
+		options.addOption("minAAFSoft", true, "Minimum AAF that can allow an SNV to be called for a sample (default: 0.015)");
+		options.addOption("gpv", true, "P-value to detemine the minimum SNV group size (default: 0.2)");
+		options.addOption("rpv", true, "P-value to detemine the minimum robust SNV group size (default: 0.01)");
+		options.addOption("edit", true, "Maximum edit distance between SNV group tags that is allowed to reassign SNVs from one group to the other (default: 2)");
+		options.addOption("e", true, "AAF error margin (default: 0.08)");
+		options.addOption("minClusterSize", true, "Minimum size a cluster must have to be a considered a node in the network (default: 2)");
+		options.addOption("maxClusterDist", true, "Maximum mean AAF difference up to which two clusters can be collapsed (default: 0.2)");
 		options.addOption("vcf", false, "Input data type is vcf (default: validation)");
-		options.addOption("nid", "normal", true, "Normal sample id (default: 0)");
 		options.addOption("s", "save", false, "Save the output to file");
-		options.addOption("d", "showBestTree", false, "Display the best lineage tree");
-		options.addOption("n", "showNetwork", false, "Display the constraint network");
+		options.addOption("tree", "showTree", false, "Display the top ranking lineage tree");
+		options.addOption("net", "showNetwork", false, "Display the constraint network");
+		options.addOption("top", true, "Number of top ranking lineage trees to display");
 		options.addOption("v", "verbose", false, "Verbose mode");
+		options.addOption("h", "help", false, "Print usage");
 		
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmdLine = null;
 		try {
 			cmdLine = parser.parse(options, args);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
+			new HelpFormatter().printHelp("smuth", options);
 			System.exit(-1);
 		}
 		
@@ -294,30 +312,61 @@ public class LineageEngine {
 		
 		// required options
 		if(!cmdLine.hasOption("i")) {
-			new HelpFormatter().printHelp("lineage", options);
+			System.out.println("Required parameter: input file path [-i]");
+			new HelpFormatter().printHelp("smuth", options);
 			System.exit(-1);
 		}
 		
-		if(cmdLine.hasOption("nid")) {
-			params.normalSampleId = Integer.parseInt(cmdLine.getOptionValue("nid"));
+		if(cmdLine.hasOption("n")) {
+			params.normalSampleId = Integer.parseInt(cmdLine.getOptionValue("n"));
+		}
+		if(cmdLine.hasOption("minAAFHard")) {
+			Configs.VALIDATION_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFHard"));
+		}
+		if(cmdLine.hasOption("minAAFSoft")) {
+			Configs.VALIDATION_SOFT_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFSoft"));
+		}
+		if(cmdLine.hasOption("gpv")) {
+			Configs.GROUP_PVALUE = Double.parseDouble(cmdLine.getOptionValue("gpv"));
+		}
+		if(cmdLine.hasOption("rpv")) {
+			Configs.ROBUSTGROUP_PVALUE = Double.parseDouble(cmdLine.getOptionValue("rpv"));
+		}
+		if(cmdLine.hasOption("edit")) {
+			Configs.EDIT_DISTANCE = Integer.parseInt(cmdLine.getOptionValue("edit"));
+		}
+		if(cmdLine.hasOption("e")) {
+			Parameters.AAF_ERROR_MARGIN = Double.parseDouble(cmdLine.getOptionValue("e"));
+		}
+		if(cmdLine.hasOption("minClusterSize")) {
+			Parameters.MIN_CLUSTER_SIZE = Integer.parseInt(cmdLine.getOptionValue("minClusterSize"));
+		}
+		if(cmdLine.hasOption("maxClusterDist")) {
+			Parameters.MAX_COLLAPSE_CLUSTER_DIFF = Double.parseDouble(cmdLine.getOptionValue("maxClusterDist"));
+		}
+		if(cmdLine.hasOption("vcf")) {
+			Configs.INFORMAT = format.VCF;
 		}
 		if(cmdLine.hasOption("s")) {
 			params.persist = true;
 		}
-		if(cmdLine.hasOption("d")) {
+		if(cmdLine.hasOption("tree")) {
 			params.showBest = true;
 		}
-		if(cmdLine.hasOption("n")) {
+		if(cmdLine.hasOption("net")) {
 			params.showNetwork = true;
 		}
-		if(cmdLine.hasOption("vcf")) {
-			params.isVCF = true;
+		if(cmdLine.hasOption("top")) {
+			params.numShow = Integer.parseInt(cmdLine.getOptionValue("top"));
+		}
+		if(cmdLine.hasOption("h")) {
+			new HelpFormatter().printHelp(" ", options);
 		}
 		// logger
 		ConsoleHandler h = new ConsoleHandler();
 		h.setFormatter(new LogFormatter());
 		h.setLevel(Level.INFO);
-		//logger.setLevel(Level.INFO);
+		logger.setLevel(Level.INFO);
 		if(cmdLine.hasOption("v")) {
 			h.setLevel(Level.FINEST);
 			logger.setLevel(Level.FINEST);
@@ -339,10 +388,10 @@ public class LineageEngine {
 			params.showFileNamePrefix = cmdLine.getOptionValue("i");
 			showTrees(params);
 		} else {
-			new HelpFormatter().printHelp("lineage", options);
+			System.out.println("Required command: build OR show");
+			new HelpFormatter().printHelp("smuth", options);
 			System.exit(-1);
 		}
-		//buildLineage("/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/Patient_2/Patient_2.validation.txt", 0);
 	}
 	
 	protected static class Args {
@@ -353,15 +402,13 @@ public class LineageEngine {
 		
 		// --- 'show' command ---
 		String showFileNamePrefix;
-		int treeId = 0;
 		int numShow = 1;
 		
 		// flags
-		boolean isVCF = false;
 		boolean showBest = false;
 		boolean showNetwork = false;
 		boolean verbose = false;
-		boolean persist = true;
+		boolean persist = false;
 	}
 
 	protected static class LogFormatter extends Formatter {

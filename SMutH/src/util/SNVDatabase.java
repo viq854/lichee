@@ -316,7 +316,7 @@ public class SNVDatabase {
 	
 	private void loadMUT(String inputFile, int normalSample){
 		//"#CHROM\tPOS\tTAG\tREF\tALT\t";
-		System.out.println(normalSample);
+		//System.out.println(normalSample);
 		try{
 			BufferedReader rd = new BufferedReader(new FileReader(inputFile));
 			String lastLine="";
@@ -483,7 +483,8 @@ public class SNVDatabase {
 		HashMap<String, ArrayList<SNVEntry>> filteredTAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
 		
 		int groupSizeThreshold = Configs.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size(),Configs.GROUP_PVALUE);
-		System.out.println("Group Size Threshold is "+ somaticSNVs.size()+" "+TAG2SNVs.size() +" "+ groupSizeThreshold);
+		//System.out.println("Group Size Threshold is "+ somaticSNVs.size()+" "+TAG2SNVs.size() +" "+ groupSizeThreshold);
+		System.out.println("#SNV="+ somaticSNVs.size()+"\t#Groups="+TAG2SNVs.size() +"\tG-thr="+ groupSizeThreshold);
 		
 		String all1s="", all0s="";
 		for (int i = 0; i < names.size(); i++) {all1s += "1";all0s +="0";}
@@ -511,7 +512,6 @@ public class SNVDatabase {
 				if (loc == 1) cnvID++;
 			}*/
 			
-			
 			if (codeLength == -1) codeLength = code.length();
 			if (!filteredTAG2SNVs.containsKey(code)){
 				filteredTAG2SNVs.put(code, new ArrayList<SNVEntry>());				
@@ -520,7 +520,7 @@ public class SNVDatabase {
 			counter++;
 		}
 		
-		System.out.println("#TREE\t"+ counter+"\t"+filteredTAG2SNVs.size()+"\t"+groupSizeThreshold);
+		System.out.println("#Filtered SNVs="+ counter+"\tGroups="+filteredTAG2SNVs.size());
 
 		return filteredTAG2SNVs;
 	}
@@ -917,7 +917,9 @@ public class SNVDatabase {
 				/*for (int j=0; j<names.size();j++)
 					System.out.printf(" %.2f %.2f",mR[j],vR[j]);*/
 				
-				}
+			} else {
+				System.out.print("\t0\t" );
+			}
 			for (int j=0; j<names.size();j++)
 				//System.out.printf(" %.2f(%.2f)",m[j],v[j]);
 				

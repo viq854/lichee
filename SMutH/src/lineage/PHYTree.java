@@ -8,6 +8,8 @@ import java.util.HashMap;
 
 /**
  * Spanning tree of the phylogenetic constraint network
+ * 
+ * @autor viq
  */
 public class PHYTree implements Comparable<PHYTree>, Serializable {
 	private static final long serialVersionUID = 1L;

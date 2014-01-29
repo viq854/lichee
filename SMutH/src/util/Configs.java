@@ -14,8 +14,8 @@ public final class Configs {
 	public static format INFORMAT = format.MUT;
 	
 	// for validation SNVs
-	public static final double VALIDATION_THR = 0.04; //0.04 0.06 0.07 0.08
-	public static final double VALIDATION_SOFT_THR = 0.015; // 0.015 0.02
+	public static double VALIDATION_THR = 0.04; //0.04 0.06 0.07 0.08
+	public static double VALIDATION_SOFT_THR = 0.015; // 0.015 0.02
 	
 	// for WGS SNVs
 	//public static final double AVG_COVERAGE = 50;
@@ -25,14 +25,14 @@ public final class Configs {
 	public static final double MIN_QUAL = 30;
 	
 	// For group size; 1 == any size is acceptable
-	public static final double GROUP_PVALUE = 0.2; 
-	public static final double ROBUSTGROUP_PVALUE = 0.01;
+	public static double GROUP_PVALUE = 0.2; 
+	public static double ROBUSTGROUP_PVALUE = 0.01;
 	public static final double SUBPOP_PVALUE = 0.0001;
 	
 	// to edit SNV 
 	public static final double BASE_ERROR = 0.02;
 	public static final double EDIT_PVALUE= 0.01;
-	public static final int EDIT_DISTANCE = 2;
+	public static int EDIT_DISTANCE = 2;
 	
 	
 	// LOH analysis

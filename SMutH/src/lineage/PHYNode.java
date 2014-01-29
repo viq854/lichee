@@ -12,6 +12,7 @@ import lineage.PHYNetwork;
  * Represents a sub-population or sample (if leaf)
  * Is associated with a given AAF (alternative allele frequency)
  * 
+ * @autor viq
  */
 public class PHYNode implements Serializable {
 	private static final long serialVersionUID = 1L;

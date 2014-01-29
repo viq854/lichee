@@ -16,6 +16,7 @@ import java.awt.Stroke;
 import java.awt.TextArea;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -27,6 +28,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
@@ -120,6 +122,148 @@ public class Visualizer {
 	    Graphics gr = image.getGraphics();
 	    frame.paint(gr);
 	    gr.dispose();
+	}
+	
+	/**
+	 * Displays the lineage tree
+	 * The tree nodes can be interacted with to obtain more information
+	 */
+	public static void showLineageTreeBreakdown(DirectedGraph<Integer, Integer> g, final HashMap<Integer, String> nodeLabels, 
+			final HashMap<String, ArrayList<SNVEntry>> snvsByTag, 
+			String fileOutputName, final HashMap<Integer, PHYNode> nodeInfo, final PHYTree t) {	
+		
+		// create a color for each internal node
+		Random rand = new Random();
+		final HashMap<Integer, Color> nodeColors = new HashMap<Integer, Color>();
+		for(Integer n : nodeLabels.keySet()) {
+			if(n < 0) {
+				// leaf
+				nodeColors.put(n, new Color(0, 191, 255));
+			} else {
+				nodeColors.put(n, new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()).brighter());
+			}
+		}
+		
+		
+		JFrame frame = new JFrame("Best Lineage Tree");
+		DelegateTree<Integer, Integer> tree = new DelegateTree<Integer, Integer>(g);
+		tree.setRoot(0);
+		TreeLayout<Integer, Integer> treeLayout = new TreeLayout<Integer, Integer>((Forest<Integer, Integer>) tree,100,70);
+		VisualizationViewer<Integer, Integer> visServer = new VisualizationViewer<Integer, Integer>(treeLayout);
+		visServer.setPreferredSize(new Dimension(1500, 600));
+		
+		DefaultModalGraphMouse<Integer, Integer> graphMouse = new DefaultModalGraphMouse<Integer, Integer>();
+		graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
+		visServer.setGraphMouse(graphMouse);
+		
+		// node click listeners
+		JPanel console = new JPanel();
+		final TextArea info = new TextArea();
+		info.setEditable(false);
+		console.add(info);
+		final PickedState<Integer> pickedState = visServer.getPickedVertexState();
+		pickedState.addItemListener(new ItemListener() { 
+		    @Override
+		    public void itemStateChanged(ItemEvent e) {
+		    Object o = e.getItem();
+		        if (o instanceof Integer) {
+		            Integer node = (Integer) o;
+		            if (pickedState.isPicked(node)) {
+		            	PHYNode n = nodeInfo.get(node);
+		                if(node < 0) { // sample 
+		                	info.setText(t.getLineage(n.getLeafSampleId(), nodeLabels.get(node)));
+		                	
+		                } else {
+		                	String s = n.getLongLabel();
+		                	s += "\nSNVs: \n";
+		                	ArrayList<SNVEntry> snvs;
+		                	if(snvsByTag == null) {
+		                		snvs = n.getSNVs(n.getSNVGroup().getSNVs());
+		                	} else {
+		                		snvs = n.getSNVs(snvsByTag.get(n.getSNVGroup().getTag()));
+		                	}
+		                	for(SNVEntry snv : snvs) {
+		                		s += snv.getChromosome() + " ";
+		                		s += snv.getPosition() + " ";
+		                		s += snv.alt + "/" + snv.ref;
+		                		s += "\n";
+		                	}
+		                	info.setText(s);
+		                }
+		            }
+		        }
+		    }
+		});
+		
+		// node labels
+		Transformer<Integer, String> vlt = new Transformer<Integer, String>(){
+			public String transform(Integer num) {
+				if (nodeLabels != null && nodeLabels.containsKey(num)) {
+					return nodeLabels.get(num);
+				}
+				else return null;
+			}
+		};
+		// node colors
+		Transformer<Integer, Paint> vpt = new Transformer<Integer, Paint>() {
+			public Paint transform(Integer num){
+				if (nodeLabels != null && nodeLabels.containsKey(num)) {
+					return nodeColors.get(num);
+				} 
+				else return Color.ORANGE;
+			}
+		};
+		// node shapes
+		Transformer<Integer, Shape> vts = new Transformer<Integer, Shape>() {
+			public Shape transform(Integer num){
+				if(num < 0) {
+					Rectangle2D r = new Rectangle2D.Float(-10, -10, 20, 20);
+					Rectangle2D r2 = new Rectangle2D.Float(-10, -10, 5, 5);
+			
+					Area a = new Area(r);
+					
+					a.add(new Area(r2));
+					return a;
+				} 
+				return new Ellipse2D.Float(-10, -10, 20, 20);
+			}
+		};
+		
+		Transformer<Context<Graph<Integer,Integer>,Integer>,Shape> et = new EdgeShape.Line<Integer,Integer>();		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Transformer<Integer,Font> vt = new ConstantTransformer(new Font("Helvetica", Font.BOLD, 12));
+		
+		visServer.getRenderer().getVertexLabelRenderer().setPosition(Position.S);
+		visServer.getRenderContext().setVertexShapeTransformer(vts);
+		visServer.getRenderContext().setVertexFontTransformer(vt);
+		visServer.getRenderContext().setEdgeShapeTransformer(et);
+		visServer.getRenderContext().setVertexLabelTransformer(vlt);
+		visServer.getRenderContext().setVertexFillPaintTransformer(vpt);
+		
+		// frame content
+		Container content = frame.getContentPane();
+		content.add(visServer);
+		content.add(console, BorderLayout.SOUTH);
+		
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.pack();
+		frame.setVisible(true);
+		
+		Dimension size = frame.getSize();
+	    BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
+	    Graphics gr = image.getGraphics();
+	    frame.paint(gr);
+	    gr.dispose();
+      
+	    if(fileOutputName != null) {
+	    	try {
+	    		ImageIO.write(image, "jpg", new File(fileOutputName));
+	    	}
+	    	catch (IOException e) {
+	    		e.printStackTrace();
+	    		System.err.println("Failed to save tree to the file: " + fileOutputName);
+	    	}
+	    }
 	}
 	
 	/**

@@ -22,6 +22,8 @@ import util.Visualizer;
  * Each internal node in the graph represents a sub-population.
  * A directed edge between two nodes denotes the 'happened-before' evolutionary 
  * relationship between the two nodes.
+ * 
+ * @autor viq
  */
 public class PHYNetwork implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -611,6 +613,8 @@ public class PHYNetwork implements Serializable {
 				edgeId++;
 			}
 		}			
+		
+		//Visualizer.showLineageTreeBreakdown(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
 		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
 	}
 	/**

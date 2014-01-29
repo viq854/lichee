@@ -17,6 +17,7 @@ import lineage.AAFClusterer.DistanceMetric;
  * An SNV group is uniquely identified by an S-bit binary tag (each bit corresponding to
  * a given sample), where a bit is set if that sample contains the SNVs in this group.
  *
+ * @autor viq
  */
 public class SNVGroup implements Serializable {
 

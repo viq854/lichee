@@ -15,9 +15,10 @@ import weka.core.Instances;
 
 /**
  * Simple implementation of a few clustering techniques
- * specialized for floating point data  
+ * specialized for floating point data 
  * representing the allele frequency values of the samples in the application.
- *
+ * 
+ * @autor viq
  */
 public class AAFClusterer implements Serializable {
 	
