@@ -1,5 +1,8 @@
 package util;
 
+import util.Configs.GroupSizeType;
+import util.Configs.format;
+
 public final class Configs {
 
 	private Configs(){}
@@ -10,12 +13,12 @@ public final class Configs {
 	//public static int normalSample;
 		
 	// Type of input
-	public enum format { VCF, MUT, FL}
+	public enum format { VCF, MUT, FL, SIM}
 	public static format INFORMAT = format.MUT;
 	
 	// for validation SNVs
 	public static double VALIDATION_THR = 0.04; //0.04 0.06 0.07 0.08
-	public static double VALIDATION_SOFT_THR = 0.015; // 0.015 0.02
+	public static double VALIDATION_SOFT_THR = 0.01; // 0.015 0.02
 	
 	// for WGS SNVs
 	//public static final double AVG_COVERAGE = 50;
@@ -25,8 +28,13 @@ public final class Configs {
 	public static final double MIN_QUAL = 30;
 	
 	// For group size; 1 == any size is acceptable
+	public enum GroupSizeType {FIXED, AVERAGE, SIGNIFICANT}; 
+	public static  GroupSizeType gst = GroupSizeType.FIXED;
+	public static  int GROUP_SIZE_THR = 2; 
 	public static double GROUP_PVALUE = 0.2; 
-	public static double ROBUSTGROUP_PVALUE = 0.01;
+	//public static final double ROBUSTGROUP_SIZE_THR = 10; 
+	//public static final double ROBUSTGROUP_PVALUE = 0.01;
+
 	public static final double SUBPOP_PVALUE = 0.0001;
 	
 	// to edit SNV 
@@ -50,15 +58,25 @@ public final class Configs {
 	 * @return
 	 */
 	
-	public static int getGroupSizeThreshold(int n, int k, double THR){
-		double pValue = 0.0;
-		int x = n / k;
-		for (; x > 1; x--){
-			pValue = Math.pow((n - x * k)/(double) n, k - 1);
-			if (pValue > THR) break;
+	public static int getGroupSizeThreshold(int n, int k){
+		switch(gst){
+		//a. fixed size
+		case FIXED:
+			return GROUP_SIZE_THR ;
+		//b. simply n/(constant*k)
+		case AVERAGE:
+			return (int)(n/(10*k));
+		//c. using p-value
+		default :
+			double pValue = 0.0;
+			int x = n / k;
+			for (; x > 1; x--){
+				pValue = Math.pow((n - x * k)/(double) n, k - 1);
+				if (pValue > GROUP_PVALUE) break;
+			}
+			//System.out.println("gourp size "+n+" "+k+" "+x);
+			return x;
 		}
-		//System.out.println("gourp size "+n+" "+k+" "+x);
-		return x;
 	}
 	
 }

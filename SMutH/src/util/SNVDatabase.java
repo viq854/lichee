@@ -59,6 +59,9 @@ public class SNVDatabase {
 			case FL :
 				loadFL(inputFile,normalSample);
 				break;
+			case SIM :
+				loadSIM(inputFile,normalSample);
+				break;
 		}
 		
 		generateMap();
@@ -76,7 +79,7 @@ public class SNVDatabase {
 	
 	public void resolveNonRobustconflicts(){	
 		
-		robustGroupSizeThreshold = Configs.getGroupSizeThreshold(robustCounter, TAG2RobustSNVNum.size(),Configs.ROBUSTGROUP_PVALUE);	
+		robustGroupSizeThreshold = Configs.getGroupSizeThreshold(robustCounter, TAG2RobustSNVNum.size())*2;
 		System.out.println("#Robust="+ robustCounter+"\t#RGroups="+ TAG2RobustSNVNum.size()+"\tR-thr="+ robustGroupSizeThreshold);
 		
 		
@@ -415,6 +418,74 @@ public class SNVDatabase {
 		
 	}
 	
+	
+	private void loadSIM(String inputFile, int normalSample){
+		//"#CHROM\tPOS\tTAG\tREF\tALT\t";
+		System.out.println(normalSample);
+		try{
+			BufferedReader rd = new BufferedReader(new FileReader(inputFile));
+			//String lastLine="";
+			String currLine = rd.readLine();
+			//while (currLine.substring(0, 1).equals("#")){ lastLine = currLine; currLine = rd.readLine();}
+			//System.out.println(lastLine+"\n");
+			getNames(currLine);
+			int numSamples = names.size();
+			currLine = rd.readLine();
+			while (currLine != null){
+				MUTEntry entry = new MUTEntry(currLine,numSamples);
+				//System.out.println(currLine);
+				currLine = rd.readLine();
+				allCounter++;
+				
+				//Makes sure entries are legitimate.
+				//boolean isLegitimate = false;
+				boolean isGermline = true;
+				//int totalCoverage = 0;
+				
+				/* Germline mutations - hard filtering */
+				if( entry.getGenotype(normalSample).equals("1/1")){
+						isGermline = true;
+				}else{
+					for (int i = 0; i < numSamples; i++){
+						/* TO FILTER OUT SNVs with very low coverage in some SAMPLES*/
+						/*if ( entry.getReadDepth(i) <= Configs.MIN_COVERAGE){
+							isLegitimate = false;
+							break;
+						}*/
+						/* TO FILTER OUT SNVs that has not been called in any samples SAMPLES*/
+						/*if(entry.getGenotype(i).equals("0/1") || entry.getGenotype(i).equals("1/1")){
+							isLegitimate = true; 
+						}*/
+						
+						/* Germline mutations - soft filtering */
+						if( entry.getGenotype(i).equals("0/0")){
+							isGermline = false;
+						}
+						
+					}
+				}
+				
+				//if (!isLegitimate) continue;
+				
+				
+				if (isGermline) {
+					germlineCounter++;
+					continue;
+				}
+				
+				//System.out.println(entry+"\t"+entry.getGroup() +"\t"+entry.isRobust());
+				somaticSNVs.add(entry);
+				
+				
+			}
+			rd.close();
+			System.out.println("There are " + allCounter + " SNVs in validation file. Of those, we pass "+ germlineCounter + " as germline, and "+ somaticSNVs.size() +" as somatic. \n");
+		} catch (IOException e){
+			System.out.println("File Reading Error!");
+		}
+		
+	}
+	
 	public String getHeader(){
 		
 		String header = "#AFF in samples \t";//"#There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + " as germline, and "+ somaticSNVs.size() +" as somatic. \n";
@@ -442,6 +513,10 @@ public class SNVDatabase {
 			case FL :
 				names = new ArrayList<String>(Arrays.asList(header).subList(4, header.length));
 				break;
+			case SIM :
+				names = new ArrayList<String>(Arrays.asList(header).subList(1, header.length));
+				break;	
+			
 		}
 		
 		System.out.println("There are "+names.size()+" samples!");
@@ -482,9 +557,8 @@ public class SNVDatabase {
 	public HashMap<String,ArrayList<SNVEntry>> generateFilteredTAG2SNVsMap(ArrayList<CNVregion> CNVs){
 		HashMap<String, ArrayList<SNVEntry>> filteredTAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
 		
-		int groupSizeThreshold = Configs.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size(),Configs.GROUP_PVALUE);
-		//System.out.println("Group Size Threshold is "+ somaticSNVs.size()+" "+TAG2SNVs.size() +" "+ groupSizeThreshold);
-		System.out.println("#SNV="+ somaticSNVs.size()+"\t#Groups="+TAG2SNVs.size() +"\tG-thr="+ groupSizeThreshold);
+		int groupSizeThreshold = Configs.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size());
+		System.out.println("Group Size Threshold is "+ somaticSNVs.size()+" "+TAG2SNVs.size() +" "+ groupSizeThreshold);
 		
 		String all1s="", all0s="";
 		for (int i = 0; i < names.size(); i++) {all1s += "1";all0s +="0";}
@@ -1123,8 +1197,8 @@ public class SNVDatabase {
 		
 		while ( conflictToPossMutMap.size() > 0){
 			String conflictMatch = findLargestUncoveredSet(conflictToPossMutMap, movedEntries);
-			System.out.println(" "+conflictMatch);
-			if (conflictMatch == null) break;
+			
+			if (conflictMatch == null) break;System.out.println(" "+conflictMatch);
 			ArrayList<SNVEntry> matchEntries = conflictToPossMutMap.get(conflictMatch);
 			matchEntries.removeAll(movedEntries);
 			for (int j = 0; j < matchEntries.size(); j++){

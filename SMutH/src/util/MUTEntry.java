@@ -7,6 +7,9 @@
  */
 package util;
 
+import util.Configs;
+import util.SNVEntry;
+
 
 public class MUTEntry extends SNVEntry{
 	
@@ -30,16 +33,16 @@ public class MUTEntry extends SNVEntry{
 		/*String all0s = "";
 		for (int x = 0; x<numofSamples - EOAtag.length(); x++) all0s +="0";
 		EOAtag = all0s + EOAtag;*/
-		
+		int AAF_suffix = i;
 		for (; i < entryParts.length; i++){
-				AAF[i-5] = Double.parseDouble(entryParts[i]);
-				if (AAF[i-5] <  Configs.VALIDATION_THR){
-					genotype[i-5] = "0/0";
-					if (AAF[i-5] >=  Configs.VALIDATION_SOFT_THR)
+				AAF[i-AAF_suffix] = Double.parseDouble(entryParts[i]);
+				if (AAF[i-AAF_suffix] <  Configs.VALIDATION_THR){
+					genotype[i-AAF_suffix] = "0/0";
+					if (AAF[i-AAF_suffix] >=  Configs.VALIDATION_SOFT_THR)
 						robust = false;
 						
 				}else 
-					genotype[i-5] = "1/1";
+					genotype[i-AAF_suffix] = "1/1";
 		}
 
 	}
