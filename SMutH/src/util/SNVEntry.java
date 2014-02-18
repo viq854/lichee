@@ -7,6 +7,8 @@
  */
 package util;
 
+import java.util.ArrayList;
+
 
 public abstract class  SNVEntry {
 	
@@ -22,6 +24,8 @@ public abstract class  SNVEntry {
 	 protected String[] genotype;
 	 protected boolean robust;
 	
+	 protected boolean inCNVRegion;
+	 
 	public String getChromosome(){
 		return chrom;
 	}
@@ -166,5 +170,27 @@ public abstract class  SNVEntry {
 	
 	public String toString(){
 		return row;
+	}
+	
+	public boolean checkInCNVRegion(ArrayList<CNVRegion> CNVs){
+		//Filter CNV regions
+		for (CNVRegion cnv : CNVs){
+			int loc = cnv.compareLocation(getChromNum(),pos);
+			if (loc == 0){
+				
+				inCNVRegion = true;
+				return true;
+			}
+			if (loc == -1){
+				inCNVRegion = false;
+				return false;
+			}
+		}
+		inCNVRegion = false;
+		return false;
+	}
+	
+	public boolean isInCNVRegion(){
+		return inCNVRegion;
 	}
 }

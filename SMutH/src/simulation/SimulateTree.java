@@ -101,7 +101,7 @@ public class SimulateTree {
 			}
 			groups.get(c).add(child);
 			
-			pw.write(booleansToString(tag)+"\t"+(generator.nextInt(180)+20)+"\t");
+			pw.write(booleansToString(tag)+"\t"+(generator.nextInt(90)+10)+"\t");
 				for (int i=0; i<numSamples; i++){
 					node[i] = node[i] - child[i];
 					pw.write((double)child[i]/100 +"\t");
@@ -129,7 +129,7 @@ public class SimulateTree {
 				child[numSamples-1-i] =  10;
 				tag[numSamples-1-i] = true;
 				
-				pw.write(booleansToString(tag)+"\t"+(new Random().nextInt(180)+20)+"\t");
+				pw.write(booleansToString(tag)+"\t"+(new Random().nextInt(90)+10)+"\t");
 				for (int j=0; j<numSamples; j++){
 					pw.write((double)child[j]/100 +"\t");
 					//System.out.print(((double)child[j]/100 +"\t"));

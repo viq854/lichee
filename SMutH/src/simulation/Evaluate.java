@@ -143,10 +143,10 @@ public class Evaluate {
 	
 	public static void main(String[] args){
 		pathS = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees";
-		pathT = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees/var.01";
+		pathT = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees/var.02";
 		//System.out.println("\tPrecision\tSensitivity\tsq-error");
 		
-		for (int j =3; j<10;j++){
+		for (int j =3; j<16;j++){
 			GroupInfo.numofSamples = j;
 			
 			double error = 0;

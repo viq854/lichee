@@ -16,10 +16,6 @@ import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 
-
-import unmixing.CNVregion;
-
-
 public class SNVDatabase {
 	
 	/* Private Instance Variables */
@@ -239,6 +235,8 @@ public class SNVDatabase {
 		
 		generateMap();
 	}
+	
+	
 	
 	private void loadVCF(String inputFile, int normalSample){
 		//"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t";
@@ -554,7 +552,7 @@ public class SNVDatabase {
 		return TAG2SNVNum;
 	}
 	
-	public HashMap<String,ArrayList<SNVEntry>> generateFilteredTAG2SNVsMap(ArrayList<CNVregion> CNVs){
+	public HashMap<String,ArrayList<SNVEntry>> generateFilteredTAG2SNVsMap(ArrayList<CNVRegion> CNVs){
 		HashMap<String, ArrayList<SNVEntry>> filteredTAG2SNVs = new HashMap<String, ArrayList<SNVEntry>>();
 		
 		int groupSizeThreshold = Configs.getGroupSizeThreshold(somaticSNVs.size(), TAG2SNVs.size());
@@ -564,8 +562,7 @@ public class SNVDatabase {
 		for (int i = 0; i < names.size(); i++) {all1s += "1";all0s +="0";}
 		
 		int counter = 0;
-		int codeLength = -1;
-		int cnvID = 0;
+		int inCNV = 0;
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
 			//Filter bad groups
@@ -577,16 +574,15 @@ public class SNVDatabase {
 				//continue;
 			
 			/*TODO
-			 * 
+			 * Filter CNV regions - what kind of filtering?
+			 * scaling for normal contamination?
 			 */
-			//Filter CNV regions
-			/*if (CNVs != null && cnvID < CNVs.size()){
-				int loc = CNVs.get(cnvID).compareLocation(entry);
-				if (loc == 0) break;
-				if (loc == 1) cnvID++;
-			}*/
+			if (CNVs != null){
+				if (entry.checkInCNVRegion(CNVs))
+					inCNV++;
+				
+			}
 			
-			if (codeLength == -1) codeLength = code.length();
 			if (!filteredTAG2SNVs.containsKey(code)){
 				filteredTAG2SNVs.put(code, new ArrayList<SNVEntry>());				
 			}
@@ -594,7 +590,7 @@ public class SNVDatabase {
 			counter++;
 		}
 		
-		System.out.println("#Filtered SNVs="+ counter+"\tGroups="+filteredTAG2SNVs.size());
+		System.out.println("#Passed SNVs="+ counter+"\tGroups="+filteredTAG2SNVs.size()+"\tinCNVs="+inCNV);
 
 		return filteredTAG2SNVs;
 	}

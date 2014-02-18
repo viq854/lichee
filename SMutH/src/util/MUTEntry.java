@@ -44,6 +44,8 @@ public class MUTEntry extends SNVEntry{
 				}else 
 					genotype[i-AAF_suffix] = "1/1";
 		}
+		
+		inCNVRegion = false;
 
 	}
 	
