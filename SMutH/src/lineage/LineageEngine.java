@@ -50,7 +50,7 @@ public class LineageEngine {
 		// 1. load validation/VCF data
 		SNVDatabase db = new SNVDatabase(args.inputFileName, args.normalSampleId);
 		db.resolveNonRobustconflicts();
-		db.annotateSNVs(args.cnvFileName, args.annFileName, args.cosmicFileName);
+		db.annotateSNVs(args.cnvFileName, args.annFileName, args.cosmicFileName, args.tcgaFileName);
 		
 		// 2. normal cell contamination, CNVs (+ any additional filtering, pre-processing)
 		
@@ -286,6 +286,7 @@ public class LineageEngine {
 		options.addOption("cnv", true, "File path to CNV regions used to mark SNVs");
 		options.addOption("ann", true, "File path to ANNOVAR SNV annotations");
 		options.addOption("cosmic", true, "File path to COSMIC SNV annotations");
+		options.addOption("tcga", true, "File path to TCGA SNV annotations");
 		options.addOption("n", "normal", true, "Normal sample id (default: 0)");
 		options.addOption("minAAFHard", true, "Minimum AAF to robustly call an SNV for a sample (default: 0.04)");
 		options.addOption("minAAFSoft", true, "Minimum AAF that can allow an SNV to be called for a sample (default: 0.015)");
@@ -402,6 +403,9 @@ public class LineageEngine {
 			if(cmdLine.hasOption("cosmic")) {
 				params.cosmicFileName = cmdLine.getOptionValue("cosmic");	
 			}
+			if(cmdLine.hasOption("tcga")) {
+				params.tcgaFileName = cmdLine.getOptionValue("tcga");	
+			}
 			buildLineage(params);
 		} else if (cmdLine.hasOption("show")){
 			params.showFileNamePrefix = cmdLine.getOptionValue("i");
@@ -419,6 +423,7 @@ public class LineageEngine {
 		String cnvFileName;
 		String annFileName;
 		String cosmicFileName;
+		String tcgaFileName;
 		String outputFilePrefix;	
 		int normalSampleId = 0;
 		

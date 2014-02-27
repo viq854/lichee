@@ -542,7 +542,31 @@ public class SNVDatabase {
 		return cosmicDB;
 	}
 	
-	public void annotateSNVs(String inputCNVFile, String inputAnnFile, String cosmicFile) {
+	private HashMap<Integer, ArrayList<Integer>> loadTCGA(String inputTCGAFile){
+		HashMap<Integer, ArrayList<Integer>> tcgaDB = new HashMap<Integer, ArrayList<Integer>>();
+		try {
+			BufferedReader rd = new BufferedReader(new FileReader(inputTCGAFile));
+			String currLine = rd.readLine();
+			while (currLine != null){
+				String[] entryParts = currLine.split("\t");
+				int chr = Integer.parseInt(entryParts[0].trim());
+				int pos = Integer.parseInt(entryParts[1].trim());
+				if(tcgaDB.containsKey(chr)) {
+					tcgaDB.get(chr).add(pos);
+				} else {
+					tcgaDB.put(chr, new ArrayList<Integer>());
+					tcgaDB.get(chr).add(pos);
+				}
+				currLine = rd.readLine();
+			}
+			rd.close();
+		} catch (IOException e) {
+			System.out.println("TCGA input file Reading Error!");
+		}
+		return tcgaDB;
+	}
+	
+	public void annotateSNVs(String inputCNVFile, String inputAnnFile, String cosmicFile, String tcgaFile) {
 		ArrayList<CNVRegion> cnvs = null;
 		if(inputCNVFile != null) {
 			cnvs = loadCNVs(inputCNVFile);
@@ -555,6 +579,10 @@ public class SNVDatabase {
 		if(cosmicFile != null) {
 			cosmicDB = loadCOSMIC(cosmicFile);
 		}
+		HashMap<Integer, ArrayList<Integer>> tcgaDB = null;
+		if(cosmicFile != null) {
+			tcgaDB = loadTCGA(tcgaFile);
+		}
 		for (int i = 0; i < somaticSNVs.size(); i++) {
 			SNVEntry entry = somaticSNVs.get(i);
 			if (cnvs != null){
@@ -566,6 +594,11 @@ public class SNVDatabase {
 			if(cosmicDB != null) {
 				if(cosmicDB.containsKey(entry.pos)) {
 					entry.annotation.cosmic = cosmicDB.get(entry.pos);
+				}
+			}
+			if(tcgaDB != null) {
+				if(tcgaDB.containsKey(entry.getChromNum()) && tcgaDB.get(entry.getChromNum()).contains(entry.pos)) {
+					entry.annotation.tcga = "+TCGA+";
 				}
 			}
 		}

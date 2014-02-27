@@ -335,7 +335,9 @@ public class Visualizer {
 		                		s += snv.getPosition() + " ";
 		                		s += snv.ref + "/" + snv.alt + " ";
 		                		s += ((snv.isInCNVRegion()) ? "*cnv* " : "");
-		                		s += ((snv.getAnnotation() != null) ? snv.getAnnotation().codingInfo + " " + snv.getAnnotation().geneInfo + " " + snv.getAnnotation().cosmic : "");
+		                		s += ((snv.getAnnotation() != null) ? snv.getAnnotation().codingInfo + " " 
+		                				+ snv.getAnnotation().geneInfo + " "
+		                				+ snv.getAnnotation().cosmic + " " + snv.getAnnotation().tcga : "");
 		                		s += "\n";
 		                	}
 		                	info.setText(s);
