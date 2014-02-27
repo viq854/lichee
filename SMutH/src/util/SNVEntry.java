@@ -26,6 +26,8 @@ public abstract class  SNVEntry {
 	
 	 protected boolean inCNVRegion;
 	 
+	 protected SNVAnnotation annotation;
+	 
 	public String getChromosome(){
 		return chrom;
 	}
@@ -72,6 +74,9 @@ public abstract class  SNVEntry {
 		return alt;
 	}
 	
+	public SNVAnnotation getAnnotation() {
+		return annotation;
+	}
 	
 	/**
 	 * Function: getGenotype(int sample)

@@ -34,10 +34,10 @@ public class SNVGroup implements Serializable {
 	private int[] sampleIndex;
 	
 	/** Alternative allele frequency data matrix (numSNVs x numSamples) */
-	private transient double[][] alleleFreqBySample;
+	protected transient double[][] alleleFreqBySample;
 	
 	/** SubPopulation clusters */
-	private Cluster[] subPopulations;
+	protected Cluster[] subPopulations;
 	
 	/** SNVs assigned to this group */
 	private transient ArrayList<SNVEntry> snvs;
@@ -172,16 +172,22 @@ public class SNVGroup implements Serializable {
 	 */
 	public void setSubPopulations(Cluster[] clusters) {
 		
-		// 1. filter out clusters that are too small (unless there is only one cluster)
+		// 1. filter out clusters that are too small //-(unless there is only one cluster)
 		ArrayList<Cluster> filteredClusters = new ArrayList<Cluster>();
 		for(Cluster c : clusters) {
-			if((clusters.length == 1) || (c.getMembership().size() >= Parameters.MIN_CLUSTER_SIZE)) {
+			if(/*(clusters.length == 1) ||*/ (c.getMembership().size() >= Parameters.MIN_CLUSTER_SIZE)) {
 				filteredClusters.add(c);
+			} else {
+				logger.log(Level.INFO, "SNVs Filtered due to Cluster Size Constraint (" + tag + ")");
+				for(Integer snv : c.getMembership()) {
+					SNVEntry entry = snvs.get(snv);
+					logger.log(Level.INFO, entry.getChromosome() + " " +  entry.getPosition() + " " + entry.getAltChar() + "/" + entry.getRefChar());
+				}
 			}
 		}
 		
 		if(filteredClusters.size() < 1) {
-			logger.log(Level.WARNING, "All subpopulation clusters in group " + tag + " have been filtered out. "
+			logger.log(Level.WARNING, "All clusters in group " + tag + " have been filtered out. "
 					+ "The group is now empty.");
 			subPopulations = new Cluster[filteredClusters.size()];
 			subPopulations = filteredClusters.toArray(subPopulations);
@@ -200,7 +206,8 @@ public class SNVGroup implements Serializable {
 			for(int j = i+1; j < numClusters; j++) {
 				Cluster c1 = filteredClusters.get(i);
 				Cluster c2 = filteredClusters.get(j);
-				double dist = c1.getDistanceToCluster(c2.getCentroid(), DistanceMetric.EUCLIDEAN);
+				//double dist = c1.getDistanceToCluster(c2.getCentroid(), DistanceMetric.EUCLIDEAN);
+				double dist = c1.getDistanceToCluster(c2.getCentroid(), DistanceMetric.AVG_PER_SAMPLE);
 				ClusterPairDistance pd = new ClusterPairDistance(c1.getId(), c2.getId(), dist);
 				
 				int k = 0;
@@ -225,10 +232,10 @@ public class SNVGroup implements Serializable {
 			}
 			numClusters--;
 			
-			c1.recomputeCentroid(alleleFreqBySample, snvs.size(), numSamples);
+			c1.recomputeCentroidAndStdDev(alleleFreqBySample, snvs.size(), numSamples);
 			filteredClusters.remove(c2);
 			logger.log(Level.FINE, "Collapse clusters: group = " + tag + " cluster " + pd.clusterId1 + " and " + pd.clusterId2 + 
-					" distance = " + pd.distance);
+					" distance = " + pd.distance + ". New cluster: " + c1);
 			
 			// remove distances from c1 and c2 from the queue
 			ArrayList<ClusterPairDistance> toRemove = new ArrayList<ClusterPairDistance>();
@@ -269,5 +276,37 @@ public class SNVGroup implements Serializable {
 		group += "numSNVs = " + this.snvs.size() + ") ";
 		if(this.subPopulations != null) group += "numSubPopulations = " + this.subPopulations.length;
 		return group;
+	}
+	
+	public void removeCluster(Cluster c) {
+		if(subPopulations == null || subPopulations.length == 0) {
+			return;
+		}
+		
+		Cluster[] clusters = new Cluster[subPopulations.length - 1];
+		int j = 0;
+		for(int i = 0; i < subPopulations.length; i++) {
+			if(!subPopulations[i].equals(c)) {
+				clusters[j] = subPopulations[i];
+				j++;
+			} 
+		}
+		subPopulations = clusters;
+	}
+	
+	public void addCluster(Cluster c) {
+		if(subPopulations == null) {
+			return;
+		}
+		
+		Cluster[] clusters = new Cluster[subPopulations.length + 1];
+		int j = 0;
+		for(int i = 0; i < subPopulations.length; i++) {
+			clusters[j] = subPopulations[i];
+			j++; 
+		}
+		clusters[subPopulations.length] = c;
+		
+		subPopulations = clusters;
 	}
 }

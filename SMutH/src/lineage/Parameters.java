@@ -12,7 +12,7 @@ public class Parameters {
 	protected static int MIN_CLUSTER_SIZE = 2;
 	
 	/** Maximum centroid difference up to which two clusters can be collapsed */
-	protected static double MAX_COLLAPSE_CLUSTER_DIFF = 0.2;
+	protected static double MAX_COLLAPSE_CLUSTER_DIFF = 0.1;
 	
 	/** Maximum number of clusters allowed per SNV group (additional clusters will be collapsed) */
 	protected static final int MAX_CLUSTER_NUM = 2;

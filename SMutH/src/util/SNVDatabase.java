@@ -326,7 +326,7 @@ public class SNVDatabase {
 			//System.out.println(lastLine+"\n");
 			getNames(lastLine);
 			int numSamples = names.size();
-			currLine = rd.readLine();
+			//currLine = rd.readLine();
 			while (currLine != null){
 				MUTEntry entry = new MUTEntry(currLine,numSamples);
 				//System.out.println(currLine);
@@ -484,6 +484,93 @@ public class SNVDatabase {
 		
 	}
 	
+	private ArrayList<CNVRegion> loadCNVs(String inputCNVFile){
+		ArrayList<CNVRegion> CNVs = new ArrayList<CNVRegion>();
+		try {
+			BufferedReader rd = new BufferedReader(new FileReader(inputCNVFile));
+			String currLine = rd.readLine();
+			if (currLine.charAt(0) == '#') {
+				currLine = rd.readLine();             
+			}
+			while (currLine != null){
+				CNVRegion c= new CNVRegion(currLine);
+				CNVs.add(c);
+				currLine = rd.readLine();
+			}
+			rd.close();
+		} catch (IOException e) {
+			System.out.println("CNV input file Reading Error!");
+		}
+		return CNVs;
+	}
+	
+	private ArrayList<SNVAnnotation> loadAnnovarFunction(String inputAnnFile){
+		ArrayList<SNVAnnotation> anns = new ArrayList<SNVAnnotation>();
+		try {
+			BufferedReader rd = new BufferedReader(new FileReader(inputAnnFile));
+			String currLine = rd.readLine();
+			while (currLine != null){
+				SNVAnnotation ann = new SNVAnnotation();
+				String[] entryParts = currLine.split("\t");
+				ann.codingInfo = entryParts[0];
+				ann.geneInfo = entryParts[1];
+				anns.add(ann);
+				currLine = rd.readLine();
+			}
+			rd.close();
+		} catch (IOException e) {
+			System.out.println("ANN input file Reading Error!");
+		}
+		return anns;
+	}
+	
+	// returns COSMIC info by SNV position
+	private HashMap<Integer, String> loadCOSMIC(String inputCOSMICFile){
+		HashMap<Integer, String> cosmicDB = new HashMap<Integer, String>();
+		try {
+			BufferedReader rd = new BufferedReader(new FileReader(inputCOSMICFile));
+			String currLine = rd.readLine();
+			while (currLine != null){
+				String[] entryParts = currLine.split("\t");
+				cosmicDB.put(Integer.parseInt(entryParts[3]), entryParts[1]);
+				currLine = rd.readLine();
+			}
+			rd.close();
+		} catch (IOException e) {
+			System.out.println("COSMIC input file Reading Error!");
+		}
+		return cosmicDB;
+	}
+	
+	public void annotateSNVs(String inputCNVFile, String inputAnnFile, String cosmicFile) {
+		ArrayList<CNVRegion> cnvs = null;
+		if(inputCNVFile != null) {
+			cnvs = loadCNVs(inputCNVFile);
+		}
+		ArrayList<SNVAnnotation> anns = null;
+		if(inputAnnFile != null) {
+			anns = loadAnnovarFunction(inputAnnFile);
+		}
+		HashMap<Integer, String> cosmicDB = null;
+		if(cosmicFile != null) {
+			cosmicDB = loadCOSMIC(cosmicFile);
+		}
+		for (int i = 0; i < somaticSNVs.size(); i++) {
+			SNVEntry entry = somaticSNVs.get(i);
+			if (cnvs != null){
+				entry.checkInCNVRegion(cnvs);
+			}
+			if(anns != null) {
+				entry.annotation = anns.get(i);
+			}
+			if(cosmicDB != null) {
+				if(cosmicDB.containsKey(entry.pos)) {
+					entry.annotation.cosmic = cosmicDB.get(entry.pos);
+				}
+			}
+		}
+	}
+	
 	public String getHeader(){
 		
 		String header = "#AFF in samples \t";//"#There are " + allCounter + " SNVs PASS by GATK hard filters. Of those, we pass "+ germlineCounter + " as germline, and "+ somaticSNVs.size() +" as somatic. \n";
@@ -563,11 +650,14 @@ public class SNVDatabase {
 		
 		int counter = 0;
 		int inCNV = 0;
+		System.out.println("SNVs Filtered due to Group Size Constraint or All-1s or All-0s Profile");
 		for (SNVEntry entry: somaticSNVs){
 			String code = entry.getGroup();
 			//Filter bad groups
-			if (code.equals(all1s) || code.equals(all0s) || (!isPrivate(code) && TAG2SNVs.get(code).size() < groupSizeThreshold))
-				continue;
+			if (code.equals(all1s) || code.equals(all0s) || (!isPrivate(code) && TAG2SNVs.get(code).size() < groupSizeThreshold)) {
+				 System.out.println(entry.getChromosome() + " " +  entry.getPosition() + " " + entry.alt + "/" + entry.ref);
+				 continue;
+			}
 		
 			//Filtering non-robust SNVs
 			//if (TAG2RobustSNVNum.containsKey(code) && !entry.isRobust())

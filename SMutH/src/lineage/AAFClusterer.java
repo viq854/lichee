@@ -40,7 +40,8 @@ public class AAFClusterer implements Serializable {
 	}
 	/** Distance measures */
 	public enum DistanceMetric {
-		EUCLIDEAN
+		EUCLIDEAN,
+		AVG_PER_SAMPLE
 	}
 	
 	/**
@@ -300,6 +301,8 @@ public class AAFClusterer implements Serializable {
 		switch(d) {
 		case EUCLIDEAN:
 			return getEuclideanDistance(x, y);
+		case AVG_PER_SAMPLE:
+			return getAvgSampleDistance(x, y);
 		default:
 			return 0;	
 		}
@@ -316,6 +319,14 @@ public class AAFClusterer implements Serializable {
 			diffSum += Math.pow(Math.abs(x[i] - y[i]), 2);
 		}
 		return Math.sqrt(diffSum);
+	}
+	
+	private double getAvgSampleDistance(double[] x, double[] y) {
+		double diffSum = 0;
+		for(int i = 0; i < x.length; i++) {
+			diffSum += Math.abs(x[i] - y[i]);
+		}
+		return diffSum/x.length;
 	}
 	
 	// ---- WEKA-related Utilities ----
@@ -394,19 +405,28 @@ public class AAFClusterer implements Serializable {
 		/** 
 		 * Computes the mean of all the members of the cluster
 		 */
-		public void recomputeCentroid(double[][] data, int numObs, int numFeatures) {
+		public void recomputeCentroidAndStdDev(double[][] data, int numObs, int numFeatures) {
 			double[] newCentroid = new double[numFeatures];
 			for(int i = 0; i < members.size(); i++) {
 				for(int j = 0; j < numFeatures; j++) {
 					newCentroid[j] += data[members.get(i)][j];
 				}
 			}
-			
 			for(int j = 0; j < numFeatures; j++) {
 				newCentroid[j] = newCentroid[j]/members.size();
 			}
-			
 			centroid = newCentroid;
+			
+			double[] clusterStdDev = new double[numFeatures];
+			for(int i = 0; i < members.size(); i++) {
+				for(int j = 0; j < numFeatures; j++) {
+					clusterStdDev[j] += Math.pow(data[members.get(i)][j] - centroid[j], 2);
+				}
+			}
+			for(int j = 0; j < numFeatures; j++) {
+				clusterStdDev[j] =  Math.sqrt(clusterStdDev[j]/members.size());
+			}
+			stdDev = clusterStdDev;
 		}
 		
 		/**

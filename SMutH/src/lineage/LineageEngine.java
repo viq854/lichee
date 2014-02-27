@@ -1,7 +1,9 @@
 package lineage;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -48,10 +50,9 @@ public class LineageEngine {
 		// 1. load validation/VCF data
 		SNVDatabase db = new SNVDatabase(args.inputFileName, args.normalSampleId);
 		db.resolveNonRobustconflicts();
+		db.annotateSNVs(args.cnvFileName, args.annFileName, args.cosmicFileName);
 		
-		// 2. handle normal cell contamination, CNVs, 
-		//    determine the minimum number of clusters using LOH
-		//    (+ any additional filtering, pre-processing)
+		// 2. normal cell contamination, CNVs (+ any additional filtering, pre-processing)
 		
 		// 3. get the SNVs partitioned by group tag and create the appropriate SNV group objects
 		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
@@ -117,9 +118,10 @@ public class LineageEngine {
 		
 		// 8. result visualization
 		String[] sampleNames = new String[db.getNumofSamples()];
+		logger.log(Level.INFO, "Samples: ");
 		for(int i = 0; i < db.getNumofSamples(); i++) {
 			sampleNames[i] = db.getName(i);
-			//logger.log(Level.FINE, sampleNames[i]);
+			logger.log(Level.INFO, i + ": " + sampleNames[i]);
 		}
 		
 		if(args.showNetwork) {
@@ -281,11 +283,13 @@ public class LineageEngine {
 		options.addOption("show", false, "Display the saved cell lineage tree(s)");
 		options.addOption("i", true, "Input file path");
 		options.addOption("o", true, "Output file path (default: input file path)");
+		options.addOption("cnv", true, "File path to CNV regions used to mark SNVs");
+		options.addOption("ann", true, "File path to ANNOVAR SNV annotations");
+		options.addOption("cosmic", true, "File path to COSMIC SNV annotations");
 		options.addOption("n", "normal", true, "Normal sample id (default: 0)");
 		options.addOption("minAAFHard", true, "Minimum AAF to robustly call an SNV for a sample (default: 0.04)");
 		options.addOption("minAAFSoft", true, "Minimum AAF that can allow an SNV to be called for a sample (default: 0.015)");
-		options.addOption("gpv", true, "P-value to detemine the minimum SNV group size (default: 0.2)");
-		options.addOption("rpv", true, "P-value to detemine the minimum robust SNV group size (default: 0.01)");
+		options.addOption("minGroupSize", true, "Minimum SNV group size (default: 2)");
 		options.addOption("edit", true, "Maximum edit distance between SNV group tags that is allowed to reassign SNVs from one group to the other (default: 2)");
 		options.addOption("e", true, "AAF error margin (default: 0.08)");
 		options.addOption("minClusterSize", true, "Minimum size a cluster must have to be a considered a node in the network (default: 2)");
@@ -317,6 +321,11 @@ public class LineageEngine {
 			new HelpFormatter().printHelp("smuth", options);
 			System.exit(-1);
 		}
+		if(!cmdLine.hasOption("n")) {
+			System.out.println("Required parameter: normal sample id [-n]");
+			new HelpFormatter().printHelp("smuth", options);
+			System.exit(-1);
+		}
 		
 		if(cmdLine.hasOption("n")) {
 			params.normalSampleId = Integer.parseInt(cmdLine.getOptionValue("n"));
@@ -327,12 +336,12 @@ public class LineageEngine {
 		if(cmdLine.hasOption("minAAFSoft")) {
 			Configs.VALIDATION_SOFT_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFSoft"));
 		}
-		if(cmdLine.hasOption("gpv")) {
-			Configs.GROUP_PVALUE = Double.parseDouble(cmdLine.getOptionValue("gpv"));
+		if(cmdLine.hasOption("minGroupSize")) {
+			Configs.GROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minGroupSize"));
 		}
-		if(cmdLine.hasOption("rpv")) {
-			Configs.ROBUSTGROUP_PVALUE = Double.parseDouble(cmdLine.getOptionValue("rpv"));
-		}
+		//if(cmdLine.hasOption("rpv")) {
+			//Configs.ROBUSTGROUP_PVALUE = Double.parseDouble(cmdLine.getOptionValue("rpv"));
+		//}
 		if(cmdLine.hasOption("edit")) {
 			Configs.EDIT_DISTANCE = Integer.parseInt(cmdLine.getOptionValue("edit"));
 		}
@@ -384,6 +393,15 @@ public class LineageEngine {
 			} else {
 				params.outputFilePrefix = params.inputFileName;	
 			}
+			if(cmdLine.hasOption("cnv")) {
+				params.cnvFileName = cmdLine.getOptionValue("cnv");	
+			}
+			if(cmdLine.hasOption("ann")) {
+				params.annFileName = cmdLine.getOptionValue("ann");	
+			}
+			if(cmdLine.hasOption("cosmic")) {
+				params.cosmicFileName = cmdLine.getOptionValue("cosmic");	
+			}
 			buildLineage(params);
 		} else if (cmdLine.hasOption("show")){
 			params.showFileNamePrefix = cmdLine.getOptionValue("i");
@@ -398,6 +416,9 @@ public class LineageEngine {
 	protected static class Args {
 		// --- 'build' command ---
 		String inputFileName;
+		String cnvFileName;
+		String annFileName;
+		String cosmicFileName;
 		String outputFilePrefix;	
 		int normalSampleId = 0;
 		

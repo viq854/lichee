@@ -30,7 +30,7 @@ public final class Configs {
 	// For group size; 1 == any size is acceptable
 	public enum GroupSizeType {FIXED, AVERAGE, SIGNIFICANT}; 
 	public static  GroupSizeType gst = GroupSizeType.FIXED;
-	public static  int GROUP_SIZE_THR = 2; 
+	public static  int GROUP_SIZE_THR = 1; 
 	public static double GROUP_PVALUE = 0.2; 
 	//public static final double ROBUSTGROUP_SIZE_THR = 10; 
 	//public static final double ROBUSTGROUP_PVALUE = 0.01;
