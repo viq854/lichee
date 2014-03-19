@@ -560,7 +560,8 @@ public class SNVDataStore {
 			currLine = rd.readLine();
 			while (currLine != null){
 				MUTEntry entry = new MUTEntry(currLine, numSamples);
-				currLine = rd.readLine();	
+				currLine = rd.readLine();
+				totalSNVCounter++;
 				
 				// filter out germline mutations
 				if(entry.getGenotype(normalSample).equals("1/1")) {
