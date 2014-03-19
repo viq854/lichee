@@ -104,6 +104,10 @@ public class PHYNetwork implements Serializable {
 			}
 		}
 		
+		if(Parameters.ALL_EDGES) {
+			addAllHiddenEdges();
+		}
+		
 		// find the nodes that are not connected and connect them to a valid node in the closest
 		// higher level
 		int[] nodeMask = new int[numNodes];
@@ -201,7 +205,7 @@ public class PHYNetwork implements Serializable {
 	 * Returns the AAF error margin on the edge 
 	 * between the from and to nodes
 	 */
-	private double getAAFErrorMargin(PHYNode from, PHYNode to, int i) {
+	protected static double getAAFErrorMargin(PHYNode from, PHYNode to, int i) {
 		if(Parameters.STATIC_ERROR_MARGIN) {
 			return Parameters.AAF_ERROR_MARGIN;
 		}
@@ -279,10 +283,10 @@ public class PHYNetwork implements Serializable {
 	
 	/** Adds all the inter-level edges */
 	public void addAllHiddenEdges() {
-		for(int i = numSamples + 1; i > 0; i--) {
+		for(int i = numSamples; i > 0; i--) { //except the root
 			ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
 			if(fromLevelNodes == null) continue;
-			for(int j = i-1; j > 0; j--) {
+			for(int j = i-1; j > 1; j--) {
 				ArrayList<PHYNode> toLevelNodes = nodes.get(j);
 				if(toLevelNodes == null) continue;
 				for(PHYNode n1 : fromLevelNodes) {
@@ -326,6 +330,19 @@ public class PHYNetwork implements Serializable {
 				}
 			}
 		}
+		
+		/*if(toRemove != null && toRemove.getMembership().size() == 1) {
+			for(PHYNode n : nodesById.values()) {
+				Cluster c = n.getCluster();
+				SNVGroup g = n.snvGroup;
+				if(g == null) continue;
+				if(c.getMembership().size() == 1 && (group.getSNVs().get(c.getMembership().get(0)).getNumRobustSamples() < group.getSNVs().get(toRemove.getMembership().get(0)).getNumRobustSamples())) {
+					toRemove = c;
+					group = g;
+				}
+			}
+		}*/
+		
 		if(toRemove != null) {
 			group.removeCluster(toRemove);
 			logger.log(Level.INFO, "Removed cluster " + toRemove.getId() + " of group " + group.getTag() + " of size " + toRemove.getMembership().size() + " with members: ");
@@ -366,7 +383,7 @@ public class PHYNetwork implements Serializable {
 					}
 				} else {
 					if(newG == null) {
-						newG = new SNVGroup(g.getTag(), g.getSNVs(), g.getNumRobustSNVs(), g.isRobust());
+						newG = new SNVGroup(g.getTag(), g.getSNVs(), g.isRobust());
 						newG.subPopulations = g.subPopulations.clone();
 						newG.removeCluster(c1);
 						newG.removeCluster(c2);
@@ -388,7 +405,7 @@ public class PHYNetwork implements Serializable {
 			if(g != null) {
 				if(g.equals(node.getSNVGroup())) {
 					if(newG == null) {
-						newG = new SNVGroup(g.getTag(), g.getSNVs(), g.getNumRobustSNVs(), g.isRobust());
+						newG = new SNVGroup(g.getTag(), g.getSNVs(), g.isRobust());
 						newG.setSubPopulations(g.subPopulations.clone());
 						newG.removeCluster(node.getCluster());
 						groups.add(newG);
@@ -435,6 +452,15 @@ public class PHYNetwork implements Serializable {
 				PHYNode v = e.to;
 				t.addNode(v);
 				t.addEdge(e.from, v);
+				
+				//NEW: check if adding this node does not violate the constraint
+				//if(Parameters.ALL_EDGES) {
+					//if(!t.checkConstraint(e.from)) {
+						//t.removeEdge(e.from, e.to);
+						//System.out.println("HERE");
+						//return;
+					//}
+				//}
 				
 				// update f
 				ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
@@ -522,7 +548,9 @@ public class PHYNetwork implements Serializable {
 			
 		}
 		grow(t);
+		//System.out.println(spanningTrees.size());
 		applyAAFConstraints(spanningTrees);
+		
 		return spanningTrees;
 	}
 	
@@ -554,7 +582,7 @@ public class PHYNetwork implements Serializable {
 					affSum += n2.getAAF(i);
 					errMargin += getAAFErrorMargin(n, n2, i);
 				}
-				if(affSum >= n.getAAF(i) + errMargin) {
+				if(affSum > n.getAAF(i) + errMargin) {
 					return false;
 				}
 			}
@@ -695,14 +723,6 @@ public class PHYNetwork implements Serializable {
 		
 		//Visualizer.showLineageTreeBreakdown(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
 		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t, this, sampleNames);	
-	}
-	
-	public void collapseTreeNodesAndDisplay() {
-		
-	}
-	
-	public void removeTreeNodeAndDisplay() {
-		
 	}
 	
 	

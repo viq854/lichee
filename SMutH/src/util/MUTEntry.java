@@ -38,11 +38,16 @@ public class MUTEntry extends SNVEntry{
 				AAF[i-AAF_suffix] = Double.parseDouble(entryParts[i]);
 				if (AAF[i-AAF_suffix] <  Configs.VALIDATION_THR){
 					genotype[i-AAF_suffix] = "0/0";
-					if (AAF[i-AAF_suffix] >=  Configs.VALIDATION_SOFT_THR)
+					if (AAF[i-AAF_suffix] >=  Configs.VALIDATION_SOFT_THR) {
 						robust = false;
+					} else {
+						numRobustSamples++;
+					}
 						
-				}else 
+				} else { 
 					genotype[i-AAF_suffix] = "1/1";
+					numRobustSamples++;
+				}
 		}
 		
 		inCNVRegion = false;
@@ -52,6 +57,10 @@ public class MUTEntry extends SNVEntry{
 	@Override
 	public double getAAF(int i) {
 		return AAF[i];
+	}
+	
+	public void setAAF(int i, double aaf) {
+		AAF[i] = aaf;
 	}
 	
 	public String getEOATag() {

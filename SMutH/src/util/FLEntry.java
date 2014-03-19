@@ -106,6 +106,11 @@ public class FLEntry extends SNVEntry{
 		return (double)altCount[i]/(refCount[i]+altCount[i]);
 	}
 	
+	public void setAAF(int i, double aaf) {
+		//TODO
+	}
+	
+	
 	public double getLAF(int i) {
 		return (double)(refCount[i] < altCount[i]? refCount[i]:altCount[i])/(double)(refCount[i]+altCount[i]);
 	}

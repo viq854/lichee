@@ -97,7 +97,7 @@ public class Visualizer {
 		
 		// mouse
 		DefaultModalGraphMouse<Integer, Integer> graphMouse = new DefaultModalGraphMouse<Integer, Integer>();
-		graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+		graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
 		visServer.setGraphMouse(graphMouse);
 		
 		// node labels
@@ -418,8 +418,10 @@ public class Visualizer {
 					return;
 				}
 				PHYNetwork constrNetwork = net.removeNode(n);
-				ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
+				ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees(); 
+				constrNetwork.evaluateLineageTrees();
 				if(spanningTrees.size() > 0) {
+					System.out.println("Best tree error score: " + spanningTrees.get(0).getErrorScore());
 					constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, null);
 				} else {
 					JOptionPane.showMessageDialog(frame, "No valid lineage tree was found.", "Message", JOptionPane.PLAIN_MESSAGE);
@@ -450,6 +452,7 @@ public class Visualizer {
 				
 				PHYNetwork constrNetwork = net.collapseClusterNodes(n1, n2);
 				ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
+				constrNetwork.evaluateLineageTrees();
 				if(spanningTrees.size() > 0) {
 					constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, null);
 				} else {

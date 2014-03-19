@@ -24,6 +24,7 @@ public class CNVRegion {
 			ploidy = parts[1];
 			whole = true;
 		}else{
+			//System.out.println(entry);
 			startPos = Integer.parseInt(parts[1]);
 			endPos = Integer.parseInt(parts[2]);
 			ploidy = parts[3];

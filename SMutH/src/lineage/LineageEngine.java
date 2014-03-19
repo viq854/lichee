@@ -1,9 +1,7 @@
 package lineage;
 
-import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -48,18 +46,18 @@ public class LineageEngine {
 	public static void buildLineage(Args args) {
 				
 		// 1. load validation/VCF data
-		SNVDatabase db = new SNVDatabase(args.inputFileName, args.normalSampleId);
-		db.resolveNonRobustconflicts();
+		SNVDataStore db = new SNVDataStore(args.inputFileName, args.normalSampleId);
 		db.annotateSNVs(args.cnvFileName, args.annFileName, args.cosmicFileName, args.tcgaFileName);
 		
-		// 2. normal cell contamination, CNVs (+ any additional filtering, pre-processing)
+		// [2. normal cell contamination, CNVs (+ any additional filtering, pre-processing)]
 		
 		// 3. get the SNVs partitioned by group tag and create the appropriate SNV group objects
-		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
+		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.getSomaticGroups();
 		ArrayList<SNVGroup> groups = new ArrayList<SNVGroup>();
 		for(String groupTag : snvsByTag.keySet()) {
-			groups.add(new SNVGroup(groupTag, snvsByTag.get(groupTag), db.getNumRobustSNVs(groupTag), db.isRobust(groupTag)));
+			groups.add(new SNVGroup(groupTag, snvsByTag.get(groupTag), db.isRobustGroup(groupTag)));
 		}
+		System.out.println("Total number of somatic SNV groups: " + groups.size());
 		if(groups.size() == 0) {
 			logger.log(Level.WARNING, "All SNV groups have been filtered out.");
 			return;
@@ -77,7 +75,7 @@ public class LineageEngine {
 		}
 		
 		// 5. construct the constraint network
-		PHYNetwork constrNetwork = new PHYNetwork(groups, db.getNumofSamples());
+		PHYNetwork constrNetwork = new PHYNetwork(groups, db.getNumSamples());
 		logger.log(Level.FINE, constrNetwork.toString());
 		logger.log(Level.INFO, "Nodes:\n" + constrNetwork.getNodesAsString());
 		
@@ -117,10 +115,10 @@ public class LineageEngine {
 		}
 		
 		// 8. result visualization
-		String[] sampleNames = new String[db.getNumofSamples()];
+		String[] sampleNames = new String[db.getNumSamples()];
 		logger.log(Level.INFO, "Samples: ");
-		for(int i = 0; i < db.getNumofSamples(); i++) {
-			sampleNames[i] = db.getName(i);
+		for(int i = 0; i < db.getNumSamples(); i++) {
+			sampleNames[i] = db.getSampleName(i);
 			logger.log(Level.INFO, i + ": " + sampleNames[i]);
 		}
 		
@@ -150,6 +148,7 @@ public class LineageEngine {
 				writeSampleLineageToFile(spanningTrees, sampleNames,args.outputFilePrefix);
 			}
 		}
+		
 	}
 	
 	/** 
@@ -288,10 +287,14 @@ public class LineageEngine {
 		options.addOption("cosmic", true, "File path to COSMIC SNV annotations");
 		options.addOption("tcga", true, "File path to TCGA SNV annotations");
 		options.addOption("n", "normal", true, "Normal sample id (default: 0)");
-		options.addOption("minAAFHard", true, "Minimum AAF to robustly call an SNV for a sample (default: 0.04)");
-		options.addOption("minAAFSoft", true, "Minimum AAF that can allow an SNV to be called for a sample (default: 0.015)");
-		options.addOption("minGroupSize", true, "Minimum SNV group size (default: 2)");
-		options.addOption("edit", true, "Maximum edit distance between SNV group tags that is allowed to reassign SNVs from one group to the other (default: 2)");
+		options.addOption("closestParentOnly", false, "Only add edges to the ancestor in the closest possible level");
+		options.addOption("maxAAF", true, "Maximum allowed AAF in a sample (default: 0.6)");
+		options.addOption("minAAFPresent", true, "Minimum AAF to robustly call an SNV in a sample (default: 0.04)");
+		options.addOption("maxAAFAbsent", true, "Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)");
+		options.addOption("minGroupSize", true, "Minimum SNV group size (default: 1)");
+		options.addOption("minRobustGroup", true, "Minimum number of robust SNVs in group to be robust (default: 2)");
+		options.addOption("minRobustGroupKeep", true, "Minimum number of robust SNVs per group to keep the group in the network initially (default: 0 - keeps all the groups)");
+		options.addOption("minTargetDistRatio", true, "Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)");
 		options.addOption("e", true, "AAF error margin (default: 0.08)");
 		options.addOption("minClusterSize", true, "Minimum size a cluster must have to be a considered a node in the network (default: 2)");
 		options.addOption("maxClusterDist", true, "Maximum mean AAF difference up to which two clusters can be collapsed (default: 0.2)");
@@ -331,20 +334,26 @@ public class LineageEngine {
 		if(cmdLine.hasOption("n")) {
 			params.normalSampleId = Integer.parseInt(cmdLine.getOptionValue("n"));
 		}
-		if(cmdLine.hasOption("minAAFHard")) {
-			Configs.VALIDATION_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFHard"));
+		if(cmdLine.hasOption("minAAFPresent")) {
+			Configs.VALIDATION_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFPresent"));
 		}
-		if(cmdLine.hasOption("minAAFSoft")) {
-			Configs.VALIDATION_SOFT_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFSoft"));
+		if(cmdLine.hasOption("maxAAFAbsent")) {
+			Configs.VALIDATION_SOFT_THR = Double.parseDouble(cmdLine.getOptionValue("maxAAFAbsent"));
 		}
 		if(cmdLine.hasOption("minGroupSize")) {
 			Configs.GROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minGroupSize"));
 		}
-		//if(cmdLine.hasOption("rpv")) {
-			//Configs.ROBUSTGROUP_PVALUE = Double.parseDouble(cmdLine.getOptionValue("rpv"));
-		//}
-		if(cmdLine.hasOption("edit")) {
-			Configs.EDIT_DISTANCE = Integer.parseInt(cmdLine.getOptionValue("edit"));
+		if(cmdLine.hasOption("maxAAF")) {
+			Configs.MAX_ALLOWED_VAF = Integer.parseInt(cmdLine.getOptionValue("maxAAF"));
+		}
+		if(cmdLine.hasOption("minRobustGroup")) {
+			Configs.ROBUSTGROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minRobustGroup"));
+		}
+		if(cmdLine.hasOption("minRobustGroupKeep")) {
+			Configs.GROUP_ROBUST_NUM_THR = Integer.parseInt(cmdLine.getOptionValue("minRobustGroupKeep"));
+		}
+		if(cmdLine.hasOption("minTargetDistRatio")) {
+			Configs.MIN_VAF_TARGET_RATIO_PER_SAMPLE = Double.parseDouble(cmdLine.getOptionValue("minTargetDistRatio"));
 		}
 		if(cmdLine.hasOption("e")) {
 			Parameters.AAF_ERROR_MARGIN = Double.parseDouble(cmdLine.getOptionValue("e"));
@@ -366,6 +375,9 @@ public class LineageEngine {
 		}
 		if(cmdLine.hasOption("net")) {
 			params.showNetwork = true;
+		}
+		if(cmdLine.hasOption("closestParentOnly")) {
+			Parameters.ALL_EDGES = false;
 		}
 		if(cmdLine.hasOption("top")) {
 			params.numShow = Integer.parseInt(cmdLine.getOptionValue("top"));
