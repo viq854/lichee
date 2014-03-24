@@ -62,7 +62,7 @@ public class SNVDatabase {
 		
 		generateMap();
 		//System.out.println("#Total=\t"+ somaticSNVs.size()+" #Groups="+TAG2SNVs.size());
-		System.out.println("Mutation Map:");
+		System.out.println("Original Mutation Map:");
 		reportGroups();
 		
 	}
@@ -76,7 +76,7 @@ public class SNVDatabase {
 	public void resolveNonRobustconflicts(){	
 		
 		robustGroupSizeThreshold = Configs.getGroupSizeThreshold(robustCounter, TAG2RobustSNVNum.size())*2;
-		System.out.println("#Robust="+ robustCounter+"\t#RGroups="+ TAG2RobustSNVNum.size()+"\tR-thr="+ robustGroupSizeThreshold);
+		//System.out.println("#Robust="+ robustCounter+"\t#RGroups="+ TAG2RobustSNVNum.size()+"\tR-thr="+ robustGroupSizeThreshold);
 		
 		
 		Set<String> conflicts = new HashSet<String>();
@@ -102,8 +102,8 @@ public class SNVDatabase {
 		
 		mergeConflicts(conflicts);
 		
-		System.out.println("Mutation Map after editing to robust groups:");
-		reportGroups();
+		//System.out.println("Mutation Map after editing to robust groups:");
+		//reportGroups();
 		
 		
 	}
@@ -517,7 +517,7 @@ public class SNVDatabase {
 			
 		}
 		
-		System.out.println("There are "+names.size()+" samples!");
+		//System.out.println("There are "+names.size()+" samples!");
 	}
 	
 	
@@ -934,7 +934,7 @@ public class SNVDatabase {
 		ArrayList<String> codes = new ArrayList<String>(TAG2SNVs.keySet());
 		Collections.sort(codes);
 		Collections.reverse(codes);
-		System.out.println("#Group\tSNVs\tRpbustSNVs");
+		System.out.println("#Group\tSNVs\t Avg. Frequency");
 		
 		for (int i = 0; i < codes.size(); i++){
 			if (TAG2SNVs.get(codes.get(i)).size() == 0){
@@ -980,16 +980,17 @@ public class SNVDatabase {
 				/*if (nR !=0)
 					vR[j] = Math.pow(vR[j]/nR,.5);*/
 			}
-			
+			/*
 			
 			if (TAG2RobustSNVNum.containsKey(codes.get(i))){
 				System.out.print("\t" + TAG2RobustSNVNum.get(codes.get(i)).intValue()+"\t" );
-				/*for (int j=0; j<names.size();j++)
-					System.out.printf(" %.2f %.2f",mR[j],vR[j]);*/
+				//for (int j=0; j<names.size();j++)
+				//	System.out.printf(" %.2f %.2f",mR[j],vR[j]);
 				
 			} else {
 				System.out.print("\t0\t" );
 			}
+			*/
 			for (int j=0; j<names.size();j++)
 				//System.out.printf(" %.2f(%.2f)",m[j],v[j]);
 				
@@ -997,7 +998,9 @@ public class SNVDatabase {
 			
 			System.out.println();
 		}	
+		System.out.println();
 	}
+	
 	
 	public double[] getMeanAAF(String code) {
 				
