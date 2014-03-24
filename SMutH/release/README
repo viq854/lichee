@@ -7,23 +7,29 @@ Usage:
  -show                   Display the saved cell lineage tree(s)
  -i <arg>                Input file path (validation or vcf file)
  -o <arg>                Output file path (default: input file path)
- -n,--normal <arg>       Normal sample id (default: 0)
- -minAAFHard <arg>       Minimum AAF to robustly call an SNV for a sample (default: 0.04)
- -minAAFSoft <arg>       Minimum AAF that can allow an SNV to be called for a sample (default: 0.015)
- -gpv <arg>              P-value to detemine the minimum SNV group size (default: 0.2)
- -rpv <arg>              P-value to detemine the minimum robust SNV group size (default: 0.01)
+ -n,--normal <arg>       Normal sample id
+ -maxAAF <arg>			 Maximum allowed AAF in a sample (default: 0.6)
+ -minAAFPresent <arg>    Minimum AAF to robustly call an SNV in a sample (default: 0.04)
+ -maxAAFAbsent <arg>     Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)
+ -minGroupSize <arg>     Minimum SNV group size (default: 1)
+ -minRobustGroup <arg>	 Minimum number of robust SNVs in group to be robust (default: 2)
+ -minRobustGroupKeep	 Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups initially)
+ -minTargetDistRatio	 Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)
  -e <arg>                AAF error margin (default: 0.08)
- -edit <arg>             Maximum edit distance between SNV group tags that is allowed to reassign SNVs 
- 			 from one group to the other (default: 2)
- -maxClusterDist <arg>   Maximum mean AAF difference up to which two clusters can be collapsed (default: 0.2)
- -minClusterSize <arg>   Minimum size a cluster must have to be a considered a node in the network (default: 2)
+ -maxClusterDist <arg>   Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1)
+ -minClusterSize <arg>   Minimum size a cluster must have to be considered a node in the network (default: 2)
  -net,--showNetwork      Display the constraint network
+ -closestParentOnly		 Only add edges to the ancestor in the closest possible level
  -top <arg>              Number of top ranking lineage trees to display
  -tree,--showTree        Display the top ranking lineage tree
  -v,--verbose            Verbose mode
  -vcf                    Input data type is vcf (default: validation)
  -s,--save               Save the output to file
  -h,--help               Print usage
+ -cnv <arg>				 File path to CNV regions used to mark SNVs
+ -tcga <arg>			 File path to TCGA SNV annotations
+ -cosmic <arg>			 File path to COSMIC SNV annotations
+ -ann <arg>				 File path to ANNOVAR variant function annotations
  
 
 HOW TO RUN
@@ -34,13 +40,13 @@ HOW TO RUN
 EXAMPLES
 --------
 #Show the top ranking tree and save the results
-./smuth -build -i ../data/Patient_1.validation.txt -tree -s
+./smuth -build -i ../data/Patient_1.validation.txt -tree -s -n 0
 
 #Change normal sample index
 ./smuth -build -i ../data/Patient_3.validation.txt -tree -n 1
 
-#Change the SNV group size p-value (will filter out the smaller groups)
-./smuth -build -i ../data/Patient_1.validation.txt -tree -gpv 0.01 
+#Change the SNV group size  (will filter out the smaller groups)
+./smuth -build -i ../data/Patient_1.validation.txt -tree -minGroupSize 4 -n 0
 
 #Eliminate clusters that have fewer than 5 SNVs
 ./smuth -build -i ../data/Patient_3.validation.txt -n 1 -minClusterSize 5 
@@ -48,9 +54,9 @@ EXAMPLES
 #Display the top 2 previously computed lineage trees
 ./smuth -show -i ../data/Patient_3.validation.txt -top 2 -n 1
 
-#Reduce/eliminate clusters by increasing the Euclidean distance between cluster AAF centroids 
+#Reduce/eliminate clusters by increasing the distance between cluster AAF centroids 
 #that determines the cluster collapse
-./smuth -build -i ../data/Patient_2.validation.txt -maxClusterDist 5
+./smuth -build -i ../data/Patient_2.validation.txt -maxClusterDist 5 -n 0
 
 
 SYSTEM REQUIREMENTS

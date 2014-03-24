@@ -1,7 +1,5 @@
 package util;
 
-import util.Configs.GroupSizeType;
-import util.Configs.format;
 
 public final class Configs {
 
@@ -10,15 +8,16 @@ public final class Configs {
 	// general variables!!!
 	public static String path;
 	public static String testName;
-	//public static int normalSample;
 		
 	// Type of input
 	public enum format { VCF, MUT, FL, SIM}
 	public static format INFORMAT = format.MUT;
 	
 	// for validation SNVs
-	public static double VALIDATION_THR = 0.04; //0.04 0.06 0.07 0.08
-	public static double VALIDATION_SOFT_THR = 0.01; // 0.015 0.02
+	public static double VALIDATION_THR = 0.04;
+	public static double VALIDATION_SOFT_THR = 0.015; 
+	public static double SYST_ERR_THR = 0.005;
+	
 	
 	// for WGS SNVs
 	//public static final double AVG_COVERAGE = 50;
@@ -30,17 +29,21 @@ public final class Configs {
 	// For group size; 1 == any size is acceptable
 	public enum GroupSizeType {FIXED, AVERAGE, SIGNIFICANT}; 
 	public static  GroupSizeType gst = GroupSizeType.FIXED;
-	public static  int GROUP_SIZE_THR = 2; 
-	public static double GROUP_PVALUE = 0.2; 
-	//public static final double ROBUSTGROUP_SIZE_THR = 10; 
-	//public static final double ROBUSTGROUP_PVALUE = 0.01;
-
-	public static final double SUBPOP_PVALUE = 0.0001;
+	public static double GROUP_PVALUE = 0.2;
 	
+	public static int GROUP_SIZE_THR = 1;  
+	public static int GROUP_ROBUST_NUM_THR = 0;  
+	public static double ROBUSTGROUP_SIZE_THR = 2; 
+	public static int EDIT_DISTANCE = 15;
+	public static double MIN_VAF_TARGET_RATIO_PER_SAMPLE = 0.5;
+	public static double MAX_ALLOWED_VAF = 0.6;
+	public static int MIN_ALLOWED_COVERAGE = 200;
+	
+	
+	public static final double SUBPOP_PVALUE = 0.0001;
 	// to edit SNV 
 	public static final double BASE_ERROR = 0.02;
 	public static final double EDIT_PVALUE= 0.01;
-	public static int EDIT_DISTANCE = 2;
 	
 	
 	// LOH analysis

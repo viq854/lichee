@@ -5,15 +5,24 @@ import ppt.*;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Paint;
 import java.awt.Panel;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TextArea;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.geom.Area;
@@ -30,12 +39,21 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonModel;
+import javax.swing.DefaultButtonModel;
+import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
+import lineage.PHYNetwork;
 import lineage.PHYNode;
 import lineage.PHYTree;
 
@@ -79,7 +97,7 @@ public class Visualizer {
 		
 		// mouse
 		DefaultModalGraphMouse<Integer, Integer> graphMouse = new DefaultModalGraphMouse<Integer, Integer>();
-		graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+		graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
 		visServer.setGraphMouse(graphMouse);
 		
 		// node labels
@@ -270,14 +288,14 @@ public class Visualizer {
 	 * Displays the lineage tree
 	 * The tree nodes can be interacted with to obtain more information
 	 */
+
 	public static void showLineageTree(DirectedGraph<Integer, Integer> g, final HashMap<Integer, String> nodeLabels, 
 			final HashMap<String, ArrayList<SNVEntry>> snvsByTag, 
-			String fileOutputName, final HashMap<Integer, PHYNode> nodeInfo, final PHYTree t) {	
-		JFrame frame = new JFrame("Best Lineage Tree");
+			String fileOutputName, final HashMap<Integer, PHYNode> nodeInfo, final PHYTree t, final PHYNetwork net, final String[] sampleNames) {	
 		DelegateTree<Integer, Integer> tree = new DelegateTree<Integer, Integer>(g);
 		tree.setRoot(0);
 		TreeLayout<Integer, Integer> treeLayout = new TreeLayout<Integer, Integer>((Forest<Integer, Integer>) tree,100,70);
-		VisualizationViewer<Integer, Integer> visServer = new VisualizationViewer<Integer, Integer>(treeLayout);
+		final VisualizationViewer<Integer, Integer> visServer = new VisualizationViewer<Integer, Integer>(treeLayout);
 		visServer.setPreferredSize(new Dimension(1500, 600));
 		
 		DefaultModalGraphMouse<Integer, Integer> graphMouse = new DefaultModalGraphMouse<Integer, Integer>();
@@ -315,7 +333,11 @@ public class Visualizer {
 		                	for(SNVEntry snv : snvs) {
 		                		s += snv.getChromosome() + " ";
 		                		s += snv.getPosition() + " ";
-		                		s += snv.alt + "/" + snv.ref;
+		                		s += snv.ref + "/" + snv.alt + " ";
+		                		s += ((snv.isInCNVRegion()) ? "*cnv* " : "");
+		                		s += ((snv.getAnnotation() != null) ? snv.getAnnotation().codingInfo + " " 
+		                				+ snv.getAnnotation().geneInfo + " "
+		                				+ snv.getAnnotation().cosmic + " " + snv.getAnnotation().tcga : "");
 		                		s += "\n";
 		                	}
 		                	info.setText(s);
@@ -369,28 +391,131 @@ public class Visualizer {
 		visServer.getRenderContext().setVertexFillPaintTransformer(vpt);
 		
 		// frame content
-		Container content = frame.getContentPane();
-		content.add(visServer);
-		content.add(console, BorderLayout.SOUTH);
+		final JFrame frame = new JFrame("Top Lineage Tree");
+		JPanel panel = new JPanel();
+		panel.setLayout(new GridBagLayout());
 		
+		JButton kill = new JButton();
+		kill.setText("Kill");
+		kill.setBackground(Color.red);
+		kill.setOpaque(true);
+		kill.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				Object[] pickedNodes = new HashSet<Integer>(visServer.getPickedVertexState().getPicked()).toArray();
+				if(pickedNodes.length != 1) {
+					JOptionPane.showMessageDialog(frame, "One node needs to be selected.", "Message", JOptionPane.PLAIN_MESSAGE);
+					return;
+				}
+				int selectedNode = (Integer)pickedNodes[0];
+				if(selectedNode < 0) {
+					JOptionPane.showMessageDialog(frame, "Sample nodes cannot be removed.", "Message", JOptionPane.PLAIN_MESSAGE);
+					return;
+				}
+				PHYNode n = nodeInfo.get(selectedNode);
+				if(n.isRoot()) {
+					JOptionPane.showMessageDialog(frame, "Cannot remove the root germline node.", "Message", JOptionPane.PLAIN_MESSAGE);
+					return;
+				}
+				PHYNetwork constrNetwork = net.removeNode(n);
+				ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees(); 
+				constrNetwork.evaluateLineageTrees();
+				if(spanningTrees.size() > 0) {
+					System.out.println("Best tree error score: " + spanningTrees.get(0).getErrorScore());
+					constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, null);
+				} else {
+					JOptionPane.showMessageDialog(frame, "No valid lineage tree was found.", "Message", JOptionPane.PLAIN_MESSAGE);
+				}
+			}
+		});
+		
+		JButton collapse = new JButton();
+		collapse.setText("Collapse");
+		collapse.setBackground(Color.blue);
+		collapse.setOpaque(true);
+		collapse.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				Object[] pickedNodes = new HashSet<Integer>(visServer.getPickedVertexState().getPicked()).toArray();
+				if(pickedNodes.length != 2) {
+					JOptionPane.showMessageDialog(frame, "Two nodes need to be selected.", "Message", JOptionPane.PLAIN_MESSAGE);
+					return;
+				}
+				PHYNode n1 = nodeInfo.get((Integer)pickedNodes[0]);
+				PHYNode n2 = nodeInfo.get((Integer)pickedNodes[1]);
+				
+				// can collapse only clusters
+				if(!n1.getSNVGroup().equals(n2.getSNVGroup())) {
+					JOptionPane.showMessageDialog(frame, "Cannot collapse nodes that are not clusters of the same group.", "Message", JOptionPane.PLAIN_MESSAGE);
+					return;
+				}
+				
+				PHYNetwork constrNetwork = net.collapseClusterNodes(n1, n2);
+				ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
+				constrNetwork.evaluateLineageTrees();
+				if(spanningTrees.size() > 0) {
+					constrNetwork.displayTree(spanningTrees.get(0), sampleNames, null, null);
+				} else {
+					JOptionPane.showMessageDialog(frame, "No valid lineage tree was found.", "Message", JOptionPane.PLAIN_MESSAGE);
+				}
+			}
+		});
+		
+		GridBagConstraints c = new GridBagConstraints();
+		//c.weighty = 0.8;
+		c.fill = GridBagConstraints.BOTH;
+		c.gridx = 0;
+		c.gridy = 0;
+		c.weightx = 1.0;
+		c.weighty = 1.0;
+		c.ipady = 100;
+		//c.anchor = GridBagConstraints.PAGE_START;
+		panel.add(visServer, c);
+
+		c.ipady = 0;
+		c.fill = GridBagConstraints.CENTER;
+		c.weighty = 0;
+		c.weightx = 0;
+		c.gridx = 0;
+		c.gridy = 1;
+		//int h = console.getPreferredSize().height;
+		//console.setMinimumSize(new Dimension(console.getPreferredSize().width, h/4));
+		//console.setPreferredSize(new Dimension(console.getPreferredSize().width, h/4));
+		//console.setMaximumSize(new Dimension(console.getPreferredSize().width, h/4));
+		panel.add(console, c);
+		
+		c.fill = GridBagConstraints.CENTER;
+		c.gridx = 0;
+		c.gridy = 2;
+		kill.setMargin(new Insets(0, 0, 1, 0));
+		panel.add(kill, c);
+		
+		c.fill = GridBagConstraints.CENTER;
+		c.gridx = 0;
+		c.gridy = 3;
+		panel.add(collapse, c);
+		
+		frame.setContentPane(panel);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
 		
-		Dimension size = frame.getSize();
-	    BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
-	    Graphics gr = image.getGraphics();
-	    frame.paint(gr);
-	    gr.dispose();
+		
+		
+		//Dimension size = frame.getSize();
+	    //BufferedImage image = (BufferedImage)frame.createImage(size.width, size.height);
+	    //Graphics gr = image.getGraphics();
+	    //frame.paint(gr);
+	    //gr.dispose();
       
 	    if(fileOutputName != null) {
-	    	try {
-	    		ImageIO.write(image, "jpg", new File(fileOutputName));
-	    	}
-	    	catch (IOException e) {
-	    		e.printStackTrace();
-	    		System.err.println("Failed to save tree to the file: " + fileOutputName);
-	    	}
+	    	//try {
+	    		//ImageIO.write(image, "jpg", new File(fileOutputName));
+	    	//}
+	    	//catch (IOException e) {
+	    		//e.printStackTrace();
+	    		//System.err.println("Failed to save tree to the file: " + fileOutputName);
+	    //	}
 	    }
 	}
 	

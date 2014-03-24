@@ -124,10 +124,12 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 		if(nbrs == null) return true;
 		for(int i = 0; i < n.getNumSamples(); i++) {
 			double affSum = 0;
+			double errMargin = 0.0;
 			for(PHYNode n2 : nbrs) {
 				affSum += n2.getAAF(i);
+				errMargin += PHYNetwork.getAAFErrorMargin(n, n2, i);
 			}
-			if(affSum >= n.getAAF(i) + Parameters.AAF_ERROR_MARGIN) {
+			if(affSum >= n.getAAF(i) + errMargin) {
 				return false;
 			}
 		}

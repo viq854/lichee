@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lineage.AAFClusterer.Cluster;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
@@ -101,6 +102,10 @@ public class PHYNetwork implements Serializable {
 					checkAndAddEdge(n1, n2);
 				}
 			}
+		}
+		
+		if(Parameters.ALL_EDGES) {
+			addAllHiddenEdges();
 		}
 		
 		// find the nodes that are not connected and connect them to a valid node in the closest
@@ -200,7 +205,7 @@ public class PHYNetwork implements Serializable {
 	 * Returns the AAF error margin on the edge 
 	 * between the from and to nodes
 	 */
-	private double getAAFErrorMargin(PHYNode from, PHYNode to, int i) {
+	protected static double getAAFErrorMargin(PHYNode from, PHYNode to, int i) {
 		if(Parameters.STATIC_ERROR_MARGIN) {
 			return Parameters.AAF_ERROR_MARGIN;
 		}
@@ -278,10 +283,10 @@ public class PHYNetwork implements Serializable {
 	
 	/** Adds all the inter-level edges */
 	public void addAllHiddenEdges() {
-		for(int i = numSamples + 1; i > 0; i--) {
+		for(int i = numSamples; i > 0; i--) { //except the root
 			ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
 			if(fromLevelNodes == null) continue;
-			for(int j = i-1; j > 0; j--) {
+			for(int j = i-1; j > 1; j--) {
 				ArrayList<PHYNode> toLevelNodes = nodes.get(j);
 				if(toLevelNodes == null) continue;
 				for(PHYNode n1 : fromLevelNodes) {
@@ -298,32 +303,121 @@ public class PHYNetwork implements Serializable {
 	/**
 	 * The network needs to be adjusted when no valid spanning PHYTrees are found.
 	 * Adjustments include: 
-	 * - removing nodes corresponding to groups that are less robust
+	 * - removing nodes corresponding to clusters of groups that are less robust
 	 * - increasing the error margin (to do)
 	 * - adding hidden edges (to do)
 	 */
 	public PHYNetwork fixNetwork() {
-		// reconstruct the network from robust groups only
+		// reconstruct the network from clusters of robust groups only
 		Set<SNVGroup> filteredGroups = new HashSet<SNVGroup>();
-		SNVGroup toRemove = null;
+		Cluster toRemove = null;
+		SNVGroup group = null;
 		for(PHYNode n : nodesById.values()) {
-			SNVGroup group = n.snvGroup;
-			if(group != null) {
-				filteredGroups.add(n.snvGroup);
-				if((!group.isRobust())) {
+			Cluster c = n.getCluster();
+			SNVGroup g = n.snvGroup;
+			if(g != null) {
+				if(!filteredGroups.contains(n.snvGroup)) {
+					filteredGroups.add(n.snvGroup);
+				}
+				if((!g.isRobust())) {
 					if (toRemove == null) {
-						toRemove = group;
-					} else if(group.getNumSNVs() < toRemove.getNumSNVs()) {
-						toRemove = group;
+						toRemove = c;
+						group = g;
+					} else if(c.getMembership().size() < toRemove.getMembership().size()) {
+						toRemove = c;
+						group = g;
 					}
 				}
 			}
 		}
+		
+		/*if(toRemove != null && toRemove.getMembership().size() == 1) {
+			for(PHYNode n : nodesById.values()) {
+				Cluster c = n.getCluster();
+				SNVGroup g = n.snvGroup;
+				if(g == null) continue;
+				if(c.getMembership().size() == 1 && (group.getSNVs().get(c.getMembership().get(0)).getNumRobustSamples() < group.getSNVs().get(toRemove.getMembership().get(0)).getNumRobustSamples())) {
+					toRemove = c;
+					group = g;
+				}
+			}
+		}*/
+		
 		if(toRemove != null) {
-			filteredGroups.remove(toRemove);
-			logger.log(Level.INFO, "Removed group " + toRemove.getTag() + " of size " + toRemove.getNumSNVs());
+			group.removeCluster(toRemove);
+			logger.log(Level.INFO, "Removed cluster " + toRemove.getId() + " of group " + group.getTag() + " of size " + toRemove.getMembership().size() + " with members: ");
+			for(Integer snv : toRemove.getMembership()) {
+				SNVEntry entry = group.getSNVs().get(snv);
+				logger.log(Level.INFO, entry.getChromosome() + " " +  entry.getPosition() + " " + entry.getAltChar() + "/" + entry.getRefChar());
+			}
 		}
 		return new PHYNetwork(new ArrayList<SNVGroup>(filteredGroups), numSamples);
+	}
+	
+	/** 
+	 * Collapses two cluster nodes and reconstructs the network
+	 * @requires the two nodes are in the same group
+	 */
+	public PHYNetwork collapseClusterNodes(PHYNode n1, PHYNode n2) {
+		
+		SNVGroup g = n1.getSNVGroup();
+		Cluster c1 = n1.getCluster();
+		Cluster c2 = n2.getCluster();
+		
+		// collapse c1 and c2
+		Cluster union = new AAFClusterer().new Cluster(c1.getCentroid().clone(), new ArrayList<Integer>(c1.getMembership()), c1.getId());
+		union.setStdDev(c1.getStdDev());
+		for(Integer obs : c2.getMembership()) {
+			union.addMember(obs);
+		}
+		union.recomputeCentroidAndStdDev(g.alleleFreqBySample, g.getSNVs().size(), g.getNumSamples());
+		
+		SNVGroup newG = null;
+		Set<SNVGroup> groups = new HashSet<SNVGroup>();
+		for(PHYNode n : nodesById.values()) {
+			SNVGroup group = n.getSNVGroup();
+			if(group != null) {
+				if(!group.equals(g)) {
+					if(!groups.contains(g)) {
+						groups.add(n.getSNVGroup());	
+					}
+				} else {
+					if(newG == null) {
+						newG = new SNVGroup(g.getTag(), g.getSNVs(), g.isRobust());
+						newG.subPopulations = g.subPopulations.clone();
+						newG.removeCluster(c1);
+						newG.removeCluster(c2);
+						newG.addCluster(union);
+						groups.add(newG);
+					}
+				}
+			}
+		}
+		return new PHYNetwork(new ArrayList<SNVGroup>(groups), numSamples);
+	}
+	
+	/** Removes a node and reconstructs the network */
+	public PHYNetwork removeNode(PHYNode node) {
+		SNVGroup newG = null;
+		Set<SNVGroup> groups = new HashSet<SNVGroup>();
+		for(PHYNode n : nodesById.values()) {
+			SNVGroup g = n.getSNVGroup();
+			if(g != null) {
+				if(g.equals(node.getSNVGroup())) {
+					if(newG == null) {
+						newG = new SNVGroup(g.getTag(), g.getSNVs(), g.isRobust());
+						newG.setSubPopulations(g.subPopulations.clone());
+						newG.removeCluster(node.getCluster());
+						groups.add(newG);
+					}
+				} else {
+					if(!groups.contains(n.getSNVGroup())) {
+						groups.add(n.getSNVGroup());
+					}
+				}
+			}
+		}
+		return new PHYNetwork(new ArrayList<SNVGroup>(groups), numSamples);
 	}
 	
 	// ---- Spanning PHYTree Generation ----
@@ -358,6 +452,15 @@ public class PHYNetwork implements Serializable {
 				PHYNode v = e.to;
 				t.addNode(v);
 				t.addEdge(e.from, v);
+				
+				//NEW: check if adding this node does not violate the constraint
+				//if(Parameters.ALL_EDGES) {
+					//if(!t.checkConstraint(e.from)) {
+						//t.removeEdge(e.from, e.to);
+						//System.out.println("HERE");
+						//return;
+					//}
+				//}
 				
 				// update f
 				ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
@@ -438,12 +541,16 @@ public class PHYNetwork implements Serializable {
 		t.addNode(root);
 		// initialize f to contain all edges (root, v)
 		f = new ArrayList<PHYEdge>();
-		for(PHYNode n : edges.get(root)) {
+		ArrayList<PHYNode> nbrs = edges.get(root);
+		if(nbrs == null || nbrs.size() == 0) return spanningTrees;
+		for(PHYNode n : nbrs) {
 			f.add(new PHYEdge(root, n));
 			
 		}
 		grow(t);
+		//System.out.println(spanningTrees.size());
 		applyAAFConstraints(spanningTrees);
+		
 		return spanningTrees;
 	}
 	
@@ -475,7 +582,7 @@ public class PHYNetwork implements Serializable {
 					affSum += n2.getAAF(i);
 					errMargin += getAAFErrorMargin(n, n2, i);
 				}
-				if(affSum >= n.getAAF(i) + errMargin) {
+				if(affSum > n.getAAF(i) + errMargin) {
 					return false;
 				}
 			}
@@ -615,8 +722,10 @@ public class PHYNetwork implements Serializable {
 		}			
 		
 		//Visualizer.showLineageTreeBreakdown(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
-		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
+		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t, this, sampleNames);	
 	}
+	
+	
 	/**
 	 * Returns a string representation of the graph
 	 */

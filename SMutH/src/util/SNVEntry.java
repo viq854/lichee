@@ -23,8 +23,11 @@ public abstract class  SNVEntry {
 		
 	 protected String[] genotype;
 	 protected boolean robust;
-	
+	 protected int numRobustSamples;
+	 
 	 protected boolean inCNVRegion;
+	 
+	 protected SNVAnnotation annotation;
 	 
 	public String getChromosome(){
 		return chrom;
@@ -72,6 +75,13 @@ public abstract class  SNVEntry {
 		return alt;
 	}
 	
+	public SNVAnnotation getAnnotation() {
+		return annotation;
+	}
+	
+	public void setAnnotation(SNVAnnotation ann) {
+		annotation = ann;
+	}
 	
 	/**
 	 * Function: getGenotype(int sample)
@@ -89,6 +99,11 @@ public abstract class  SNVEntry {
 	public boolean isRobust(){
 		return robust;
 	}
+	
+	public int getNumRobustSamples() {
+		return numRobustSamples;
+	}
+	
 	/**
 	 * Function: getGATK(int sample)
 	 * Usage: String gatk = entry.getGATK(sample)
@@ -115,6 +130,7 @@ public abstract class  SNVEntry {
 
 	
 	public abstract double getAAF(int i) ;
+	public abstract void setAAF(int i, double aaf);
 	
 	
 	/**
