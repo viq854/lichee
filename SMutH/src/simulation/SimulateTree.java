@@ -17,6 +17,9 @@ public class SimulateTree {
 	private int numGroups;
 	private HashMap<Integer, ArrayList<int[]>> groups;
 	
+	private final static int MinSize = 5;
+	private final static int MaxSize = 200;
+
 	
 	public SimulateTree(int n, int m){
 		numSamples = n;
@@ -101,7 +104,7 @@ public class SimulateTree {
 			}
 			groups.get(c).add(child);
 			
-			pw.write(booleansToString(tag)+"\t"+(generator.nextInt(90)+10)+"\t");
+			pw.write(booleansToString(tag)+"\t"+(generator.nextInt(MaxSize-MinSize)+MinSize)+"\t");
 				for (int i=0; i<numSamples; i++){
 					node[i] = node[i] - child[i];
 					pw.write((double)child[i]/100 +"\t");

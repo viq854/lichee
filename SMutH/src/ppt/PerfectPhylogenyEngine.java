@@ -1,9 +1,12 @@
 package ppt;
 
 import util.*;
+import util.Configs.format;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.*;
+
 
 import org.apache.commons.cli.*;
 
@@ -21,7 +24,7 @@ import edu.uci.ics.jung.graph.util.*;
  */
 public class PerfectPhylogenyEngine {
 	
-	private static enum Samples {
+	/*private static enum Samples {
 		LPJ040 (3),
 		LPJ041 (2),
 		LPJ128 (2),
@@ -50,7 +53,7 @@ public class PerfectPhylogenyEngine {
 	        this.normal = normal;
 	    }
 		
-	}
+	}*/
 			
 	/**
 	 * Function: main(String[] args)
@@ -64,23 +67,50 @@ public class PerfectPhylogenyEngine {
 	 * @param args	Main's normal args parameter
 	 */
 	public static void main(String[] args) {
-		CommandLine cmdLineArgs = setOptions(args);
-		args = cmdLineArgs.getArgs();
+		Options options = new Options(); 
+		options.addOption("i", true, "Input file path");
+		options.addOption("n", "normal", true, "Normal sample id (default: 0)");
 
-		/*if (args.length == 0) {
-			System.out.println("Must pass input matrix!");
-			System.exit(1);
-		}*/
 		
+		CommandLineParser parser = new BasicParser();
+		CommandLine cmdLine = null;
+		try {
+			cmdLine = parser.parse(options, args);
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			new HelpFormatter().printHelp("smuth", options);
+			System.exit(-1);
+		}
+		
+		
+		// required options
+		if(!cmdLine.hasOption("i")) {
+			System.out.println("Required parameter: input file path [-i]");
+			new HelpFormatter().printHelp("smuth", options);
+			System.exit(-1);
+		}
+		
+		int normalSample = 0;
+		if(cmdLine.hasOption("n")) {
+			normalSample = Integer.parseInt(cmdLine.getOptionValue("n"));
+		}
 
+		if(cmdLine.hasOption("h")) {
+			new HelpFormatter().printHelp(" ", options);
+		}
+
+		
+		String inputFile = cmdLine.getOptionValue("i");
+		
+		File f = new File(inputFile);
+		Configs.path = f.getParent();
+		Configs.testName = f.getName().substring(0, f.getName().length()-4);
 		//for (Samples s: Samples.values())
 		{
-		Configs.testName = "Patient_2";//s.toString();
-		int normalSample = 0;
+					
 		//Configs.path =  "/Users/rahelehs/Work/ash/AllMutations/";
-		Configs.path =  "/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/"+Configs.testName+"/";
+		//Configs.path =  "/Users/rahelehs/Work/BreastCancer/patients_vcfs/full_vcfs/"+Configs.testName+"/";
 		//path =  "/Users/rahelehs/Work/cancerTree/simulation_vcfs/RECOMB2013/";
-		String inputFile = Configs.path+Configs.testName+".validation.txt";
 		SNVDatabase snvDB = new SNVDatabase(inputFile, normalSample);
 		snvDB.resolveNonRobustconflicts();
 
@@ -106,7 +136,7 @@ public class PerfectPhylogenyEngine {
 			Set<String> conflicts = tc.getConflicts();
 			
 			snvDB.resolveConflicts(conflicts);
-			System.out.println("Mutation Map after editing to perfect phytree groups!");
+			System.out.println("Mutation Map after editing to perfect phylogentic tree groups!");
 			snvDB.reportGroups();
 			
 			//Step 3 ####
@@ -122,8 +152,7 @@ public class PerfectPhylogenyEngine {
 			buildTree(conflictFreeMatrixPrime, LColFuncMap,snvDB);
 
 		}
-		
-		snvDB.printSNVs(Configs.path+Configs.testName+".validSNVs.txt");
+		snvDB.printSNVs(Configs.path+"//"+Configs.testName+".validSNVs.txt");
 		
 		
 		}
@@ -267,5 +296,7 @@ public class PerfectPhylogenyEngine {
 		}
 		return colFuncMap;
 	}
+	
+
 	
 }
