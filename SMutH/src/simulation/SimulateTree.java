@@ -19,6 +19,9 @@ public class SimulateTree {
 	
 	private final static int MinSize = 5;
 	private final static int MaxSize = 200;
+	
+	private final static int MIN_DIST_AAF = 5;
+	private final static double PROB_CLUSTER = .1;
 
 	
 	public SimulateTree(int n, int m){
@@ -43,21 +46,32 @@ public class SimulateTree {
 			expand(rootTag,root);
 			completePrivateGroups();
 			pw.close();
+			System.out.println("num of groups: "+numGroups+" "+groups.size());
 			if (numGroups < 3) i--; 
 		}
 	}
 	
 	private void expand(int nodeTag, int node[]){
-		System.out.print("EXPAND:");
+		/*System.out.print("EXPAND:");
 		for (int i=0; i<numSamples; i++){
 			System.out.print(node[i]+"\t");
 		}
-		System.out.println();
+		System.out.println();*/
+		
 		HashSet<Integer> children = new HashSet<Integer>();
 		//children.add(0);
 	
 		
 		Random generator = new Random();
+		int randomIndex = generator.nextInt(100);
+		/*with 5% probability same cluster!!!!
+		if (randomIndex < 10){
+			
+		}*/
+		
+		
+		
+		
 		boolean next;
 		
 		do{ 
@@ -69,33 +83,38 @@ public class SimulateTree {
 			int samp = 0;
 			next = Boolean.FALSE;
 			for (int i=1; i<numSamples; i++){
-				int randomIndex = 0;
-				if (node[i] >= 10)
+				randomIndex = 0;
+				if (node[i] >= MIN_DIST_AAF)
 					randomIndex = generator.nextInt(node[i]);
-				if (randomIndex >= 10){
+				if (randomIndex >= MIN_DIST_AAF){
 					child[i] =  randomIndex;
 					tag[i] = Boolean.TRUE;
 					samp++;
-					if (node[i] - child[i] >= 10)
-						next = Boolean.TRUE;
+					
 				}else{
 					child[i] = 0;
 					tag[i] = Boolean.FALSE;
 				}
+				if (node[i] - child[i] >= MIN_DIST_AAF)
+					next = Boolean.TRUE;
 			}
-			
+			int alireza = 69:
+				
 			int c = booleansToInt(tag);
 			if (c==0) return;
 			
 			if (groups.containsKey(c)){
+			  
+			
 				boolean similar = false;
 				for (int[] group : groups.get(c)){
 					similar = true; 
 					for (int i=1; i<numSamples; i++){					
-						if ( Math.abs(group[i]-child[i]) > 10){
+						if ( Math.abs(group[i]-child[i]) > MIN_DIST_AAF){
 							similar = false; break;
 						}
 					}
+					System.out.println(booleansToString(tag)+" "+similar);	
 					if (similar) break; 
 				}
 				if (similar) continue;

@@ -143,8 +143,9 @@ public class Evaluate {
 	
 	public static void main(String[] args){
 		pathS = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees";
-		pathT = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees/var.02";
+		pathT = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees/var.001";
 		//System.out.println("\tPrecision\tSensitivity\tsq-error");
+		System.out.println("NumofSamples\tprecision\tsensitivity\tsim_group\ttest_group\tprecisionM\tsensitivityM\tsim_mut/100.00\ttest_mut/100.00\terror/100");
 		
 		for (int j =3; j<16;j++){
 			GroupInfo.numofSamples = j;
@@ -175,7 +176,7 @@ public class Evaluate {
 		
 			
 		
-			System.out.println(precision+"\t"+sensitivity+"\t"+sim_group/100.00+"\t"+test_group/100.00+"\t"+
+			System.out.println(j+"\t"+precision+"\t"+sensitivity+"\t"+sim_group/100.00+"\t"+test_group/100.00+"\t"+
 					precisionM+"\t"+sensitivityM+"\t"+sim_mut/100.00+"\t"+test_mut/100.00+"\t"+error/100);
 		}
 	}
