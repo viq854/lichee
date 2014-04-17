@@ -91,6 +91,7 @@ public class LineageEngine {
 			System.exit(-1);
 		}
 		
+		constrNetwork.displayNetwork();
 		// 6. find all the lineage trees that pass the AAF constraints
 		ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
 		logger.log(Level.INFO, "Found " + spanningTrees.size() + " valid trees");
@@ -299,6 +300,7 @@ public class LineageEngine {
 		options.addOption("minClusterSize", true, "Minimum size a cluster must have to be a considered a node in the network (default: 2)");
 		options.addOption("maxClusterDist", true, "Maximum mean AAF difference up to which two clusters can be collapsed (default: 0.2)");
 		options.addOption("vcf", false, "Input data type is vcf (default: validation)");
+		options.addOption("sim", false, "Input data type is simulation ");
 		options.addOption("s", "save", false, "Save the output to file");
 		options.addOption("tree", "showTree", false, "Display the top ranking lineage tree");
 		options.addOption("net", "showNetwork", false, "Display the constraint network");
@@ -367,6 +369,9 @@ public class LineageEngine {
 		if(cmdLine.hasOption("vcf")) {
 			Configs.INFORMAT = format.VCF;
 		}
+		if(cmdLine.hasOption("sim")) {
+			Configs.INFORMAT = format.SIM;
+		}
 		if(cmdLine.hasOption("s")) {
 			params.persist = true;
 		}
@@ -419,6 +424,9 @@ public class LineageEngine {
 				params.tcgaFileName = cmdLine.getOptionValue("tcga");	
 			}
 			buildLineage(params);
+			//NetworkTest t = new NetworkTest();
+			//t.test();
+			
 		} else if (cmdLine.hasOption("show")){
 			params.showFileNamePrefix = cmdLine.getOptionValue("i");
 			showTrees(params);

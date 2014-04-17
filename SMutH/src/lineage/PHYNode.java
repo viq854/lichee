@@ -180,7 +180,7 @@ public class PHYNode implements Serializable {
 		} else if(isLeaf) {
 			node += "leaf sample id = " + leafSampleId;
 		} else {
-			node += "root";
+			//node += "root";
 		}
 		return node;
 	}

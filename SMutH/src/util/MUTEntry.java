@@ -25,10 +25,12 @@ public class MUTEntry extends SNVEntry{
 		robust = true;
 		
 		int i =0;
-		chrom = entryParts[i++];
-		pos = new Integer(entryParts[i++]).intValue();
-		ref = entryParts[i++].charAt(0);
-		alt = entryParts[i++].charAt(0);
+		if(Configs.INFORMAT != Configs.format.SIM) {
+			chrom = entryParts[i++];
+			pos = new Integer(entryParts[i++]).intValue();
+			ref = entryParts[i++].charAt(0);
+			alt = entryParts[i++].charAt(0);
+		}
 		EOAtag = entryParts[i++];
 		/*String all0s = "";
 		for (int x = 0; x<numofSamples - EOAtag.length(); x++) all0s +="0";

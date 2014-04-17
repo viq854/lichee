@@ -30,9 +30,8 @@ public class SimulateTree {
 		int [] root = new int[numSamples];
 		Arrays.fill(root, 50);
 		for (int i=0; i < m; i++)
-		//int i = 4;
 		{
-			String fileName = "/Users/rahelehs/Work/cancertree/LineageTree/simulation/trees/tree"+n+"_"+i;
+			String fileName = "/Users/viq/smuth/SMutH/data/trees/tree"+n+"_"+i;
 			numGroups = 0;
 			groups = new HashMap<Integer, ArrayList<int[]>>();
 			try {
@@ -98,7 +97,6 @@ public class SimulateTree {
 				if (node[i] - child[i] >= MIN_DIST_AAF)
 					next = Boolean.TRUE;
 			}
-			int alireza = 69:
 				
 			int c = booleansToInt(tag);
 			if (c==0) return;
@@ -106,7 +104,7 @@ public class SimulateTree {
 			if (groups.containsKey(c)){
 			  
 			
-				boolean similar = false;
+				/*boolean similar = false;
 				for (int[] group : groups.get(c)){
 					similar = true; 
 					for (int i=1; i<numSamples; i++){					
@@ -117,8 +115,9 @@ public class SimulateTree {
 					System.out.println(booleansToString(tag)+" "+similar);	
 					if (similar) break; 
 				}
-				if (similar) continue;
-			}else{
+				if (similar) continue;*/
+				continue;
+			} else {
 				groups.put(new Integer(c), new ArrayList<int[]>());
 			}
 			groups.get(c).add(child);
@@ -179,7 +178,7 @@ public class SimulateTree {
 	}
 	
 	public static void main(String[] args) {
-		for (int i=3; i<=15; i++ )
+		for (int i=5; i<=15; i++ )
 			new SimulateTree(i, 100);
 		
 		//new SimulateTree(4, 5);

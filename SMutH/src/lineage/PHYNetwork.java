@@ -30,20 +30,20 @@ public class PHYNetwork implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	/** Nodes in the graph divided by levels (number of samples node SNVs occurred in) */
-	private HashMap<Integer, ArrayList<PHYNode>> nodes;
+	protected HashMap<Integer, ArrayList<PHYNode>> nodes;
 	
 	/** Nodes in the graph indexed by their unique ID */
-	private transient HashMap<Integer, PHYNode> nodesById;
+	protected transient HashMap<Integer, PHYNode> nodesById;
 	
 	/** Adjacency map of nodes to the their neighbors/children */
-	private transient HashMap<PHYNode, ArrayList<PHYNode>> edges;
+	protected transient HashMap<PHYNode, ArrayList<PHYNode>> edges;
 	
 	/** Total number of nodes in the graph.
 	 *  During construction: used as a counter to assign unique IDs to nodes */
 	protected int numNodes;
 	
 	/** Total number of edges in the graph */
-	private int numEdges;
+	protected int numEdges;
 	
 	/** Total number of tissue samples */
 	protected int numSamples;
@@ -54,6 +54,13 @@ public class PHYNetwork implements Serializable {
 	private static Logger logger = LineageEngine.logger;
 	
 	// ---- Network Construction ----
+	
+	public PHYNetwork() {
+		numSamples = 1;
+		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
+		nodesById = new HashMap<Integer, PHYNode>();
+		edges = new HashMap<PHYNode, ArrayList<PHYNode>>(); 
+	}
 	
 	/**
 	 * Constructs a PHYNetwork from the sub-populations of the SNV groups
@@ -218,19 +225,21 @@ public class PHYNetwork implements Serializable {
 			parentStdError = Parameters.AAF_ERROR_MARGIN;
 		} else {
 			parentSampleSize = from.getCluster().getMembership().size();
-			parentStdError = 1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
+			parentStdError = 2*1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
 		}	
 		if(to.isRoot()) {
 			childStdError = Parameters.AAF_ERROR_MARGIN;
 		} else {
 			childSampleSize = to.getCluster().getMembership().size();
-			childStdError = 1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
+			childStdError = 2*1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
 		}
 		
 		double standardError = parentStdError + childStdError;
 		
-		if(standardError > Parameters.AAF_ERROR_MARGIN)
+		if(standardError > Parameters.AAF_ERROR_MARGIN) {
+			//System.out.println("err = " + from.getStdDev(i) + " " + to.getStdDev(i) + " " + standardError);
 			return standardError;
+		}
 		
 		return Parameters.AAF_ERROR_MARGIN;
 		
@@ -441,7 +450,13 @@ public class PHYNetwork implements Serializable {
 		if(t.treeNodes.size() == numNodes) {
 			L = t;
 			spanningTrees.add(L.clone());
+			
+			if(spanningTrees.size() % 10000 == 0) {
+				System.out.println("Found " + spanningTrees.size() + " trees");
+			}
+			
 		} else {
+			
 			// list used to reconstruct the original F
 			ArrayList<PHYEdge> ff = new ArrayList<PHYEdge>();
 			
@@ -454,45 +469,44 @@ public class PHYNetwork implements Serializable {
 				t.addEdge(e.from, v);
 				
 				//NEW: check if adding this node does not violate the constraint
-				//if(Parameters.ALL_EDGES) {
-					//if(!t.checkConstraint(e.from)) {
-						//t.removeEdge(e.from, e.to);
-						//System.out.println("HERE");
-						//return;
-					//}
-				//}
-				
-				// update f
-				ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
-				ArrayList<PHYNode> vNbrs = edges.get(v);
-				if(vNbrs != null) {
-					for(PHYNode w : vNbrs) {
-						if(!t.containsNode(w)) {
-							PHYEdge vw = new PHYEdge(v, w);
-							f.add(vw);
-							edgesAdded.add(vw);
+				if(t.checkConstraint(e.from)) {
+					//System.out.println("Passed constraint");
+					// update f
+					ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
+					ArrayList<PHYNode> vNbrs = edges.get(v);
+					if(vNbrs != null) {
+						for(PHYNode w : vNbrs) {
+							if(!t.containsNode(w)) {
+								PHYEdge vw = new PHYEdge(v, w);
+								f.add(vw);
+								edgesAdded.add(vw);
+							}
 						}
 					}
-				}
 				
-				// remove (w,v) w in T from f
-				ArrayList<PHYEdge> edgesRemoved = new ArrayList<PHYEdge>();
-				for(int i = 0; i < f.size(); i++) {
-					PHYEdge wv = f.get(i);
-					if(t.containsNode(wv.from) && (wv.to.equals(v))) {
-						edgesRemoved.add(wv);
+					// remove (w,v) w in T from f
+					ArrayList<PHYEdge> edgesRemoved = new ArrayList<PHYEdge>();
+					for(int i = 0; i < f.size(); i++) {
+						PHYEdge wv = f.get(i);
+						if(t.containsNode(wv.from) && (wv.to.equals(v))) {
+							edgesRemoved.add(wv);
+						}
 					}
-				}
-				f.removeAll(edgesRemoved);
+					f.removeAll(edgesRemoved);
 	
-				// recurse
-				grow(t);
+					// recurse
+					grow(t);
+					
+					if(spanningTrees.size() == Parameters.MAX_NUM_TREES) {
+						return;
+					}
+					
+					// pop
+					f.removeAll(edgesAdded);
 				
-				// pop
-				f.removeAll(edgesAdded);
-				
-				// restore
-				f.addAll(edgesRemoved);
+					// restore
+					f.addAll(edgesRemoved);
+				}
 				
 				// remove e from T and G
 				t.removeEdge(e.from, e.to);
@@ -502,20 +516,21 @@ public class PHYNetwork implements Serializable {
 				ff.add(e);
 				
 				// bridge test
+				b = true;
 				for(PHYNode w : this.edges.keySet()) {
 					ArrayList<PHYNode> wNbrs = this.edges.get(w);
 					if(wNbrs == null) continue;
 					for(PHYNode n : wNbrs) {
 						if(n.equals(v)) {
 							// check if w is a descendant of v in L
-							if(!L.isDescendent(v, w)) {
+							if((L == null) || (!L.isDescendent(v, w))) {
 								b = false;
 								break;
 							}
 						}
 					}
 					if(!b) break;
-				}
+				}				
 			}
 			
 			// pop from ff, push to f, add to G
@@ -536,6 +551,8 @@ public class PHYNetwork implements Serializable {
 		spanningTrees = new ArrayList<PHYTree>();
 		
 		PHYNode root = nodes.get(numSamples+1).get(0);
+		//PHYNode root = nodesById.get(1);
+		
 		// initialize tree t to contain the root
 		PHYTree t = new PHYTree();
 		t.addNode(root);
@@ -548,8 +565,9 @@ public class PHYNetwork implements Serializable {
 			
 		}
 		grow(t);
-		//System.out.println(spanningTrees.size());
+		System.out.println(spanningTrees.size());
 		applyAAFConstraints(spanningTrees);
+		//testSpanningTrees();
 		
 		return spanningTrees;
 	}

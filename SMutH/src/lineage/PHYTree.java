@@ -122,6 +122,7 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 	public boolean checkConstraint(PHYNode n) {
 		ArrayList<PHYNode> nbrs = treeEdges.get(n);			
 		if(nbrs == null) return true;
+				
 		for(int i = 0; i < n.getNumSamples(); i++) {
 			double affSum = 0;
 			double errMargin = 0.0;
