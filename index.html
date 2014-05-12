@@ -36,7 +36,6 @@
 </a>SMutH: Somatic Mutation Hierarchies</h3>
 
       </section>
-    </div>
 
 <p> 
 Program: smuth (Somatic Mutation Hierarchies)  
@@ -70,25 +69,26 @@ Usage:
 </p> 
 
 <p>
-HOW TO RUN
-----------
+HOW TO RUN <br>
+---------- <br>
 
-./smuth -build -i <input_file_path> - n <normal_sample_id> [options]
+./smuth -build -i <input_file_path> - n <normal_sample_id> [options] <br>
 </p>
 
 <p>
-EXAMPLES
---------
-#Show the top ranking tree
-./smuth -build -i ../data/ccRCC/RK26.txt -tree -n 0
+EXAMPLES<br>
+--------<br>
+#Show the top ranking tree<br>
+./smuth -build -i ../data/ccRCC/RK26.txt -tree -n 0<br>
 
-#Eliminate clusters that have fewer than 3 SNVs
-./smuth -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree
+#Eliminate clusters that have fewer than 3 SNVs<br>
+./smuth -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree<br>
 
-#Change hard SNV caller thresholds
-./smuth -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree
+#Change hard SNV caller thresholds<br>
+./smuth -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree<br>
 </p>
 
+</div>
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
