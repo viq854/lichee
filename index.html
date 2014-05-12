@@ -39,32 +39,32 @@
 <p> 
 Program: smuth (Somatic Mutation Hierarchies)  <br>
 Usage:<br>
- -build                  Construct the sample cell lineage trees<br>
- -i <arg>                Input file path (validation or vcf file)<br>
- -o <arg>                Output file path (default: input file path)<br>
- -n,--normal <arg>       Normal sample id<br>
- -minAAFPresent <arg>    Minimum AAF to robustly call an SNV in a sample (default: 0.04)<br>
- -maxAAFAbsent <arg>     Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)<br>
- -maxAAF <arg>			 Maximum allowed AAF in a sample (default: 0.6)<br>
- -minGroupSize <arg>     Minimum SNV group size (default: 1)<br>
- -minRobustGroup <arg>	 Minimum number of robust SNVs in group to be robust (default: 2)<br>
- -minRobustGroupKeep	 Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups initially)<br>
- -minTargetDistRatio	 Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)<br>
- -e <arg>                AAF error margin (default: 0.1)<br>
- -maxClusterDist <arg>   Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1)<br>
- -minClusterSize <arg>   Minimum size a cluster must have to be considered a node in the network (default: 2)<br>
- -net,--showNetwork      Display the constraint network<br>
- -closestParentOnly		 Only add edges to the ancestor in the closest possible level<br>
- -top <arg>              Number of top ranking lineage trees to display<br>
- -tree,--showTree        Display the top ranking lineage tree<br>
- -v,--verbose            Verbose mode<br>
- -vcf                    Input data type is vcf (default: validation)<br>
- -s,--save               Save the output to file<br>
- -h,--help               Print usage<br>
- -cnv <arg>				 File path to CNV regions used to mark SNVs<br>
- -tcga <arg>			 File path to TCGA SNV annotations<br>
- -cosmic <arg>			 File path to COSMIC SNV annotations<br>
- -ann <arg>				 File path to ANNOVAR variant function annotations<br>
+ &emsp;-build     &emsp;             Construct the sample cell lineage trees<br>
+ &emsp;-i <arg>     &emsp;           Input file path (validation or vcf file)<br>
+ &emsp;-o <arg>     &emsp;           Output file path (default: input file path)<br>
+ &emsp;-n,--normal <arg>   &emsp;    Normal sample id<br>
+ &emsp;-minAAFPresent <arg>  &emsp;  Minimum AAF to robustly call an SNV in a sample (default: 0.04)<br>
+ &emsp;-maxAAFAbsent <arg>  &emsp;   Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)<br>
+ &emsp;-maxAAF <arg>	&emsp;		 Maximum allowed AAF in a sample (default: 0.6)<br>
+ &emsp;-minGroupSize <arg>   &emsp;  Minimum SNV group size (default: 1)<br>
+ &emsp;-minRobustGroup <arg>	&emsp; Minimum number of robust SNVs in group to be robust (default: 2)<br>
+ &emsp;-minRobustGroupKeep	&emsp; Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups initially)<br>
+ &emsp;-minTargetDistRatio	&emsp; Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)<br>
+ &emsp;-e <arg>               &emsp; AAF error margin (default: 0.1)<br>
+ &emsp;-maxClusterDist <arg>  &emsp; Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1)<br>
+ &emsp;-minClusterSize <arg>  &emsp; Minimum size a cluster must have to be considered a node in the network (default: 2)<br>
+ &emsp;-net,--showNetwork   &emsp;   Display the constraint network<br>
+ &emsp;-closestParentOnly	&emsp;	 Only add edges to the ancestor in the closest possible level<br>
+ &emsp;-top <arg>           &emsp;   Number of top ranking lineage trees to display<br>
+ &emsp;-tree,--showTree     &emsp;   Display the top ranking lineage tree<br>
+ &emsp;-v,--verbose        &emsp;    Verbose mode<br>
+ &emsp;-vcf               &emsp;     Input data type is vcf (default: validation)<br>
+ &emsp;-s,--save          &emsp;     Save the output to file<br>
+ &emsp;-h,--help          &emsp;     Print usage<br>
+ &emsp;-cnv <arg>			&emsp;	 File path to CNV regions used to mark SNVs<br>
+ &emsp;-tcga <arg>		&emsp;	 File path to TCGA SNV annotations<br>
+ &emsp;-cosmic <arg>	&emsp;		 File path to COSMIC SNV annotations<br>
+ &emsp;-ann <arg>		&emsp;		 File path to ANNOVAR variant function annotations<br>
 </p> 
 
 <p>
