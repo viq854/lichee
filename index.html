@@ -39,26 +39,25 @@
 <p> 
 Program: smuth (Somatic Mutation Hierarchies)  <br>
 Usage:<br>
- &emsp;-build     &emsp;             Construct the sample cell lineage trees<br>
- &emsp;-i <arg>     &emsp;           Input file path (validation or vcf file)<br>
- &emsp;-o <arg>     &emsp;           Output file path (default: input file path)<br>
- &emsp;-n,--normal <arg>   &emsp;    Normal sample id<br>
- &emsp;-minAAFPresent <arg>  &emsp;  Minimum AAF to robustly call an SNV in a sample (default: 0.04)<br>
- &emsp;-maxAAFAbsent <arg>  &emsp;   Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)<br>
- &emsp;-maxAAF <arg>	&emsp;		 Maximum allowed AAF in a sample (default: 0.6)<br>
+ &emsp;-build       &emsp;&emsp; Construct the sample cell lineage trees<br>
+ &emsp;-i <arg>     &emsp;&emsp; Input file path (validation or vcf file)<br>
+ &emsp;-o <arg>     &emsp;&emsp; Output file path (default: input file path)<br>
+ &emsp;-n,--normal <arg>   &emsp;&emsp; Normal sample id<br>
+ &emsp;-minAAFPresent <arg> &emsp; Minimum AAF to robustly call an SNV in a sample (default: 0.04)<br>
+ &emsp;-maxAAFAbsent <arg>  &emsp; Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)<br>
+ &emsp;-maxAAF <arg>	&emsp;&emsp; Maximum allowed AAF in a sample (default: 0.6)<br>
  &emsp;-minGroupSize <arg>   &emsp;  Minimum SNV group size (default: 1)<br>
  &emsp;-minRobustGroup <arg>	&emsp; Minimum number of robust SNVs in group to be robust (default: 2)<br>
  &emsp;-minRobustGroupKeep	&emsp; Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups initially)<br>
  &emsp;-minTargetDistRatio	&emsp; Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)<br>
- &emsp;-e <arg>               &emsp; AAF error margin (default: 0.1)<br>
+ &emsp;-e <arg>               &emsp;&emsp; AAF error margin (default: 0.1)<br>
  &emsp;-maxClusterDist <arg>  &emsp; Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1)<br>
  &emsp;-minClusterSize <arg>  &emsp; Minimum size a cluster must have to be considered a node in the network (default: 2)<br>
  &emsp;-net,--showNetwork   &emsp;   Display the constraint network<br>
  &emsp;-closestParentOnly	&emsp;	 Only add edges to the ancestor in the closest possible level<br>
- &emsp;-top <arg>           &emsp;   Number of top ranking lineage trees to display<br>
- &emsp;-tree,--showTree     &emsp;   Display the top ranking lineage tree<br>
- &emsp;-v,--verbose        &emsp;    Verbose mode<br>
- &emsp;-vcf               &emsp;     Input data type is vcf (default: validation)<br>
+ &emsp;-top <arg>           &emsp;&emsp;   Number of top ranking lineage trees to display<br>
+ &emsp;-tree,--showTree     &emsp;&emsp;   Display the top ranking lineage tree<br>
+ &emsp;-v,--verbose        &emsp;&emsp;    Verbose mode<br>
  &emsp;-s,--save          &emsp;     Save the output to file<br>
  &emsp;-h,--help          &emsp;     Print usage<br>
  &emsp;-cnv <arg>			&emsp;	 File path to CNV regions used to mark SNVs<br>
