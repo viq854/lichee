@@ -15,8 +15,7 @@ import weka.core.Instances;
 
 /**
  * Simple implementation of a few clustering techniques
- * specialized for floating point data 
- * representing the allele frequency values of the samples in the application.
+ * for allele frequency values of sample SNVs.
  * 
  * @autor viq
  */
@@ -125,16 +124,6 @@ public class AAFClusterer implements Serializable {
 			eval.evaluateClusterer(new Instances(ds));                               
 			int numClusters = eval.getNumClusters();
 			
-			// output predictions
-		    /*for (int i = 0; i < ds.numInstances(); i++) {
-		    	Instance inst = ds.instance(i);
-		    	double[] mean = new double[inst.numAttributes()];
-				for(int j = 0; j < mean.length; j++) {
-					mean[j] = inst.value(j);
-				}
-		    	//double[] dist = clusterer.distributionForInstance(ds.instance(i));
-		    }*/
-			
 			Cluster[] clusters = new Cluster[numClusters];
 			double[][] clusterCentroids = new double[numClusters][numFeatures];
 			int[] clusterCount = new int[numClusters];
@@ -188,9 +177,7 @@ public class AAFClusterer implements Serializable {
 	/**
 	 * http://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_c-means_clustering
 	 * Every point has a degree of belonging to each cluster
-	 * The centroid is a means of all points weighted by the degree of belonging
-	 * to cluster
-	 * [Could improve clustering under noise]
+	 * The centroid is a means of all points weighted by the degree of belonging to cluster
 	 * @param data - matrix of observations (numObs x numFeatures)
 	 * @param c - number of clusters
 	 * @param m - fuzzifier (determines the level of cluster fuzziness 

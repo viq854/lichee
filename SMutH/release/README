@@ -1,21 +1,20 @@
 PROGRAM DESCRIPTION
 -------------------
 
-Program: smuth (Somatic Mutation Hierarchy)  
+Program: smuth (Somatic Mutation Hierarchies)  
 Usage:
  -build                  Construct the sample cell lineage trees
- -show                   Display the saved cell lineage tree(s)
  -i <arg>                Input file path (validation or vcf file)
  -o <arg>                Output file path (default: input file path)
  -n,--normal <arg>       Normal sample id
- -maxAAF <arg>			 Maximum allowed AAF in a sample (default: 0.6)
  -minAAFPresent <arg>    Minimum AAF to robustly call an SNV in a sample (default: 0.04)
  -maxAAFAbsent <arg>     Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)
+ -maxAAF <arg>			 Maximum allowed AAF in a sample (default: 0.6)
  -minGroupSize <arg>     Minimum SNV group size (default: 1)
  -minRobustGroup <arg>	 Minimum number of robust SNVs in group to be robust (default: 2)
  -minRobustGroupKeep	 Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups initially)
  -minTargetDistRatio	 Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)
- -e <arg>                AAF error margin (default: 0.08)
+ -e <arg>                AAF error margin (default: 0.1)
  -maxClusterDist <arg>   Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1)
  -minClusterSize <arg>   Minimum size a cluster must have to be considered a node in the network (default: 2)
  -net,--showNetwork      Display the constraint network
@@ -35,29 +34,18 @@ Usage:
 HOW TO RUN
 ----------
 
-./smuth -build | -show -i <input_file_path> [options]
+./smuth -build -i <input_file_path> - n <normal_sample_id> [options]
 
 EXAMPLES
 --------
-#Show the top ranking tree and save the results
-./smuth -build -i ../data/Patient_1.validation.txt -tree -s -n 0
+#Show the top ranking tree
+./smuth -build -i ../data/ccRCC/RK26.txt -tree -n 0
 
-#Change normal sample index
-./smuth -build -i ../data/Patient_3.validation.txt -tree -n 1
+#Eliminate clusters that have fewer than 3 SNVs
+./smuth -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree
 
-#Change the SNV group size  (will filter out the smaller groups)
-./smuth -build -i ../data/Patient_1.validation.txt -tree -minGroupSize 4 -n 0
-
-#Eliminate clusters that have fewer than 5 SNVs
-./smuth -build -i ../data/Patient_3.validation.txt -n 1 -minClusterSize 5 
-
-#Display the top 2 previously computed lineage trees
-./smuth -show -i ../data/Patient_3.validation.txt -top 2 -n 1
-
-#Reduce/eliminate clusters by increasing the distance between cluster AAF centroids 
-#that determines the cluster collapse
-./smuth -build -i ../data/Patient_2.validation.txt -maxClusterDist 5 -n 0
-
+#Change hard SNV caller thresholds
+./smuth -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree
 
 SYSTEM REQUIREMENTS
 -------------------

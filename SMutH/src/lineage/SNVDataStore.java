@@ -10,9 +10,6 @@ import java.util.HashMap;
 
 import util.CNVRegion;
 import util.Configs;
-import util.MUTEntry;
-import util.SNVAnnotation;
-import util.SNVEntry;
 
 public class SNVDataStore {
 	/** Input samples */
@@ -39,11 +36,6 @@ public class SNVDataStore {
 			case VCF :
 				//loadVCF(snvInputFile,normalSample);
 				break;
-			case SIM :
-				loadSIM(snvInputFile);
-				break;
-			case FL:
-				break;
 			default:
 				break;
 		}
@@ -65,7 +57,7 @@ public class SNVDataStore {
 		// handle mutations in groups with insufficient support as unreliable
 		ArrayList<String> smallGroups = new ArrayList<String>();
 		for(String tag : tag2SNVs.keySet()) {
-			if(tag2SNVs.get(tag).size() < Configs.ROBUSTGROUP_SIZE_THR) {
+			if(tag2SNVs.get(tag).size() < Parameters.ROBUSTGROUP_SIZE_THR) {
 				for(SNVEntry entry : tag2SNVs.get(tag)) {
 					unreliableSNVs.add(entry);
 				}
@@ -87,55 +79,23 @@ public class SNVDataStore {
 	private boolean isValidSNV(SNVEntry snv) {
 		for(int i = 0; i < numSamples; i++) {
 			// check if the VAF i too high
-			if(snv.getAAF(i) > Configs.MAX_ALLOWED_VAF) {
+			if(snv.getAAF(i) > Parameters.MAX_ALLOWED_VAF) {
 				return false;
 			}
 			// check if coverage is too low
+			//if(snv.getTotalReadCount(i) < Configs.MIN_ALLOWED_COVERAGE) {
+				//System.out.println("LOW coverage " + snv);
+				//return false;
+			//}
 		}
 		return true;
-	}
-	
-	private void detectSystematicNoise(SNVEntry snv) {
-		if(snv.getAAF(normalSample) < Configs.SYST_ERR_THR) {
-			return;
-		}
-		// detected a high level of noise in the normal
-		ArrayList<Double> vafs = new ArrayList<Double>();
-		for(int i = 0; i < numSamples; i++) {
-			if(snv.getAAF(i) < Configs.VALIDATION_THR) {
-				vafs.add(snv.getAAF(i));
-			}
-		}
-		
-		if(vafs.size() == 0) return;
-		
-		Collections.sort(vafs);
-		double noise = vafs.get(vafs.size()/2);
-		System.out.println("High noise in SNV " + snv.getGroup() +" normal sample: " + snv + "\n Subtracting: " + noise);
-		
-		String group = "";
-		for(int i = 0; i < numSamples; i++) {
-			if(snv.getAAF(i) >= noise) {
-				snv.setAAF(i, (snv.getAAF(i)-noise));
-				System.out.print(snv.getAAF(i) + " ");
-				if(snv.getAAF(i) >= Configs.VALIDATION_THR) {
-					group += '1';
-				} else {
-					group += '0';
-				}
-			} else {
-				group += '0';
-			}
-		}
-		snv.updateGroup(group);
-		System.out.println("Result " + snv.getGroup());
 	}
 	
 	private void filterGroups() {
 		// apply minimum size and robust size constraint
 		ArrayList<String> filteredOut = new ArrayList<String>();
 		for(String tag : tag2SNVs.keySet()) {
-			if(tag2SNVs.get(tag).size() < Configs.GROUP_SIZE_THR) {
+			if(tag2SNVs.get(tag).size() < Parameters.GROUP_SIZE_THR) {
 				filteredOut.add(tag);
 				continue;
 			}
@@ -143,12 +103,12 @@ public class SNVDataStore {
 			for(SNVEntry entry : tag2SNVs.get(tag)) {
 				if(entry.isRobust()) {
 					numRobust++;
-					if(numRobust >= Configs.GROUP_ROBUST_NUM_THR) {
+					if(numRobust >= Parameters.GROUP_ROBUST_NUM_THR) {
 						break;
 					}
 				}
 			}
-			if(numRobust < Configs.GROUP_ROBUST_NUM_THR) {
+			if(numRobust < Parameters.GROUP_ROBUST_NUM_THR) {
 				filteredOut.add(tag);
 				continue;
 			}
@@ -180,7 +140,7 @@ public class SNVDataStore {
 			String bestTarget = "";
 				
 			for(String target : targetTags) {				
-				if(getHammingDist(tag, target) > Configs.EDIT_DISTANCE || !canConvert(snv, target)) continue;
+				if(!canConvert(snv, target)) continue;
 				// if the target is germline, move to germline regardless of distance
 				if(target.equals(all1s)) {
 					toRemove.add(snv);
@@ -211,23 +171,17 @@ public class SNVDataStore {
 				continue;
 			}
 			
-			if(bestDistToTarget != 0 && bestDistToTarget >= getHammingWeight(bestTarget)*Configs.MIN_VAF_TARGET_RATIO_PER_SAMPLE) {
+			if(bestDistToTarget != 0 && bestDistToTarget >= getHammingWeight(bestTarget)*Parameters.MIN_VAF_TARGET_RATIO_PER_SAMPLE) {
 				// found a valid match
 				snv.updateGroup(bestTarget);
 				toRemove.add(snv);
-				//System.out.println(bestTarget);
 				tag2SNVs.get(bestTarget).add(snv);
 				System.out.println("Assigned " + tag + " to " + bestTarget + " with dist " + bestDistToTarget + " (" + snv + ")");
 				continue;
 			}
 			
-			// if there is a matching robust group tag, remove the snv
-			//if((!tag.equals(all0s)) && tag2SNVs.containsKey(tag)) {
-				//toRemove.add(snv);
-				//System.out.println("**Removed " + tag + " as conflict" + ((bestDistToTarget != 0) ? " (best dist = " + bestDistToTarget + " to target " + bestTarget + "): " : " ") + snv);
-			//} else {
-				System.out.println("**Could not assign " + tag + ", no conflict" + ((bestDistToTarget != 0) ? " (best dist = " + bestDistToTarget + " to target " + bestTarget + "): " : " ") + snv);
-			//}
+			System.out.println("**Could not assign " + tag + ", no conflict" + ((bestDistToTarget != 0) ? " (best dist = " + bestDistToTarget + " to target " + bestTarget + "): " : " ") + snv);
+
 		}
 		unreliableSNVs.removeAll(toRemove);
 		
@@ -237,7 +191,6 @@ public class SNVDataStore {
 		
 		for(String tag : unreliableGroups.keySet()) {
 			if(tag.equals(all0s)) continue;
-			//if(!allowGroup(snv)) continue;	
 			if(!tag2SNVs.containsKey(tag)) {
 				tag2SNVs.put(tag, unreliableGroups.get(tag));
 				System.out.println("New group: " + tag);
@@ -245,17 +198,6 @@ public class SNVDataStore {
 		}
 		tag2SNVs.remove(all0s);
 	}
-	
-	/*private boolean allowGroup(SNVEntry snv) {
-		String tag = snv.getGroup();
-		// if there are ambiguous 1s, don't allow it
-		for(int i = 0; i < tag.length(); i++) {
-			if(snv.getAAF(i) < (Configs.VALIDATION_THR + 0.01) && snv.getAAF(i) > (Configs.VALIDATION_THR - 0.01)) {
-				return false;
-			}
-		}
-		return true;
-	}*/
 	
 	private HashMap<String, ArrayList<SNVEntry>> mergeUnreliableSNVs(ArrayList<SNVEntry> snvs) {
 		HashMap<String, ArrayList<SNVEntry>> groups = new HashMap<String, ArrayList<SNVEntry>>();
@@ -274,7 +216,6 @@ public class SNVDataStore {
 		for(SNVEntry entry : snvs) {
 			for(String target : adj.keySet()) {
 				if(canConvert(entry, target)) {
-					//System.out.println("Can convert " + entry.getGroup() + " to " + target);
 					adj.get(target).add(entry);
 				}
 			}
@@ -289,7 +230,6 @@ public class SNVDataStore {
 					maxSet = target;
 				}
 			}
-			System.out.println("Max size = " + maxSize);
 			if(maxSize == 1) break;
 			
 			groups.put(maxSet, adj.get(maxSet));
@@ -313,9 +253,9 @@ public class SNVDataStore {
 		for(SNVEntry snv : snvs) {
 			String tag = "";
 			for(int i = 0; i < numSamples; i++) {
-				if(snv.getGroup().charAt(i) == '0' && snv.EvidenceOfPresence(i)) {
-					double delta0 = snv.getAAF(i) - Configs.VALIDATION_SOFT_THR;
-					double delta1 = Configs.VALIDATION_THR - snv.getAAF(i);
+				if(snv.getGroup().charAt(i) == '0' && snv.evidenceOfPresence(i)) {
+					double delta0 = snv.getAAF(i) - Parameters.VALIDATION_SOFT_THR;
+					double delta1 = Parameters.VALIDATION_THR - snv.getAAF(i);
 					tag += (delta1 < delta0) ? '1' : snv.getGroup().charAt(i);
 				} else {
 					tag += snv.getGroup().charAt(i);
@@ -342,12 +282,11 @@ public class SNVDataStore {
 	private void extendTarget(String partialProfile, SNVEntry snv, ArrayList<String> targets) {
 		int sample = partialProfile.length();
 		if(sample == numSamples) {
-			//System.out.println(snv.getGroup() + " to " + partialProfile);
 			targets.add(partialProfile);
 			return;
 		}
 		extendTarget(partialProfile + ""+ snv.getGroup().charAt(sample), snv, targets);
-		if(snv.getGroup().charAt(sample) == '0' && snv.EvidenceOfPresence(sample)) {
+		if(snv.getGroup().charAt(sample) == '0' && snv.evidenceOfPresence(sample)) {
 			extendTarget(partialProfile + '1', snv, targets);
 		}
 	}
@@ -356,7 +295,7 @@ public class SNVDataStore {
 		String tag = snv.getGroup();
 		double dist = 0;
 		for(int i = 0; i < numSamples; i++) {
-			if(tag.charAt(i) == '1' || snv.EvidenceOfPresence(i)) {
+			if(tag.charAt(i) == '1' || snv.evidenceOfPresence(i)) {
 				dist += 0.0001/snv.getAAF(i);
 			}
 		}
@@ -368,7 +307,7 @@ public class SNVDataStore {
 		String targetTag = targetSNV.getGroup();
 		double dist = 0;
 		for(int i = 0; i < numSamples; i++) {
-			if(targetTag.charAt(i) == '0' && tag.charAt(i) == '0' && !snv.EvidenceOfPresence(i)) continue;
+			if(targetTag.charAt(i) == '0' && tag.charAt(i) == '0' && !snv.evidenceOfPresence(i)) continue;
 			double min = targetSNV.getAAF(i) < snv.getAAF(i) ? targetSNV.getAAF(i) : snv.getAAF(i);
 			double max = targetSNV.getAAF(i) > snv.getAAF(i) ? targetSNV.getAAF(i) : snv.getAAF(i);
 			if(min == 0) {
@@ -386,20 +325,12 @@ public class SNVDataStore {
 				if(tag.charAt(i) == '1') {
 					return false;
 				}
-				if(!snv.EvidenceOfPresence(i)) {
+				if(!snv.evidenceOfPresence(i)) {
 					return false;
 				}
 			}
 		}
 		return true;
-	}
-	
-	private int getHammingDist(String s1, String s2) {
-		int dist = 0;
-		for (int i = 0; i < s1.length(); i++){
-			if (s1.charAt(i) != s2.charAt(i)) dist++;
-		}
-		return dist;
 	}
 	
 	private int getHammingWeight(String tag) {
@@ -433,7 +364,7 @@ public class SNVDataStore {
 		for(SNVEntry entry : tag2SNVs.get(groupTag)) {
 			if(entry.isRobust()) {
 				numRobust++;
-				if(numRobust >= Configs.ROBUSTGROUP_SIZE_THR) {
+				if(numRobust >= Parameters.ROBUSTGROUP_SIZE_THR) {
 					return true;
 				}
 			}
@@ -496,13 +427,7 @@ public class SNVDataStore {
 				break;
 			case MUT :
 				sampleNames = new ArrayList<String>(Arrays.asList(header).subList(5, header.length));
-				break;
-			case FL :
-				sampleNames = new ArrayList<String>(Arrays.asList(header).subList(4, header.length));
-				break;
-			case SIM :
-				sampleNames = new ArrayList<String>(Arrays.asList(header).subList(1, header.length));
-				break;			
+				break;		
 		}
 	}
 	
@@ -516,13 +441,14 @@ public class SNVDataStore {
 				currLine = rd.readLine();
 			}
 			setSampleNames(lastLine);
+			
 			numSamples = sampleNames.size();
 			System.out.println("There are " + numSamples + " samples!");
 			int totalSNVCounter = 0;
 			int germlineCounter = 0;
 			System.out.println("SNV Entries:");
 			while (currLine != null){
-				MUTEntry entry = new MUTEntry(currLine, numSamples);
+				SNVEntry entry = new SNVEntry(currLine, numSamples);
 				currLine = rd.readLine();
 				totalSNVCounter++;
 				
@@ -535,8 +461,7 @@ public class SNVDataStore {
 					System.out.println("**Filtered as untrustable: " + entry);
 					continue;
 				}
-				System.out.println(entry + "\t" + entry.getGroup() +"\t" + entry.isRobust());
-				detectSystematicNoise(entry);
+				//System.out.println(entry + "\t" + entry.getGroup() +"\t" + entry.isRobust());
 				somaticSNVs.add(entry);	
 			}
 			rd.close();
@@ -545,38 +470,6 @@ public class SNVDataStore {
 			System.out.println("File Reading Error!");
 		}
 		
-	}
-	
-	private void loadSIM(String inputFile){
-		System.out.println(normalSample);
-		try {
-			BufferedReader rd = new BufferedReader(new FileReader(inputFile));
-			String currLine = rd.readLine();
-			setSampleNames(currLine);
-			numSamples = sampleNames.size();
-			int totalSNVCounter = 0;
-			int germlineCounter = 0;
-			
-			currLine = rd.readLine();
-			while (currLine != null){
-				MUTEntry entry = new MUTEntry(currLine, numSamples);
-				currLine = rd.readLine();
-				totalSNVCounter++;
-				
-				// filter out germline mutations
-				if(entry.getGenotype(normalSample).equals("1/1")) {
-					System.out.println("**Filtered as germline: " + entry);
-					germlineCounter++;
-					continue;
-				} 				
-				System.out.println(entry + "\t" + entry.getGroup() +"\t" + entry.isRobust());
-				somaticSNVs.add(entry);	
-			}
-			rd.close();
-			System.out.println("There are " + totalSNVCounter + " SNVs in validation file. Of those, we pass "+ germlineCounter + " as germline, and "+ somaticSNVs.size() +" as somatic. \n");
-		} catch (IOException e){
-			System.out.println("File Reading Error!");
-		}
 	}
 	
 	private ArrayList<CNVRegion> loadCNVs(String inputCNVFile){
@@ -594,21 +487,21 @@ public class SNVDataStore {
 			}
 			rd.close();
 		} catch (IOException e) {
-			System.out.println("CNV input file Reading Error!");
+			System.out.println("CNV input file Reading Error!"+ e);
 		}
 		return CNVs;
 	}
 	
-	private ArrayList<SNVAnnotation> loadAnnovarFunction(String inputAnnFile){
-		ArrayList<SNVAnnotation> anns = new ArrayList<SNVAnnotation>();
+	private ArrayList<String> loadAnnovarFunction(String inputAnnFile){
+		ArrayList<String> anns = new ArrayList<String>();
 		try {
 			BufferedReader rd = new BufferedReader(new FileReader(inputAnnFile));
 			String currLine = rd.readLine();
 			while (currLine != null){
-				SNVAnnotation ann = new SNVAnnotation();
 				String[] entryParts = currLine.split("\t");
-				ann.codingInfo = entryParts[0];
-				ann.geneInfo = entryParts[1];
+				String ann = "";
+				ann += entryParts[0] + " ";
+				ann += entryParts[1];
 				anns.add(ann);
 				currLine = rd.readLine();
 			}
@@ -666,7 +559,7 @@ public class SNVDataStore {
 		if(inputCNVFile != null) {
 			cnvs = loadCNVs(inputCNVFile);
 		}
-		ArrayList<SNVAnnotation> anns = null;
+		ArrayList<String> anns = null;
 		if(inputAnnFile != null) {
 			anns = loadAnnovarFunction(inputAnnFile);
 		}
@@ -684,7 +577,7 @@ public class SNVDataStore {
 				entry.checkInCNVRegion(cnvs);
 			}
 			if(anns != null) {
-				entry.setAnnotation(anns.get(i));
+				entry.getAnnotation().annovar = anns.get(i);
 			}
 			if(cosmicDB != null) {
 				if(cosmicDB.containsKey(entry.getPosition())) {

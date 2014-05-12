@@ -25,7 +25,7 @@ import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
 import lineage.PHYTree;
 import util.*;
-import util.Configs.format;
+import util.Configs.Format;
 
 /**
  * Main cell lineage construction pipeline
@@ -49,7 +49,7 @@ public class LineageEngine {
 		SNVDataStore db = new SNVDataStore(args.inputFileName, args.normalSampleId);
 		db.annotateSNVs(args.cnvFileName, args.annFileName, args.cosmicFileName, args.tcgaFileName);
 		
-		// [2. normal cell contamination, CNVs (+ any additional filtering, pre-processing)]
+		// [2. normal contamination, CNVs (+ any additional filtering, pre-processing)]
 		
 		// 3. get the SNVs partitioned by group tag and create the appropriate SNV group objects
 		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.getSomaticGroups();
@@ -66,7 +66,7 @@ public class LineageEngine {
 		// 4. cluster SNVs in each group
 		AAFClusterer clusterer = new AAFClusterer();
 		for(SNVGroup group : groups) {
-			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 1);
+			Cluster[] clusters = clusterer.clusterSubPopulations(group, ClusteringAlgorithms.EM, 3);
 			logger.fine("Clustering results for group: " + group.getTag());
 			for(Cluster c : clusters) {
 				logger.log(Level.FINE, c.toString());
@@ -79,19 +79,6 @@ public class LineageEngine {
 		logger.log(Level.FINE, constrNetwork.toString());
 		logger.log(Level.INFO, "Nodes:\n" + constrNetwork.getNodesAsString());
 		
-		// -- temporary -- evaluating results
-		String nodesFileName = args.outputFilePrefix + ".nodes";
-		try {
-			FileWriter fw = new FileWriter(nodesFileName);
-			fw.write(constrNetwork.getNodesAsString());
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Failed to write to the file: " + nodesFileName);
-			System.exit(-1);
-		}
-		
-		constrNetwork.displayNetwork();
 		// 6. find all the lineage trees that pass the AAF constraints
 		ArrayList<PHYTree> spanningTrees = constrNetwork.getLineageTrees();  
 		logger.log(Level.INFO, "Found " + spanningTrees.size() + " valid trees");
@@ -139,7 +126,7 @@ public class LineageEngine {
 					break;
 				}
 			}
-		}
+		} 
 		
 		// 9. persistent storage
 		if(args.persist) {
@@ -152,6 +139,7 @@ public class LineageEngine {
 		
 	}
 	
+	
 	/** 
 	 * The main pipeline for tree result visualization
 	 */
@@ -159,10 +147,9 @@ public class LineageEngine {
 		String netFileName = args.showFileNamePrefix + NET_FILE_EXTENSION;
 		String treeFileName = args.showFileNamePrefix + TREE_FILE_EXTENSION;
 		
-		SNVDatabase db = new SNVDatabase(args.showFileNamePrefix, args.normalSampleId);
-		db.resolveNonRobustconflicts();
-		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.generateFilteredTAG2SNVsMap(null);
-		
+		SNVDataStore db = new SNVDataStore(args.showFileNamePrefix, args.normalSampleId);
+		HashMap<String, ArrayList<SNVEntry>> snvsByTag = db.getSomaticGroups();
+
 		PHYNetwork net = readNetworkFromFile(netFileName);
 		String[] sampleNames = new String[net.numSamples];
 		ArrayList<PHYTree> trees = readTreesFromFile(treeFileName, sampleNames);
@@ -238,11 +225,9 @@ public class LineageEngine {
 			fis.close();
 			return net;
 		} catch (IOException e) {
-			//e.printStackTrace();
 			System.err.println("Failed to read to the file: " + netFileName + "\nNote: The -build command (with -s option) has to be run before the -show command for the given file.");
 			System.exit(1);
 		} catch (ClassNotFoundException e) {
-			//e.printStackTrace();
 			System.err.println("Failed to load network from file: " + netFileName + "\nNote: The -build command (with -s option) has to be run before the -show command for the given file.");
 			System.exit(1);
 		}
@@ -283,10 +268,6 @@ public class LineageEngine {
 		options.addOption("show", false, "Display the saved cell lineage tree(s)");
 		options.addOption("i", true, "Input file path");
 		options.addOption("o", true, "Output file path (default: input file path)");
-		options.addOption("cnv", true, "File path to CNV regions used to mark SNVs");
-		options.addOption("ann", true, "File path to ANNOVAR SNV annotations");
-		options.addOption("cosmic", true, "File path to COSMIC SNV annotations");
-		options.addOption("tcga", true, "File path to TCGA SNV annotations");
 		options.addOption("n", "normal", true, "Normal sample id (default: 0)");
 		options.addOption("closestParentOnly", false, "Only add edges to the ancestor in the closest possible level");
 		options.addOption("maxAAF", true, "Maximum allowed AAF in a sample (default: 0.6)");
@@ -296,17 +277,21 @@ public class LineageEngine {
 		options.addOption("minRobustGroup", true, "Minimum number of robust SNVs in group to be robust (default: 2)");
 		options.addOption("minRobustGroupKeep", true, "Minimum number of robust SNVs per group to keep the group in the network initially (default: 0 - keeps all the groups)");
 		options.addOption("minTargetDistRatio", true, "Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)");
-		options.addOption("e", true, "AAF error margin (default: 0.08)");
+		options.addOption("e", true, "AAF error margin (default: 0.1)");
 		options.addOption("minClusterSize", true, "Minimum size a cluster must have to be a considered a node in the network (default: 2)");
 		options.addOption("maxClusterDist", true, "Maximum mean AAF difference up to which two clusters can be collapsed (default: 0.2)");
-		options.addOption("vcf", false, "Input data type is vcf (default: validation)");
-		options.addOption("sim", false, "Input data type is simulation ");
+		//options.addOption("vcf", false, "Input data type is vcf (default: validation)");
 		options.addOption("s", "save", false, "Save the output to file");
 		options.addOption("tree", "showTree", false, "Display the top ranking lineage tree");
 		options.addOption("net", "showNetwork", false, "Display the constraint network");
 		options.addOption("top", true, "Number of top ranking lineage trees to display");
 		options.addOption("v", "verbose", false, "Verbose mode");
 		options.addOption("h", "help", false, "Print usage");
+		// annotations
+		options.addOption("cnv", true, "File path to CNV regions used to mark SNVs");
+		options.addOption("ann", true, "File path to ANNOVAR SNV annotations");
+		options.addOption("cosmic", true, "File path to COSMIC SNV annotations");
+		options.addOption("tcga", true, "File path to TCGA SNV annotations");
 		
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmdLine = null;
@@ -337,25 +322,25 @@ public class LineageEngine {
 			params.normalSampleId = Integer.parseInt(cmdLine.getOptionValue("n"));
 		}
 		if(cmdLine.hasOption("minAAFPresent")) {
-			Configs.VALIDATION_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFPresent"));
+			Parameters.VALIDATION_THR = Double.parseDouble(cmdLine.getOptionValue("minAAFPresent"));
 		}
 		if(cmdLine.hasOption("maxAAFAbsent")) {
-			Configs.VALIDATION_SOFT_THR = Double.parseDouble(cmdLine.getOptionValue("maxAAFAbsent"));
+			Parameters.VALIDATION_SOFT_THR = Double.parseDouble(cmdLine.getOptionValue("maxAAFAbsent"));
 		}
 		if(cmdLine.hasOption("minGroupSize")) {
-			Configs.GROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minGroupSize"));
+			Parameters.GROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minGroupSize"));
 		}
 		if(cmdLine.hasOption("maxAAF")) {
-			Configs.MAX_ALLOWED_VAF = Integer.parseInt(cmdLine.getOptionValue("maxAAF"));
+			Parameters.MAX_ALLOWED_VAF = Integer.parseInt(cmdLine.getOptionValue("maxAAF"));
 		}
 		if(cmdLine.hasOption("minRobustGroup")) {
-			Configs.ROBUSTGROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minRobustGroup"));
+			Parameters.ROBUSTGROUP_SIZE_THR = Integer.parseInt(cmdLine.getOptionValue("minRobustGroup"));
 		}
 		if(cmdLine.hasOption("minRobustGroupKeep")) {
-			Configs.GROUP_ROBUST_NUM_THR = Integer.parseInt(cmdLine.getOptionValue("minRobustGroupKeep"));
+			Parameters.GROUP_ROBUST_NUM_THR = Integer.parseInt(cmdLine.getOptionValue("minRobustGroupKeep"));
 		}
 		if(cmdLine.hasOption("minTargetDistRatio")) {
-			Configs.MIN_VAF_TARGET_RATIO_PER_SAMPLE = Double.parseDouble(cmdLine.getOptionValue("minTargetDistRatio"));
+			Parameters.MIN_VAF_TARGET_RATIO_PER_SAMPLE = Double.parseDouble(cmdLine.getOptionValue("minTargetDistRatio"));
 		}
 		if(cmdLine.hasOption("e")) {
 			Parameters.AAF_ERROR_MARGIN = Double.parseDouble(cmdLine.getOptionValue("e"));
@@ -367,10 +352,7 @@ public class LineageEngine {
 			Parameters.MAX_COLLAPSE_CLUSTER_DIFF = Double.parseDouble(cmdLine.getOptionValue("maxClusterDist"));
 		}
 		if(cmdLine.hasOption("vcf")) {
-			Configs.INFORMAT = format.VCF;
-		}
-		if(cmdLine.hasOption("sim")) {
-			Configs.INFORMAT = format.SIM;
+			Configs.INFORMAT = Format.VCF;
 		}
 		if(cmdLine.hasOption("s")) {
 			params.persist = true;

@@ -3,7 +3,6 @@ package lineage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import util.SNVEntry;
 import lineage.AAFClusterer.Cluster;
 import lineage.PHYNetwork;
 
@@ -14,7 +13,7 @@ import lineage.PHYNetwork;
  * 
  * @autor viq
  */
-public class PHYNode implements Serializable {
+public class PHYNode implements Serializable, Comparable<PHYNode> {
 	private static final long serialVersionUID = 1L;
 
 	/** Sub-population cluster that the node represents */
@@ -179,9 +178,7 @@ public class PHYNode implements Serializable {
 			node += cluster.toString();
 		} else if(isLeaf) {
 			node += "leaf sample id = " + leafSampleId;
-		} else {
-			//node += "root";
-		}
+		} 
 		return node;
 	}
 	
@@ -204,7 +201,6 @@ public class PHYNode implements Serializable {
 		String node = "";
 		if(!isLeaf && !isRoot) {
 			node += "Group: " + snvGroup.getTag() + "\n";
-			//node += "("+cluster.getMembership().size()+")";
 			node += cluster.toString();
 		} else if(isLeaf) {
 			node += "sample " + leafSampleId;
@@ -228,6 +224,16 @@ public class PHYNode implements Serializable {
 	
 	public int hashCode() {
 		return nodeId;
+	}
+
+	@Override
+	public int compareTo(PHYNode arg0) {
+		if(arg0.getNodeId() < this.nodeId) {
+			return -1;
+		} else if(arg0.getNodeId() > this.nodeId) {
+			return 1;
+		}
+		return 0;
 	}
 	
 }

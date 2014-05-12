@@ -11,11 +11,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lineage.AAFClusterer.Cluster;
+import util.Visualizer;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
-import util.SNVEntry;
-import util.Visualizer;
 
 /**
  * PHYNetwork is a directed constraint graph representing the phylogenetic relationship
@@ -54,13 +53,6 @@ public class PHYNetwork implements Serializable {
 	private static Logger logger = LineageEngine.logger;
 	
 	// ---- Network Construction ----
-	
-	public PHYNetwork() {
-		numSamples = 1;
-		nodes = new HashMap<Integer, ArrayList<PHYNode>>();
-		nodesById = new HashMap<Integer, PHYNode>();
-		edges = new HashMap<PHYNode, ArrayList<PHYNode>>(); 
-	}
 	
 	/**
 	 * Constructs a PHYNetwork from the sub-populations of the SNV groups
@@ -115,8 +107,7 @@ public class PHYNetwork implements Serializable {
 			addAllHiddenEdges();
 		}
 		
-		// find the nodes that are not connected and connect them to a valid node in the closest
-		// higher level
+		// find the nodes that are not connected and connect them to a valid node in the closest higher level
 		int[] nodeMask = new int[numNodes];
 		for(PHYNode n : edges.keySet()) {
 			for(PHYNode m : edges.get(n)) {
@@ -157,7 +148,7 @@ public class PHYNetwork implements Serializable {
 	 * @param n1 - node 1
 	 * @param n2 - node 2
 	 */
-	public int checkAndAddEdge(PHYNode n1, PHYNode n2) {
+	public int checkAndAddEdge(PHYNode n1, PHYNode n2) {	
 		if(n2.isLeaf) {
 			int sampleId = n2.getLeafSampleId();
 			if(n1.getAAF(sampleId) > 0) {
@@ -171,7 +162,6 @@ public class PHYNetwork implements Serializable {
 		int comp_21 = 0;
 		double err_12 = 0;
 		double err_21 = 0;
-		
 		for(int i = 0; i < numSamples; i++) {
 			if((n1.getAAF(i) == 0) && (n2.getAAF(i) != 0)) break;
 			comp_12 += (n1.getAAF(i) >= (n2.getAAF(i) - getAAFErrorMargin(n1, n2, i))) ? 1 : 0;
@@ -186,7 +176,6 @@ public class PHYNetwork implements Serializable {
 				err_21 += n1.getAAF(i) - n2.getAAF(i);
 			}
 		}
-		
 		if(comp_12 == numSamples) {
 			if (comp_21 == numSamples) {
 				if(err_12 < err_21) {
@@ -209,8 +198,7 @@ public class PHYNetwork implements Serializable {
 	}
 	
 	/**
-	 * Returns the AAF error margin on the edge 
-	 * between the from and to nodes
+	 * Returns the AAF error margin on the edge between the from and to nodes
 	 */
 	protected static double getAAFErrorMargin(PHYNode from, PHYNode to, int i) {
 		if(Parameters.STATIC_ERROR_MARGIN) {
@@ -225,33 +213,19 @@ public class PHYNetwork implements Serializable {
 			parentStdError = Parameters.AAF_ERROR_MARGIN;
 		} else {
 			parentSampleSize = from.getCluster().getMembership().size();
-			parentStdError = 2*1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
+			parentStdError = 1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
 		}	
 		if(to.isRoot()) {
 			childStdError = Parameters.AAF_ERROR_MARGIN;
 		} else {
 			childSampleSize = to.getCluster().getMembership().size();
-			childStdError = 2*1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
+			childStdError = 1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
 		}
-		
 		double standardError = parentStdError + childStdError;
-		
 		if(standardError > Parameters.AAF_ERROR_MARGIN) {
-			//System.out.println("err = " + from.getStdDev(i) + " " + to.getStdDev(i) + " " + standardError);
 			return standardError;
 		}
-		
 		return Parameters.AAF_ERROR_MARGIN;
-		
-		// max std dev of the centroid vector
-		/*double maxStd = Parameters.AAF_ERROR_MARGIN;
-		if(from.getStdDev(i) > maxStd) {
-			maxStd = from.getStdDev(i);
-		}
-		if(to.getStdDev(i) > maxStd) {
-			maxStd = to.getStdDev(i);
-		}
-		return maxStd; */
 	}
 	
 	/** Adds a new node to the graph */
@@ -292,10 +266,10 @@ public class PHYNetwork implements Serializable {
 	
 	/** Adds all the inter-level edges */
 	public void addAllHiddenEdges() {
-		for(int i = numSamples; i > 0; i--) { //except the root
+		for(int i = numSamples; i > 0; i--) { // (-) the root
 			ArrayList<PHYNode> fromLevelNodes = nodes.get(i);
 			if(fromLevelNodes == null) continue;
-			for(int j = i-1; j > 1; j--) {
+			for(int j = i-1; j > 1; j--) { // (-) private
 				ArrayList<PHYNode> toLevelNodes = nodes.get(j);
 				if(toLevelNodes == null) continue;
 				for(PHYNode n1 : fromLevelNodes) {
@@ -313,8 +287,6 @@ public class PHYNetwork implements Serializable {
 	 * The network needs to be adjusted when no valid spanning PHYTrees are found.
 	 * Adjustments include: 
 	 * - removing nodes corresponding to clusters of groups that are less robust
-	 * - increasing the error margin (to do)
-	 * - adding hidden edges (to do)
 	 */
 	public PHYNetwork fixNetwork() {
 		// reconstruct the network from clusters of robust groups only
@@ -339,19 +311,6 @@ public class PHYNetwork implements Serializable {
 				}
 			}
 		}
-		
-		/*if(toRemove != null && toRemove.getMembership().size() == 1) {
-			for(PHYNode n : nodesById.values()) {
-				Cluster c = n.getCluster();
-				SNVGroup g = n.snvGroup;
-				if(g == null) continue;
-				if(c.getMembership().size() == 1 && (group.getSNVs().get(c.getMembership().get(0)).getNumRobustSamples() < group.getSNVs().get(toRemove.getMembership().get(0)).getNumRobustSamples())) {
-					toRemove = c;
-					group = g;
-				}
-			}
-		}*/
-		
 		if(toRemove != null) {
 			group.removeCluster(toRemove);
 			logger.log(Level.INFO, "Removed cluster " + toRemove.getId() + " of group " + group.getTag() + " of size " + toRemove.getMembership().size() + " with members: ");
@@ -367,8 +326,7 @@ public class PHYNetwork implements Serializable {
 	 * Collapses two cluster nodes and reconstructs the network
 	 * @requires the two nodes are in the same group
 	 */
-	public PHYNetwork collapseClusterNodes(PHYNode n1, PHYNode n2) {
-		
+	public PHYNetwork collapseClusterNodes(PHYNode n1, PHYNode n2) {	
 		SNVGroup g = n1.getSNVGroup();
 		Cluster c1 = n1.getCluster();
 		Cluster c2 = n2.getCluster();
@@ -450,13 +408,7 @@ public class PHYNetwork implements Serializable {
 		if(t.treeNodes.size() == numNodes) {
 			L = t;
 			spanningTrees.add(L.clone());
-			
-			if(spanningTrees.size() % 10000 == 0) {
-				System.out.println("Found " + spanningTrees.size() + " trees");
-			}
-			
 		} else {
-			
 			// list used to reconstruct the original F
 			ArrayList<PHYEdge> ff = new ArrayList<PHYEdge>();
 			
@@ -468,9 +420,8 @@ public class PHYNetwork implements Serializable {
 				t.addNode(v);
 				t.addEdge(e.from, v);
 				
-				//NEW: check if adding this node does not violate the constraint
+				//check if adding this node does not violate the constraint
 				if(t.checkConstraint(e.from)) {
-					//System.out.println("Passed constraint");
 					// update f
 					ArrayList<PHYEdge> edgesAdded = new ArrayList<PHYEdge>();
 					ArrayList<PHYNode> vNbrs = edges.get(v);
@@ -550,11 +501,9 @@ public class PHYNetwork implements Serializable {
 	public ArrayList<PHYTree> getLineageTrees() {
 		spanningTrees = new ArrayList<PHYTree>();
 		
-		PHYNode root = nodes.get(numSamples+1).get(0);
-		//PHYNode root = nodesById.get(1);
-		
 		// initialize tree t to contain the root
 		PHYTree t = new PHYTree();
+		PHYNode root = nodes.get(numSamples+1).get(0);
 		t.addNode(root);
 		// initialize f to contain all edges (root, v)
 		f = new ArrayList<PHYEdge>();
@@ -565,10 +514,7 @@ public class PHYNetwork implements Serializable {
 			
 		}
 		grow(t);
-		System.out.println(spanningTrees.size());
 		applyAAFConstraints(spanningTrees);
-		//testSpanningTrees();
-		
 		return spanningTrees;
 	}
 	
@@ -598,8 +544,9 @@ public class PHYNetwork implements Serializable {
 				double errMargin = 0.0;
 				for(PHYNode n2 : nbrs) {
 					affSum += n2.getAAF(i);
-					errMargin += getAAFErrorMargin(n, n2, i);
+					//errMargin += getAAFErrorMargin(n, n2, i);
 				}
+				errMargin = Parameters.AAF_ERROR_MARGIN;
 				if(affSum > n.getAAF(i) + errMargin) {
 					return false;
 				}
@@ -738,8 +685,6 @@ public class PHYNetwork implements Serializable {
 				edgeId++;
 			}
 		}			
-		
-		//Visualizer.showLineageTreeBreakdown(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t);	
 		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t, this, sampleNames);	
 	}
 	
@@ -779,13 +724,12 @@ public class PHYNetwork implements Serializable {
 	 */
 	public String getNodesAsString() {
 		String s = "";
-		
-		// print nodes by level
 		for(int i = numSamples + 1; i >= 0; i--) {
 			ArrayList<PHYNode> levelNodes = nodes.get(i);
 			if(levelNodes != null) {
 				for(PHYNode n : levelNodes) {
 					if(n.isRoot()) continue;
+					s += n.getNodeId() + "\t";
 					s += n.getSNVGroup().getTag() + "\t";
 					s += n.getCluster().getMembership().size() + "\t";
 					double[] c = n.getCluster().getCentroid();

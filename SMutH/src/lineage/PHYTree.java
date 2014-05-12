@@ -3,6 +3,7 @@ package lineage;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 
@@ -130,8 +131,8 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 				affSum += n2.getAAF(i);
 				errMargin += PHYNetwork.getAAFErrorMargin(n, n2, i);
 			}
-			if(affSum >= n.getAAF(i) + errMargin) {
-				return false;
+			if(affSum > n.getAAF(i) + errMargin) {
+				//return false;
 			}
 		}
 		
@@ -139,16 +140,15 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 	}
 	
 	public String toString() {
-		String graph = "--- SPANNING TREE --- \n";
+		String graph = "";
 		for(PHYNode n1 : treeEdges.keySet()) {
 			ArrayList<PHYNode> nbrs = treeEdges.get(n1);
 			for(PHYNode n2 : nbrs) {
-				graph += n1.getNodeId() + " -> " + n2.getNodeId() + "\n";
+				graph += n1.getNodeId() + "\t" + n2.getNodeId() + "\n";
 			}
 		}
 		return graph;
 	}
-	
 	
 	
 	/** 
@@ -163,8 +163,11 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 	}
 	
 	public double computeErrorScore() {
+		ArrayList<PHYNode> nodes = new ArrayList<PHYNode>(treeEdges.keySet());
+		Collections.sort(nodes);
+		
 		double err = 0;
-		for(PHYNode n : treeEdges.keySet()) {
+		for(PHYNode n : nodes) {
 			ArrayList<PHYNode> nbrs = treeEdges.get(n);			
 			for(int i = 0; i < n.getNumSamples(); i++) {
 				double affSum = 0;
