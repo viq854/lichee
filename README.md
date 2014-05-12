@@ -1,2 +1,2 @@
-cell-lineage
+Multi-sample cancer phylogeny reconstruction
 ============
