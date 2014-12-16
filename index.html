@@ -4,11 +4,11 @@
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="LICHeE : " />
+    <meta name="description" content="LICHeE: " />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>SMutH</title>
+    <title>LICHeE</title>
   </head>
 
   <body>
@@ -37,53 +37,119 @@
 
 
 <p> 
-Program: smuth (Somatic Mutation Hierarchies)  <br>
+Program: lichee <br>
 Usage:<br>
- &emsp;-build       &emsp;&emsp; Construct the sample cell lineage trees<br>
- &emsp;-i <arg>     &emsp;&emsp; Input file path (validation or vcf file)<br>
- &emsp;-o <arg>     &emsp;&emsp; Output file path (default: input file path)<br>
- &emsp;-n,--normal <arg>   &emsp;&emsp; Normal sample id<br>
- &emsp;-minAAFPresent <arg> &emsp; Minimum AAF to robustly call an SNV in a sample (default: 0.04)<br>
- &emsp;-maxAAFAbsent <arg>  &emsp; Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.015)<br>
- &emsp;-maxAAF <arg>	&emsp;&emsp; Maximum allowed AAF in a sample (default: 0.6)<br>
- &emsp;-minGroupSize <arg>   &emsp;  Minimum SNV group size (default: 1)<br>
- &emsp;-minRobustGroup <arg>	&emsp; Minimum number of robust SNVs in group to be robust (default: 2)<br>
- &emsp;-minRobustGroupKeep	&emsp; Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups initially)<br>
- &emsp;-minTargetDistRatio	&emsp; Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5)<br>
- &emsp;-e <arg>               &emsp;&emsp; AAF error margin (default: 0.1)<br>
- &emsp;-maxClusterDist <arg>  &emsp; Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1)<br>
- &emsp;-minClusterSize <arg>  &emsp; Minimum size a cluster must have to be considered a node in the network (default: 2)<br>
- &emsp;-net,--showNetwork   &emsp;   Display the constraint network<br>
- &emsp;-closestParentOnly	&emsp;	 Only add edges to the ancestor in the closest possible level<br>
- &emsp;-top <arg>           &emsp;&emsp;   Number of top ranking lineage trees to display<br>
- &emsp;-tree,--showTree     &emsp;&emsp;   Display the top ranking lineage tree<br>
- &emsp;-v,--verbose        &emsp;&emsp;    Verbose mode<br>
- &emsp;-s,--save          &emsp;     Save the output to file<br>
- &emsp;-h,--help          &emsp;     Print usage<br>
- &emsp;-cnv <arg>			&emsp;	 File path to CNV regions used to mark SNVs<br>
+<table>
+  <tr>
+    <td> -build </td>
+    <td> Construct the sample cell lineage trees </td>
+  </tr>
+  <tr>
+    <td> -i <arg> </td>
+    <td>Input file path (validation or vcf file)</td>
+  </tr>
+   <tr>
+    <td> -o <arg> </td>
+    <td> Output file path (default: input file path)</td>
+  </tr>
+  <tr>
+    <td> -n,--normal <arg> </td>
+    <td> Normal sample id </td>
+  </tr>
+  <tr>
+    <td> -minAAFPresent <arg> </td>
+    <td> Minimum AAF to robustly call an SNV in a sample (default: 0.05) </td>
+  </tr>
+  <tr>
+    <td> -maxAAFAbsent <arg> </td>
+    <td> Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.02) </td>
+  </tr>
+  <tr>
+    <td> -maxAAF <arg> </td>
+    <td> Maximum allowed AAF in a sample (default: 0.6) </td>
+  </tr>
+  <tr>
+    <td> -minGroupSize <arg> </td>
+    <td> Minimum SNV group size (default: 1) </td>
+  </tr>
+  <tr>
+    <td> -minRobustGroup <arg> </td>
+    <td> Minimum number of robust SNVs in group to be robust (default: 2) </td>
+  </tr>
+  <tr>
+    <td> -minRobustGroupKeep <arg> </td>
+    <td> Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups) </td>
+  </tr>
+  <tr>
+    <td> -minTargetDistRatio <arg> </td>
+    <td> Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5) </td>
+  </tr>
+  <tr>
+    <td> -e <arg> </td>
+    <td> AAF error margin (default: 0.1) </td>
+  </tr>
+  <tr>
+    <td> -maxClusterDist <arg> </td>
+    <td> Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1) </td>
+  </tr>
+  <tr>
+    <td> -minClusterSize <arg> </td>
+    <td> Minimum size a cluster must have to be considered a node in the network (default: 2) </td>
+  </tr>
+  <tr>
+    <td> -closestParentOnly </td>
+    <td>  Only add edges to the ancestor in the closest possible level </td>
+  </tr>
+  <tr>
+    <td> -net,--showNetwork </td>
+    <td> Display the constraint network </td>
+  </tr>
+  <tr>
+    <td> -top <arg> </td>
+    <td> Number of top ranking lineage trees to display </td>
+  </tr>
+  <tr>
+    <td> -tree,--showTree </td>
+    <td> Display the top ranking lineage tree </td>
+  </tr>
+  <tr>
+    <td> -v,--verbose  </td>
+    <td> Verbose mode </td>
+  </tr>
+  <tr>
+    <td> -s,--save  </td>
+    <td> Save the output to file </td>
+  </tr>
+  <tr>
+    <td> -h,--help  </td>
+    <td> Print usage </td>
+  </tr>
+</table>
+</p> 
+
+<!--  &emsp;-cnv <arg>			&emsp;	 File path to CNV regions used to mark SNVs<br>
  &emsp;-tcga <arg>		&emsp;	 File path to TCGA SNV annotations<br>
  &emsp;-cosmic <arg>	&emsp;		 File path to COSMIC SNV annotations<br>
- &emsp;-ann <arg>		&emsp;		 File path to ANNOVAR variant function annotations<br>
-</p> 
+ &emsp;-ann <arg>		&emsp;		 File path to ANNOVAR variant function annotations<br> -->
 
 <p>
 HOW TO RUN <br>
 ---------- <br>
 
-./smuth -build -i <input_file_path> - n <normal_sample_id> [options] <br>
+./lichee -build -i <input_file_path> - n <normal_sample_id> [options] <br>
 </p>
 
 <p>
 EXAMPLES<br>
 --------<br>
 #Show the top ranking tree<br>
-./smuth -build -i ../data/ccRCC/RK26.txt -tree -n 0<br>
+./lichee -build -i ../data/ccRCC/RK26.txt -tree -n 0<br>
 
 #Eliminate clusters that have fewer than 3 SNVs<br>
-./smuth -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree<br>
+./lichee -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree<br>
 
 #Change hard SNV caller thresholds<br>
-./smuth -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree<br>
+./lichee -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree<br>
 </p>
 
 </section>
@@ -91,7 +157,7 @@ EXAMPLES<br>
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">SMutH maintained by <a href="https://github.com/viq854">viq854</a></p>
+        <p class="copyright">LICHeE developed by <a href="https://github.com/viq854">viq854</a></p>
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
