@@ -13,7 +13,7 @@
     <!-- HEADER -->
     <div style="background-color:black; color:white; padding:25px">
         <header class="inner">
-          <a style="display: block;position: absolute;top:0;right: 10px;z-index: 10;padding: 10px 50px 10px 10px;color: #fff; background: url('../images/blacktocat.png') #0090ff no-repeat 95% 50%; font-weight: 700; box-shadow: 0 0 10px rgba(0,0,0,.5); border-bottom-left-radius: 2px; border-bottom-right-radius: 2px;" href="https://github.com/viq854/lichee">View on GitHub</a>
+          <a style="display: block;position: absolute;top:0;right: 10px;z-index: 10;padding: 10px 50px 10px 10px;color: #fff; background: url('images/blacktocat.png') #0090ff no-repeat 95% 50%; font-weight: 700; box-shadow: 0 0 10px rgba(0,0,0,.5); border-bottom-left-radius: 2px; border-bottom-right-radius: 2px;" href="https://github.com/viq854/lichee">View on GitHub</a>
           <h1 id="project_title">LICHeE: Lineage Inference for Cancer Heterogeneity and Evolution</h1>
         </header>
     </div>
@@ -25,54 +25,56 @@
 <a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span>
 </a>LICHeE: Lineage Inference for Cancer Heterogeneity and Evolution </h3> -->
 
-<p> 
-<b>Program</b>: lichee <br>
-<b>Parameters:</b>
+<div style="float:right" >
+<img src="url('images/tree.png')" alt="">
+</div>
+
+<h3>PROGRAM PARAMETERS</h3>
 <table>
-  <tr><td> -build </td><td> Construct the sample cell lineage trees </td></tr>
-  <tr><td> -i <arg> </td><td>Input file path (validation or vcf file)</td></tr>
-   <tr><td> -o <arg> </td><td> Output file path (default: input file path)</td></tr>
-  <tr><td> -n,--normal <arg> </td><td> Normal sample id </td></tr>
-  <tr><td> -minAAFPresent <arg> </td><td> Minimum AAF to robustly call an SNV in a sample (default: 0.05) </td></tr>
-  <tr><td> -maxAAFAbsent <arg> </td><td> Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.02) </td></tr>
-  <tr><td> -maxAAF <arg> </td><td> Maximum allowed AAF in a sample (default: 0.6) </td></tr>
-  <tr><td> -minGroupSize <arg> </td><td> Minimum SNV group size (default: 1) </td></tr>
-  <tr><td> -minRobustGroup <arg> </td><td> Minimum number of robust SNVs in group to be robust (default: 2) </td></tr>
-  <tr><td> -minRobustGroupKeep <arg> </td><td> Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups) </td></tr>
-  <tr><td> -minTargetDistRatio <arg> </td><td> Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5) </td></tr>
-  <tr><td> -e <arg> </td><td> AAF error margin (default: 0.1) </td></tr>
-  <tr><td> -maxClusterDist <arg> </td><td> Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1) </td></tr>
-  <tr><td> -minClusterSize <arg> </td><td> Minimum size a cluster must have to be considered a node in the network (default: 2) </td></tr>
-  <tr><td> -closestParentOnly </td><td>  Only add edges to the ancestor in the closest possible level </td></tr>
-  <tr><td> -net,--showNetwork </td><td> Display the constraint network </td></tr>
-  <tr><td> -top <arg> </td><td> Number of top ranking lineage trees to display </td></tr>
-  <tr><td> -tree,--showTree </td><td> Display the top ranking lineage tree </td></tr>
-  <tr><td> -v,--verbose  </td><td> Verbose mode </td></tr>
-  <tr><td> -s,--save  </td><td> Save the output to file </td></tr>
-  <tr><td> -h,--help  </td><td> Print usage </td></tr>
+  <tr><td> <font face="courier"> -build </td><td> Construct the cell lineage trees </td></tr>
+  <tr><td> <font face="courier"> -i &#60;arg> </td><td>Input file path (validation or vcf file, see <font face="courier">/data</font> directory for examples)</td></tr>
+   <tr><td>  <font face="courier">-o &#60;arg> </td><td> Output file path (default: input file path)</td></tr>
+  <tr><td>  <font face="courier"> -n,--normal <arg> </td><td> Normal sample id </td></tr>
+  <tr><td>  <font face="courier"> -minAAFPresent &#60;arg> </td><td> Minimum AAF to robustly call an SNV in a sample (default: 0.05) </td></tr>
+  <tr><td>  <font face="courier"> -maxAAFAbsent &#60;arg> </td><td> Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.02) </td></tr>
+  <tr><td>  <font face="courier"> -maxAAF &#60;arg> </td><td> Maximum allowed AAF in a sample (default: 0.6) </td></tr>
+  <tr><td>  <font face="courier"> -e &#60;arg> </td><td> AAF error margin (default: 0.1) </td></tr>  
+  <tr><td>  <font face="courier"> -minGroupSize &#60;arg> </td><td> Minimum SNV group size (default: 1) </td></tr>
+  <tr><td>  <font face="courier"> -minRobustGroup &#60;arg> </td><td> Minimum number of robust SNVs in group to be robust (default: 2) </td></tr>
+  <tr><td>  <font face="courier"> -minRobustGroupKeep &#60;arg> </td><td> Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups) </td></tr>
+  <tr><td>  <font face="courier"> -minTargetDistRatio &#60;arg> </td><td> Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5) </td></tr>
+  <tr><td>  <font face="courier"> -maxClusterDist &#60;arg> </td><td> Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1) </td></tr>
+  <tr><td>  <font face="courier"> -minClusterSize &#60;arg> </td><td> Minimum size a cluster must have to be considered a node in the network (default: 2) </td></tr>
+  <tr><td>  <font face="courier"> -closestParentOnly </td><td>  Only add edges to the ancestor in the closest possible level  (default: false) </td></tr>
+  <tr><td>  <font face="courier"> -net,--showNetwork </td><td> Display the constraint network </td></tr>
+  <tr><td>  <font face="courier"> -tree,--showTree </td><td> Display the top ranking lineage tree </td></tr>
+  <tr><td>  <font face="courier"> -top <arg> </td><td> Number of top ranking lineage trees to display </td></tr>
+  <tr><td>  <font face="courier"> -v,--verbose  </td><td> Verbose mode </td></tr>
+  <tr><td>  <font face="courier"> -s,--save  </td><td> Save the output to file </td></tr>
+  <tr><td>  <font face="courier"> -h,--help  </td><td> Print usage </td></tr>
 </table>
 
 
 <h3>HOW TO RUN</h3> 
 <p>
-./lichee -build -i <input_file_path> - n <normal_sample_id> [options] <br>
+<font face="courier"> ./lichee -build -i <input_file_path> - n <normal_sample_id> [options] </font> <br>
 </p>
 
 
 <h3>EXAMPLES</h3>
 <p>
 #Show the top ranking tree<br>
-./lichee -build -i ../data/ccRCC/RK26.txt -tree -n 0<br>
+<font face="courier"> ./lichee -build -i ../data/ccRCC/RK26.txt -tree -n 0</font> <br>
 </p>
 
 <p>
 #Eliminate clusters that have fewer than 3 SNVs<br>
-./lichee -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree<br>
+<font face="courier"> ./lichee -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree</font><br>
 </p>
 
 <p>
 #Change hard SNV caller thresholds<br>
-./lichee -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree<br>
+<font face="courier"> ./lichee -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree</font><br>
 </p>
 
 </section>
