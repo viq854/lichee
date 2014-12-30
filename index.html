@@ -31,33 +31,37 @@
 
 <h3>PROGRAM PARAMETERS</h3>
 <table>
-  <tr><td> <font face="courier"> -build </td><td> Construct the cell lineage trees </td></tr>
-  <tr><td> <font face="courier"> -i &#60;arg> </td><td>Input file path (validation or vcf file, see <font face="courier">/data</font> directory for examples)</td></tr>
+  <tr><td> <font face="courier"> -build </td><td> Reconstruct lineage trees </td></tr>
+  <tr><td> <font face="courier"> -i &#60;arg> </td><td>Input file path (see <font face="courier">/data</font> directory for examples)</td></tr>
    <tr><td>  <font face="courier">-o &#60;arg> </td><td> Output file path (default: input file path)</td></tr>
-  <tr><td>  <font face="courier"> -n,--normal <arg> </td><td> Normal sample id </td></tr>
-  <tr><td>  <font face="courier"> -minAAFPresent &#60;arg> </td><td> Minimum AAF to robustly call an SNV in a sample (default: 0.05) </td></tr>
-  <tr><td>  <font face="courier"> -maxAAFAbsent &#60;arg> </td><td> Maximum AAF to robustly consider an SNV as absent from a sample (default: 0.02) </td></tr>
-  <tr><td>  <font face="courier"> -maxAAF &#60;arg> </td><td> Maximum allowed AAF in a sample (default: 0.6) </td></tr>
-  <tr><td>  <font face="courier"> -e &#60;arg> </td><td> AAF error margin (default: 0.1) </td></tr>  
+  <tr><td>  <font face="courier"> -n,--normal <arg> </td><td> Normal sample id (default: 0) </td></tr>
+  <tr><td>  <font face="courier"> -e &#60;arg> </td><td> VAF error margin (default: 0.1) </td></tr>  
+  <tr><td>  <font face="courier"> -minVAFPresent &#60;arg> </td><td> Minimum VAF to robustly consider an SSNV as present in a sample (default: 0.005) </td></tr>
+  <tr><td>  <font face="courier"> -maxVAFAbsent &#60;arg> </td><td> Maximum VAF to robustly consider an SSNV as absent from a sample (default: 0.005) </td></tr>
+  <tr><td>  <font face="courier"> -maxVAFValid &#60;arg> </td><td> Maximum allowed VAF in a sample (default: 0.6) </td></tr>
   <tr><td>  <font face="courier"> -minGroupSize &#60;arg> </td><td> Minimum SNV group size (default: 1) </td></tr>
-  <tr><td>  <font face="courier"> -minRobustGroup &#60;arg> </td><td> Minimum number of robust SNVs in group to be robust (default: 2) </td></tr>
-  <tr><td>  <font face="courier"> -minRobustGroupKeep &#60;arg> </td><td> Minimum number of robust SNVs per group to keep the group in the network (default: 0 - keeps all the groups) </td></tr>
+  <tr><td>  <font face="courier"> -minRobustGroup &#60;arg> </td><td> Minimum number of robust SSNVs in group to be robust (default: 2) </td></tr>
+  <tr><td>  <font face="courier"> -minRobustGroupKeep &#60;arg> </td><td> Minimum number of robust SSNVs per group to keep the group in the network (default: 0 - keeps all the groups) </td></tr>
   <tr><td>  <font face="courier"> -minTargetDistRatio &#60;arg> </td><td> Minimum non-robust SNV to target group's SNV ratio per sample (default: 0.5) </td></tr>
-  <tr><td>  <font face="courier"> -maxClusterDist &#60;arg> </td><td> Maximum mean AAF difference on average per sample up to which two clusters can be collapsed (default: 0.1) </td></tr>
+  <tr><td>  <font face="courier"> -maxClusterDist &#60;arg> </td><td> Maximum mean VAF difference on average per sample up to which two clusters can be collapsed (default: 0.2) </td></tr>
   <tr><td>  <font face="courier"> -minClusterSize &#60;arg> </td><td> Minimum size a cluster must have to be considered a node in the network (default: 2) </td></tr>
-  <tr><td>  <font face="courier"> -closestParentOnly </td><td>  Only add edges to the ancestor in the closest possible level  (default: false) </td></tr>
+  <tr><td>  <font face="courier"> -minPrivateClusterSize &#60;arg> </td><td>	Minimum size a private mutation cluster must have to be a considered a node in the network (default: 1) </td></tr>
+  <tr><td>  <font face="courier"> -c,--completeNetwork </td><td>  Add all possible edges to the constraint network (default: private nodes are connected only to closest level parents;
+                                only nodes with no other parents are descendants of root) </td></tr>
+  <tr><td>  <font face="courier"> -cp </td><td> Input data represents cell prevalaence (CP) values </td></tr>
   <tr><td>  <font face="courier"> -net,--showNetwork </td><td> Display the constraint network </td></tr>
   <tr><td>  <font face="courier"> -tree,--showTree </td><td> Display the top ranking lineage tree </td></tr>
-  <tr><td>  <font face="courier"> -top <arg> </td><td> Number of top ranking lineage trees to display </td></tr>
+  <tr><td>  <font face="courier"> -top &#60;arg> </td><td> Number of top ranking lineage trees to display </td></tr>
+  <tr><td>  <font face="courier"> -s,--save &#60;arg> </td><td> Maximum number of output trees to save (default: 1) </td></tr>
   <tr><td>  <font face="courier"> -v,--verbose  </td><td> Verbose mode </td></tr>
-  <tr><td>  <font face="courier"> -s,--save  </td><td> Save the output to file </td></tr>
   <tr><td>  <font face="courier"> -h,--help  </td><td> Print usage </td></tr>
 </table>
 
 
 <h3>HOW TO RUN</h3> 
 <p>
-<font face="courier"> ./lichee -build -i <input_file_path> - n <normal_sample_id> [options] </font> <br>
+From the <font face="courier">/release</font> directory: <br>
+<font face="courier"> ./lichee -build -i <input_file_path> -n <normal_sample_id> [options] </font> <br>
 </p>
 
 
@@ -68,13 +72,13 @@
 </p>
 
 <p>
-#Eliminate clusters that have fewer than 3 SNVs<br>
+#Eliminate clusters that have fewer than 3 SSNVs<br>
 <font face="courier"> ./lichee -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree</font><br>
 </p>
 
 <p>
-#Change hard SNV caller thresholds<br>
-<font face="courier"> ./lichee -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxAAFAbsent 0.005 -minAAFPresent 0.01 -tree</font><br>
+#Change hard SSNV caller thresholds<br>
+<font face="courier"> ./lichee -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxVAFAbsent 0.005 -minVAFPresent 0.01 -tree</font><br>
 </p>
 
 </section>
