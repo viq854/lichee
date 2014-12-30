@@ -1,0 +1,60 @@
+PROGRAM DESCRIPTION
+-------------------
+
+Program: lichee (Lineage Inference for Cancer Heterogeneity and Evolution)  
+Usage:
+-build							Construct the sample lineage trees
+-i <arg>						Input file path
+-o <arg>						Output file path (default: input file path)
+-n,--normal <arg>				Normal sample id (default: 0)
+-e <arg>						VAF error margin (default: 0.1)
+-minVAFPresent <arg>			Minimum VAF to robustly consider an SSNV as present in a sample (default: 0.005)
+-maxVAFAbsent <arg>				Maximum VAF to robustly consider an SSNV as absent from a sample (default: 0.005)
+-maxVAFValid <arg>				Maximum allowed VAF in a sample (default: 0.6)
+-minGroupSize <arg>				Minimum SSNV group size (default: 1)
+-minRobustGroup <arg>			Minimum number of robust SSNVs in group to be robust (default: 2)
+-minRobustGroupKeep <arg>		Minimum number of robust SSNVs per group to keep the group in the network initially (default: 0 - keeps all the groups)
+-minTargetDistRatio <arg>		Minimum non-robust SSNV to target group's SSNV ratio per sample (default: 0.5)
+-maxClusterDist <arg>			Maximum mean VAF difference up to which two clusters can be collapsed (default: 0.2)
+-minClusterSize <arg>			Minimum size a cluster must have to be a considered a node in the network (default: 2)
+-minPrivateClusterSize <arg>	Minimum size a private mutation cluster must have to be a considered a node in the network (default: 1)
+-c,--completeNetwork			Add all possible edges to the constraint network (default: private nodes are connected only to closest level parents;
+                                only nodes with no other parents are descendants of root)
+-cp								Input data represents cell prevalaence (CP) values
+-net,--showNetwork				Display the constraint network
+-tree,--showTree				Display the top ranking lineage tree
+-top <arg>						Number of top ranking lineage trees to display
+-s,--save <arg>					Maximum number of output trees to save (default: 1)
+-show							Display the saved lineage tree(s)
+-v,--verbose					Verbose mode
+-h,--help						Print usage
+
+
+HOW TO RUN
+----------
+
+From the /release directory:
+
+./lichee -build -i <input_file_path> - n <normal_sample_id> [options]
+
+EXAMPLES
+--------
+#Show the top ranking tree
+./lichee -build -i ../data/ccRCC/RK26.txt -tree -n 0
+
+#Eliminate non-private clusters that have fewer than 3 SSNVs 
+./lichee -build -i ../data/ccRCC/EV007.txt -n 0 -minClusterSize 3 -tree
+
+#Change hard SSNV caller thresholds
+./lichee -build -i ../data/ccRCC/RMH004.txt -n 0 -minClusterSize 5 -maxVAFAbsent 0.005 -minVAFPresent 0.01 -tree
+
+
+SYSTEM REQUIREMENTS
+-------------------
+Java Runtime Environment (JRE)
+
+
+LICENSE
+-------
+MIT License
+
