@@ -3,7 +3,7 @@ PROGRAM DESCRIPTION
 
 Program: lichee (Lineage Inference for Cancer Heterogeneity and Evolution)  
 Usage:
--build							Construct the sample lineage trees
+-build							Reconstruct lineage trees
 -i <arg>						Input file path
 -o <arg>						Output file path (default: input file path)
 -n,--normal <arg>				Normal sample id (default: 0)
@@ -35,7 +35,7 @@ HOW TO RUN
 
 From the /release directory:
 
-./lichee -build -i <input_file_path> - n <normal_sample_id> [options]
+./lichee -build -i <input_file_path> -n <normal_sample_id> [options]
 
 EXAMPLES
 --------
