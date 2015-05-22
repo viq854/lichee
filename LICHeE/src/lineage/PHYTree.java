@@ -160,7 +160,7 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 				affSum += n2.getAAF(i);
 				//errMargin += PHYNetwork.getAAFErrorMargin(n, n2, i);
 			}
-			errMargin = Parameters.AAF_ERROR_MARGIN;
+			errMargin = Parameters.VAF_ERROR_MARGIN;
 			if(affSum > n.getAAF(i) + errMargin) {
 				return false;
 			}
@@ -174,7 +174,7 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 		for(PHYNode n1 : treeEdges.keySet()) {
 			ArrayList<PHYNode> nbrs = treeEdges.get(n1);
 			for(PHYNode n2 : nbrs) {
-				graph += n1.getNodeId() + "\t" + n2.getNodeId() + "\n";
+				graph += n1.getNodeId() + " -> " + n2.getNodeId() + "\n";
 			}
 		}
 		return graph;
@@ -188,7 +188,7 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
     		s += n.getNodeId();
     		s += "\t" + n.getSNVGroup().getTag();
     		for(SNVEntry snv : snvs) {
-    			s += "\t" + snv.getInfoField();
+    			s += "\t" + snv.getDescription();
         	}
     		s += "\n";
 		}
@@ -239,7 +239,7 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 		StringBuilder lineage = new StringBuilder();
 		String indent = "";
 		lineage.append(sampleName + ":\n");
-		lineage.append("GERMLINE\n");
+		lineage.append("GL\n");
 		
 		// traverse the tree starting from the root in DFS order
 		for(PHYNode n : treeEdges.get(treeNodes.get(0))) {
@@ -249,7 +249,7 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 	}
 	
 	private void getLineageHelper(StringBuilder lineage, String indent, PHYNode n, int sampleId) {
-		indent += "\t";			
+		indent += "     ";			
 		
 		DecimalFormat df = new DecimalFormat("#.##");
 		if(n.getSNVGroup().containsSample(sampleId)) {

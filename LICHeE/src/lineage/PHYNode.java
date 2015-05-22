@@ -139,6 +139,11 @@ public class PHYNode implements Serializable, Comparable<PHYNode> {
 		return snvGroup;
 	}
 	
+	public int getSize() {
+		if(cluster == null) return 0;
+		return cluster.getMembership().size();
+	}
+	
 	/**
 	 * Returns the total number of samples in the network
 	 */
@@ -155,7 +160,7 @@ public class PHYNode implements Serializable, Comparable<PHYNode> {
 	 */
 	public double getAAF(int sampleId) {
 		if(isRoot) {
-			return Parameters.AAF_MAX;
+			return Parameters.VAF_MAX;
 		} 
 		if(isLeaf) {
 			return 0;
@@ -213,14 +218,13 @@ public class PHYNode implements Serializable, Comparable<PHYNode> {
 	public String getLabel() {
 		String node = "";
 		if(!isLeaf && !isRoot) {
-			node += nodeId + ": \n";
+			//node += nodeId + ": \n";
 			node += snvGroup.getTag() + "\n";
 			node += "("+cluster.getMembership().size()+")";
-			//node += cluster.toString();
 		} else if(isLeaf) {
 			node += "sample " + leafSampleId;
 		} else {
-			node += "germline";
+			node += "GL";
 		}
 		return node;
 	}
@@ -233,7 +237,7 @@ public class PHYNode implements Serializable, Comparable<PHYNode> {
 		} else if(isLeaf) {
 			node += "sample " + leafSampleId;
 		} else {
-			node += "germline";
+			node += "GL";
 		}
 		return node;
 	}

@@ -244,22 +244,22 @@ public class PHYNetwork implements Serializable {
 		int parentSampleSize = 0;
 		int childSampleSize = 0;
 		if(from.isRoot()) {
-			parentStdError = Parameters.AAF_ERROR_MARGIN;
+			parentStdError = Parameters.VAF_ERROR_MARGIN;
 		} else {
 			parentSampleSize = from.getCluster().getMembership().size();
 			parentStdError = 1.96*from.getStdDev(i)/Math.sqrt((double)parentSampleSize);
 		}	
 		if(to.isRoot()) {
-			childStdError = Parameters.AAF_ERROR_MARGIN;
+			childStdError = Parameters.VAF_ERROR_MARGIN;
 		} else {
 			childSampleSize = to.getCluster().getMembership().size();
 			childStdError = 1.96*to.getStdDev(i)/Math.sqrt((double)childSampleSize);
 		}
 		double standardError = parentStdError + childStdError;
-		if(standardError > Parameters.AAF_ERROR_MARGIN) {
+		if(standardError > Parameters.VAF_ERROR_MARGIN) {
 			return standardError;
 		}
-		return Parameters.AAF_ERROR_MARGIN;
+		return Parameters.VAF_ERROR_MARGIN;
 	}
 	
 	/** Adds a new node to the graph */
@@ -320,7 +320,7 @@ public class PHYNetwork implements Serializable {
 	/**
 	 * The network needs to be adjusted when no valid spanning PHYTrees are found.
 	 * Adjustments include: 
-	 * - removing nodes corresponding to clusters of groups that are less robust
+	 * - removing nodes corresponding to less robust clusters (smallest first)
 	 */
 	public PHYNetwork fixNetwork() {
 		// reconstruct the network from clusters of robust groups only
@@ -334,11 +334,12 @@ public class PHYNetwork implements Serializable {
 				if(!filteredGroups.contains(n.snvGroup)) {
 					filteredGroups.add(n.snvGroup);
 				}
-				if((!g.isRobust())) {
+				// check if this cluster is robust
+				if((!c.isRobust())) {
 					if (toRemove == null) {
 						toRemove = c;
 						group = g;
-					} else if(c.getMembership().size() < toRemove.getMembership().size()) {
+					} else if(c.getMembership().size() < toRemove.getMembership().size()) { // smallest
 						toRemove = c;
 						group = g;
 					}
@@ -350,7 +351,7 @@ public class PHYNetwork implements Serializable {
 			logger.log(Level.INFO, "Removed cluster " + toRemove.getId() + " of group " + group.getTag() + " of size " + toRemove.getMembership().size() + " with members: ");
 			for(Integer snv : toRemove.getMembership()) {
 				SNVEntry entry = group.getSNVs().get(snv);
-				logger.log(Level.INFO, entry.getChromosome() + " " +  entry.getPosition() + " " + entry.getAltChar() + "/" + entry.getRefChar());
+				logger.log(Level.INFO, entry.toString());
 			}
 		}
 		return new PHYNetwork(new ArrayList<SNVGroup>(filteredGroups), numSamples);
@@ -605,13 +606,14 @@ public class PHYNetwork implements Serializable {
 	 * and removes the trees that don't pass the constraints
 	 */
 	private void applyConsistencyConstraints(List<PHYTree> trees) {
-		ArrayList<PHYTree> toBeRemoved = new ArrayList<PHYTree>();
-		for(PHYTree t : trees) {
-			if(!checkConsistencyConstraints(t)) {
-				toBeRemoved.add(t);
+		//ArrayList<PHYTree> toBeRemoved = new ArrayList<PHYTree>();
+		for(int i = 0; i < trees.size(); i++) {
+			if(!checkConsistencyConstraints(trees.get(i))) {
+				//toBeRemoved.add(t);
+				logger.info("Top tree " + i + " did not pass the QP consistency check");
 			}
 		}
-		spanningTrees.removeAll(toBeRemoved);
+		//spanningTrees.removeAll(toBeRemoved);
 	}
 	
 	/**
@@ -619,6 +621,9 @@ public class PHYNetwork implements Serializable {
 	 * @param t - spanning tree
 	 */
 	private boolean checkConsistencyConstraints(PHYTree t) {
+		org.apache.log4j.BasicConfigurator.configure();
+		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
+			
 		HashMap<PHYNode, Integer> nodeToIndex = new HashMap<PHYNode, Integer>();
 		int numNodes = t.treeNodes.size();
 		for(int i = 0; i < numNodes; i++) {
@@ -628,16 +633,10 @@ public class PHYNetwork implements Serializable {
 		int nVariables = numNodes*numSamples;
 		int nConstraints = nVariables + 2*nVariables + nVariables; // sum-of-child + abs val (2) + magnitude
 		
-	//	System.out.println("nSamples = " + numSamples);
-	//	System.out.println("nNodes = " + numNodes);
-	//	System.out.println("nVariables = " + nVariables);
-	//	System.out.println("nConstraints = " + nConstraints);
-		
 		double[] diffVAFSCPerNode = new double[nConstraints]; 
 		for(int i = 0; i < nConstraints; i++) {
 			diffVAFSCPerNode[i] = 0.0001;
 		}
-		
 		double[][] adjacency = new double[nConstraints][nVariables];
 		
 		// sum of children 
@@ -662,28 +661,13 @@ public class PHYNetwork implements Serializable {
 				adjacency[i*numSamples + j][numNodes*j + i] = -1;
 			}
 		}
-		
-//		for(int i = 0; i < numNodes; i++) {
-//			PHYNode n = t.treeNodes.get(i);
-//			System.out.println("Node i = " + i);
-//			System.out.println(n.toString());
-//			ArrayList<PHYNode> children = t.treeEdges.get(n);
-//			if(children != null) {
-//				System.out.print("Children: ");
-//				for(PHYNode c : children) {
-//					System.out.print(nodeToIndex.get(c) + " ");
-//				}
-//				System.out.println();
-//			}
-//		}
-		
-		
+				
 		// absolute value
 		for(int i = 0; i < nVariables; i++) {
 			adjacency[nVariables + i][i] = 1;
 			adjacency[2*nVariables + i][i] = -1;
-			diffVAFSCPerNode[nVariables + i] = Parameters.AAF_ERROR_MARGIN;
-			diffVAFSCPerNode[2*nVariables + i] = Parameters.AAF_ERROR_MARGIN;
+			diffVAFSCPerNode[nVariables + i] = Parameters.VAF_ERROR_MARGIN;
+			diffVAFSCPerNode[2*nVariables + i] = Parameters.VAF_ERROR_MARGIN;
 		}
 		
 		// magnitude
@@ -696,18 +680,7 @@ public class PHYNetwork implements Serializable {
 				}
 			}
 		}
-		
-//		for(int j = 0; j < nConstraints; j++) {
-//			for(int i = 0; i < nVariables; i++) {
-//				String sep = " ";
-//				if(i % numNodes == 0 && i != 0) {
-//					sep += " | ";
-//				}
-//				System.out.print(sep + adjacency[j][i]);
-//			}
-//			System.out.println(" < " + diffVAFSCPerNode[j]);
-//		}
-		
+
 		// identity
 		double[][] p = new double[nVariables][nVariables];
 		for(int i = 0; i < nVariables; i++) {
@@ -729,7 +702,6 @@ public class PHYNetwork implements Serializable {
 		or.setFi(ineq);
 		or.setToleranceFeas(1.E-9);
 		or.setTolerance(1.E-9);
-		//or.setInitialPoint(new double[nVariables]);
 		
 		JOptimizer opt = new JOptimizer();
 		opt.setOptimizationRequest(or);
@@ -737,17 +709,13 @@ public class PHYNetwork implements Serializable {
 			int r = opt.optimize();
 			if(r != 0) return false;
 			double[] epsilon = opt.getOptimizationResponse().getSolution();
-			//DecimalFormat df = new DecimalFormat("#.####");
 			t.errorScore = 0;
 			for(int i = 0; i < epsilon.length; i++) {
 				t.errorScore += Math.pow(epsilon[i], 2);
-				//System.out.println(df.format(epsilon[i]));
 			}
 		} catch (Exception e) {
-			//e.printStackTrace();
 			return false;
 		}
-		
 		return true;
 	}
 	
@@ -758,10 +726,10 @@ public class PHYNetwork implements Serializable {
 	public void evaluateLineageTrees() {
 		Collections.sort(spanningTrees);
 		int numTreesToCheck = spanningTrees.size() <= Parameters.NUM_TREES_FOR_CONSISTENCY_CHECK ? spanningTrees.size() : Parameters.NUM_TREES_FOR_CONSISTENCY_CHECK;
-		int origSize = spanningTrees.size();
+		//int origSize = spanningTrees.size();
 		applyConsistencyConstraints(spanningTrees.subList(0, numTreesToCheck));
-		int nRemoved = origSize - spanningTrees.size();
-		Collections.sort(spanningTrees.subList(0, numTreesToCheck - nRemoved));
+		//int nRemoved = origSize - spanningTrees.size();
+		//Collections.sort(spanningTrees.subList(0, numTreesToCheck - nRemoved));
 	}
 	
 	/** Debugging only - tests that all the spanning trees found are different */
@@ -813,7 +781,7 @@ public class PHYNetwork implements Serializable {
 	}
 	
 	/** Displays a spanning tree of the network */
-	public void displayTree(PHYTree t, String[] sampleNames, HashMap<String, ArrayList<SNVEntry>> snvsByTag, String fileOutputName) {			
+	public void displayTree(PHYTree t, ArrayList<String> sampleNames, HashMap<String, ArrayList<SNVEntry>> snvsByTag, String fileOutputName) {			
 		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
 		HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
 		HashMap<Integer, PHYNode> nodeObj = new HashMap<Integer, PHYNode>();
@@ -838,7 +806,7 @@ public class PHYNetwork implements Serializable {
 		for(int i = 0; i < numSamples; i++) {
 			PHYNode n = new PHYNode(0, i, numNodes + i);
 			g.addVertex(-n.getNodeId());
-			nodeLabels.put(-n.getNodeId(), sampleNames[i]);
+			nodeLabels.put(-n.getNodeId(), sampleNames.get(i));
 			nodeObj.put(-n.getNodeId(), n);
 			
 			// find a parent in the closest higher level		 
@@ -961,10 +929,33 @@ public class PHYNetwork implements Serializable {
 					ArrayList<SNVEntry> snvs = n.getSNVs(n.getSNVGroup().getSNVs());
 					s += n.getNodeId();
 		    		s += "\t" + n.getSNVGroup().getTag();
+		    		s += "\t[";
+		    		DecimalFormat df = new DecimalFormat("#.##");
+					for(int j = 0; j < n.getCluster().getCentroid().length; j++) {
+						s += " " + df.format(n.getCluster().getCentroid()[j]);
+					}
+					s += "]";
 		    		for(SNVEntry snv : snvs) {
-		    			s += "\t" + snv.getInfoField();
+		    			s += "\tsnv" + snv.getId();
 		        	}
 					s += "\n";
+				}
+			}
+		}
+		return s;
+	}
+	
+	public String getNodeMembersOnlyAsString() {
+		String s = "";
+		for(int i = numSamples + 1; i >= 0; i--) {
+			ArrayList<PHYNode> levelNodes = nodes.get(i);
+			if(levelNodes != null) {
+				for(PHYNode n : levelNodes) {
+					if(n.isRoot()) continue;
+					ArrayList<SNVEntry> snvs = n.getSNVs(n.getSNVGroup().getSNVs());
+		    		for(SNVEntry snv : snvs) {
+		    			s += "snv" + snv.getId() + ": " + snv.getChromosome() + " " + snv.getPosition() + " " + snv.getDescription() + "\n";
+		        	}
 				}
 			}
 		}

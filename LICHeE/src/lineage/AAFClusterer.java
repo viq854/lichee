@@ -87,7 +87,7 @@ public class AAFClusterer implements Serializable {
 		case KMEANS:
 			return kmeans(group.getAlleleFreqBySample(), group.getNumSNVs(), group.getNumSamples(), minNumClusters);
 		case EM:
-			return em(group.getAlleleFreqBySample(), group.getNumSNVs(), group.getNumSamples(), minNumClusters);
+			return em(group.getAlleleFreqBySample(), group.getNumSNVs(), group.getNumSamples());
 		default:
 			return null;	
 		}
@@ -143,7 +143,7 @@ public class AAFClusterer implements Serializable {
 	 * @param data - matrix of observations (numObs x numFeatures)
 	 * @param k - number of clusters
 	 */
-	public Cluster[] em(double[][] data, int numObs, int numFeatures, int k) {
+	public Cluster[] em(double[][] data, int numObs, int numFeatures) {
 		Instances ds = convertMatrixToWeka(data, numObs, numFeatures);
 		EM clusterer = new EM();
 		try {
@@ -386,6 +386,8 @@ public class AAFClusterer implements Serializable {
 		/** List of observations assigned to this cluster */
 		private ArrayList<Integer> members;
 		
+		private boolean robust = false;
+		
 		public Cluster(double[] clusterCentroid, int clusterId) {
 			centroid = clusterCentroid;
 			members = new ArrayList<Integer>();
@@ -473,22 +475,30 @@ public class AAFClusterer implements Serializable {
 			return id;
 		}
 		
+		public boolean isRobust() {
+			return robust;
+		}
+		
+		public void setRobust() {
+			robust = true;
+		}
+		
 		public String toString() {
 			String c = "";
 			c += "Size: " + members.size() + "\n";
 			DecimalFormat df = new DecimalFormat("#.##");
-			c += "AAF Mean: [";
+			c += "VAF Mean: [";
 			for(int i = 0; i < centroid.length; i++) {
 				c += " " + df.format(centroid[i]) + " ";
 			}
 			c += "] \n";
-			c += "    Stdev:";
+			c += "       Stdev:";
 			if(stdDev != null) {
 				c += " [";
 				for(int i = 0; i < stdDev.length; i++) {
 					c += " " + df.format(stdDev[i]) + " ";
 				}
-				c += "]\n";
+				c += "]";
 			}
 			return c;
 		}

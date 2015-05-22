@@ -9,9 +9,9 @@ Matthews N, Santos CR: Genomic architecture and evolution of clear cell renal ce
 defined by multiregion sequencing. Nature genetics 2014, 46:225-233.
 
 LICHeE settings:
--build -n 0 -i ccRCC/RK26.txt -tree [same for EV003, EV005, EV006, EV007, and RMH002]
--build -n 0 -i ccRCC/RMH004.txt -tree -maxVAFAbsent 0.01 -minVAFPresent 0.01
--build -n 0 -i ccRCC/RMH008.txt -minPrivateClusterSize 2 -tree
+-build -n 0 -i ccRCC/RK26.txt -tree 1 -maxVAFAbsent 0.005 -minVAFPresent 0.005 [same for EV003, EV005, EV006, EV007, and RMH002]
+-build -n 0 -i ccRCC/RMH004.txt -tree 1 -maxVAFAbsent 0.01 -minVAFPresent 0.01
+-build -n 0 -i ccRCC/RMH008.txt -tree 1 -maxVAFAbsent 0.005 -minVAFPresent 0.005 -minPrivateClusterSize 2
 
 hgsc/
 
@@ -20,8 +20,11 @@ Distinct evolutionary trajectories of primary high-grade serous ovarian cancers 
 spatial mutational profiling. The Journal of pathology 2013, 231:21-34.
 
 LICHeE settings:
--build -n 0 -i hgsc/case1.txt -tree -maxVAFAbsent 0.005 -minVAFPresent 0.01 [same for case2 and case3]
--build -n 0 -i hgsc/case4.txt -tree -maxVAFAbsent 0.005 -minVAFPresent 0.01 -minClusterSize 3
--build -n 0 -i hgsc/case5.txt -tree -maxVAFAbsent 0.01 -minVAFPresent 0.04 -minClusterSize 3 -maxClusterDist 0.1
--build -n 0 -i hgsc/case6.txt -tree -maxVAFAbsent 0.005 -minVAFPresent 0.01 -maxClusterDist 0.1
+-build -n 0 -i hgsc/case1.txt -tree 1 -maxVAFAbsent 0.005 -minVAFPresent 0.01 [same for case2 and case3]
+-build -n 0 -i hgsc/case4.txt -tree 1 -maxVAFAbsent 0.005 -minVAFPresent 0.01 -minClusterSize 3
+-build -n 0 -i hgsc/case5.txt -tree 1 -maxVAFAbsent 0.01 -minVAFPresent 0.04 -minClusterSize 3 -maxClusterDist 0.1
+-build -n 0 -i hgsc/case6.txt -tree 1 -maxVAFAbsent 0.005 -minVAFPresent 0.01 -maxClusterDist 0.1
 
+In addition, the following settings were used on the two xenoengraftment passages:
+./lichee -build -n 0 -i SA494.txt -tree 1 -maxVAFAbsent 0.03 -minVAFPresent 0.05 -minClusterSize 6 -minPrivateClusterSize 5
+./lichee -build -n 0 -i SA501.txt -tree 1 -maxVAFAbsent 0.03 -minVAFPresent 0.05 -minClusterSize 6 -minPrivateClusterSize 5 -maxClusterDist 0.085 -c

@@ -90,7 +90,7 @@ public class SNVGroup implements Serializable {
 		for(int i = 0; i < snvs.size(); i++) {
 			SNVEntry snv = snvs.get(i);
 			for(int j = 0; j < numSamples; j++) {
-				alleleFreqBySample[i][j] = snv.getAAF(sampleIndex[j]);
+				alleleFreqBySample[i][j] = snv.getVAF(sampleIndex[j]);
 			}
 		}
 	}
@@ -223,10 +223,10 @@ public class SNVGroup implements Serializable {
 			if((c.getMembership().size() >= Parameters.MIN_CLUSTER_SIZE) || ((numSamples == 1) && c.getMembership().size() >= Parameters.MIN_PRIVATE_CLUSTER_SIZE)) { // don't filter out private mutations
 				filteredClusters.add(c);
 			} else {
-				logger.log(Level.INFO, "SNVs Filtered due to Cluster Size Constraint (" + tag + ")");
+				logger.log(Level.INFO, "**Filtered due to cluster size constraint (" + tag + " size " + c.getMembership().size() + "):");
 				for(Integer snv : c.getMembership()) {
 					SNVEntry entry = snvs.get(snv);
-					logger.log(Level.INFO, entry.getChromosome() + " " +  entry.getPosition() + " " + entry.getAltChar() + "/" + entry.getRefChar());
+					logger.log(Level.INFO, entry.toString());
 				}
 			}
 		}
@@ -305,6 +305,21 @@ public class SNVGroup implements Serializable {
 					}
 				}
 				minDistQueue.add(k, cpd);
+			}
+		}
+		
+		// compute the robustness of each cluster
+		for(Cluster c : filteredClusters) {
+			int numRobust = 0;
+			for(Integer snv : c.getMembership()) {
+				SNVEntry entry = snvs.get(snv);
+				if(entry.isRobust()) {
+					numRobust++;
+					if(numRobust >= Parameters.MIN_ROBUST_CLUSTER_SUPPORT) {
+						c.setRobust();
+						break;
+					}
+				}
 			}
 		}
 		
