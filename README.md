@@ -37,7 +37,7 @@ For best results users are advised to explore the parameters exposed by the meth
 ```-minProfileSupport <arg>``` Minimum number of *robust*\*\* SSNVs required for a group presence-absence profile to be labeled robust during SNV calling: SNVs from non-robust groups can be re-assigned to existing robust groups (default: 2)
 
 \* *these parameters are required unless the -sampleProfile option is specified*  
-\*\* *robust SNVs have VAFs > maxVAFAbsent or < minVAFPresent across all the samples*
+\*\* *robust SNVs have VAFs < maxVAFAbsent or > minVAFPresent across all the samples*
 
 ##### PHYLOGENETIC NETWORK CONSTRUCTION AND TREE SEARCH
 
