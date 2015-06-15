@@ -50,6 +50,7 @@ import org.apache.commons.cli.ParseException;
 
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
+import lineage.Parameters.Format;
 import lineage.PHYTree;
 
 /**
@@ -267,6 +268,10 @@ public class LineageEngine {
 		if(cmdLine.hasOption("clustersFile")) {
 			params.clustersFileName = cmdLine.getOptionValue("clustersFile");
 		}
+		if(cmdLine.hasOption("sampleProfile")) {
+			Parameters.INPUT_FORMAT = Format.SNV_WITH_PROFILE;
+		}
+		
 		if(cmdLine.hasOption("n")) {
 			params.normalSampleId = Integer.parseInt(cmdLine.getOptionValue("n"));
 		} else if(!cmdLine.hasOption("sampleProfile")) {
