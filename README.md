@@ -19,7 +19,7 @@ For best results users are advised to explore the parameters exposed by the meth
 ##### INPUT/OUTPUT AND DISPLAY OPTIONS
 
 ```-i <arg>``` Input file path (*required*)  
-```-o <arg>``` Output file path where the results should be written (default: input file name with the suffix .trees)  
+```-o <arg>``` Output file path where the results should be written (default: input file name with the suffix .trees.txt)  
 ```-cp``` Input data represents cell prevalence (CP) values (as opposed to default VAF values)  
 ```-sampleProfile``` Input file contains the SSNV sample presence-absence profile (this will disable the default SSNV calling step)  
 ```-n,--normal <arg>``` Normal sample column id in the list of samples, 0-based (e.g. 0 is the first column) (*required*\*)  
