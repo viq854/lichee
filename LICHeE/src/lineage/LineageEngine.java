@@ -177,26 +177,26 @@ public class LineageEngine {
 	
 	// ---- LAUNCH ----
 	
-	private static final String TREES_TXT_FILE_EXTENSION = ".trees";
+	private static final String TREES_TXT_FILE_EXTENSION = ".trees.txt";
 	public static void main(String[] args) {
 		Options options = new Options(); 
 		// Commands
 		options.addOption("build", false, "Construct the sample lineage trees");
 		
 		// Input/Output/Display
-		options.addOption("i", true, "Input file path");
-		options.addOption("o", true, "Output file path (default: input file with suffix .trees)");
+		options.addOption("i", true, "Input file path [required]");
+		options.addOption("o", true, "Output file path (default: input file with suffix .trees.txt)");
 		options.addOption("cp", false, "Input data represents cell prevalaence (CP) values");
 		options.addOption("sampleProfile", false, "Input file contains the SSNV sample presence-absence profile (this will disable the default SSNV calling step)");
-		options.addOption("n", "normal", true, "Normal sample column id in the list of samples, 0-based (e.g 0 is the first column)");
+		options.addOption("n", "normal", true, "Normal sample column id in the list of samples, 0-based (e.g 0 is the first column) [required without -sampleProfile]");
 		options.addOption("clustersFile", true, "SSNV clusters file path");
 		options.addOption("s", "save", true, "Maximum number of output trees to save (default: 1)");
 		options.addOption("showNetwork", "net", false, "Display the constraint network");
 		options.addOption("showTree", "tree", true, "Number of top-ranking trees to display (default: 0)");
 	
 		// SSNV filtering / calling
-		options.addOption("maxVAFAbsent", "absent", true, "Maximum VAF to robustly consider an SSNV as absent from a sample (default: 0.03)");
-		options.addOption("minVAFPresent", "present", true, "Minimum VAF to robustly consider an SSNV as present in a sample (default: 0.05)");
+		options.addOption("maxVAFAbsent", "absent", true, "Maximum VAF to robustly consider an SSNV as absent from a sample [required without -sampleProfile]");
+		options.addOption("minVAFPresent", "present", true, "Minimum VAF to robustly consider an SSNV as present in a sample [required without -sampleProfile]");
 		options.addOption("maxVAFValid", true, "Maximum allowed VAF in a sample (default: 0.6)");
 		options.addOption("minProfileSupport", true, "Minimum number of robust SSNVs required for a group presence-absence profile to be labeled robust (default: 2)");
 		
@@ -207,7 +207,7 @@ public class LineageEngine {
 		options.addOption("maxClusterDist", true, "Maximum mean VAF difference up to which two clusters can be collapsed (default: 0.2)");
 		options.addOption("c", "completeNetwork", false, "Add all possible edges to the constraint network (default: private nodes are connected only to closest level parents; only nodes with no other parents are descendants of root)");
 		options.addOption("e", true, "VAF error margin (default: 0.1)");
-		options.addOption("nTreeQPCheck", true, "Number of top-ranking trees the QP consistency check is run on, we have not seen this check to fail in practice (default: 0)");
+		options.addOption("nTreeQPCheck", true, "Number of top-ranking trees on which the QP consistency check is run, we have not seen this check fail in practice (default: 0, for best performance)");
 		
 		options.addOption("v", "verbose", false, "Verbose mode");
 		options.addOption("h", "help", false, "Print usage");
