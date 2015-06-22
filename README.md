@@ -46,7 +46,7 @@ For best results users are advised to explore the parameters exposed by the meth
 ```-maxClusterDist <arg>``` Maximum mean VAF difference on average per sample up to which two SSNV clusters can be collapsed (default: 0.2)  
 ```-c,--completeNetwork``` Add all possible edges to the constraint network, by default private nodes are connected only to closest level parents and only nodes with no other parents are descendants of root  
 ```-e <arg>``` VAF error margin (default: 0.1)  
-```-nTreeQPCheck <arg>``` Number of top-ranking trees the QP consistency check is run on, we have not seen this check to fail in practice (default: 0, for best performance)
+```-nTreeQPCheck <arg>``` Number of top-ranking trees on which the QP consistency check is run, we have not seen this check to fail in practice (default: 0, for best performance)
 
 ##### OTHER
 ```-v,--verbose``` Verbose mode, prints more information about each step of the algorithm  
