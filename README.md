@@ -1,9 +1,8 @@
-Multi-sample cancer phylogeny reconstruction
+LICHeE: Fast and scalable inference of multi-sample cancer lineages
 ============
 
 ### About
-LICHeE is designed to reconstruct multi-sample cell lineage trees and infer the subclonal composition of the given samples based on variant allele frequencies (VAFs) of deep-sequencing somatic single nucleotide variants (SSNVs). The program accepts as input a list of SSNVs with specified per-sample VAFs and outputs the inferred cell lineage tree(s) and the sample subclone
-decomposition. It provides a simple GUI to allow users to interact with the trees dynamically.
+LICHeE is a combinatorial method designed to reconstruct multi-sample cell lineage trees and infer the subclonal composition of the given samples based on variant allele frequencies (VAFs) of deep-sequencing somatic single nucleotide variants (SSNVs). The program accepts as input a list of SNVs with specified per-sample VAFs and outputs the inferred cell lineage tree(s) and the sample subclone decomposition. It provides an optional simple GUI to allow users to interact with the trees dynamically.
 
 For more information about the algorithm please see the following publication:  
 Popic V, Salari R, Hajirasouliha I, Kashef-Haghighi D, West RB, Batzoglou S.  
@@ -25,9 +24,9 @@ For best results users are advised to explore the parameters exposed by the meth
 ```-sampleProfile``` Input file contains the SSNV sample presence-absence profile (this will disable the default SSNV calling step)  
 ```-n,--normal <arg>``` Normal sample column id in the list of samples, 0-based (e.g. 0 is the first column) (*required*\*)  
 ```-clustersFile <arg>``` SSNV clusters file path  
-```-s,--save``` Maximum number of output trees to save, if any (default: 1)  
-```-net,--showNetwork``` Display the constraint network  
-```-tree,--showTree <arg>``` Display the top ranking lineage tree(s) (default: 1)
+```-s,--save <arg>``` Maximum number of output trees to save, if any (default: 1)  
+```-showNetwork,--net``` Display the constraint network  
+```-showTree,--tree <arg>``` Display the top ranking lineage tree(s) (default: 0)
 
 ##### SSNV FILTERING AND CALLING
 
@@ -66,17 +65,17 @@ From the /release directory (for other command-line settings used on the ccRCC a
 
 \#Show the top ranking tree <br>
 ```
-./lichee -build -i ../data/ccRCC/RK26.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -tree 1
+./lichee -build -i ../data/ccRCC/RK26.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -showTree 1
 ```
 
 \#Eliminate private clusters/nodes that have fewer than 2 SSNVs, show and save to file the top-ranking tree <br>
 ```
-./lichee -build -i ../data/ccRCC/RMH008.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -minPrivateClusterSize 2 -tree 1 -s 1
+./lichee -build -i ../data/ccRCC/RMH008.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -minPrivateClusterSize 2 -showTree 1 -s 1
 ```
 
 \#Reduce the VAF cluster centroid distance, which determines when the clusters are collapsed <br>
 ```
-./lichee -build -i ../data/hgsc/case6.txt -maxVAFAbsent 0.005 -minVAFPresent 0.01 -n 0 -maxClusterDist 0.1 -tree 1
+./lichee -build -i ../data/hgsc/case6.txt -maxVAFAbsent 0.005 -minVAFPresent 0.01 -n 0 -maxClusterDist 0.1 -showTree 1
 ```
 
 ### Input File Types
@@ -123,7 +122,7 @@ For example (the following file contains 3 clusters for the SSNV example file sh
 
 ### Output Visualization
 
-The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the ```-s``` option that specifies up to how many top trees should be saved) and visualized via the simple GUI (using the ```-tree``` option that specifies how many trees should be displayed). The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and see information about the SSNVs at each node and the sample breakdown. A few useful tips for working with the GUI: one or multiple nodes can be selected and dragged, the size and position of the graph can be adjusted using the trackpad, the Snapshot button can be used to capture the current state of the tree.
+The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the ```-s``` option that specifies up to how many top trees should be saved) and visualized via the simple GUI (using the ```-showTree``` option that specifies how many trees should be displayed). The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and see information about the SSNVs at each node and the sample breakdown. A few useful tips for working with the GUI: one or multiple nodes can be selected and dragged, the size and position of the graph can be adjusted using the trackpad, the Snapshot button can be used to capture the current state of the tree.
 
 ### System Requirements
 

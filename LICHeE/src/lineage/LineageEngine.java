@@ -191,8 +191,8 @@ public class LineageEngine {
 		options.addOption("n", "normal", true, "Normal sample column id in the list of samples, 0-based (e.g 0 is the first column)");
 		options.addOption("clustersFile", true, "SSNV clusters file path");
 		options.addOption("s", "save", true, "Maximum number of output trees to save (default: 1)");
-		options.addOption("net", "showNetwork", false, "Display the constraint network");
-		options.addOption("tree", "showTree", true, "Number of top-ranking trees to display (default: 1)");
+		options.addOption("showNetwork", "net", false, "Display the constraint network");
+		options.addOption("showTree", "tree", true, "Number of top-ranking trees to display (default: 0)");
 	
 		// SSNV filtering / calling
 		options.addOption("maxVAFAbsent", "absent", true, "Maximum VAF to robustly consider an SSNV as absent from a sample (default: 0.03)");
@@ -279,10 +279,10 @@ public class LineageEngine {
 			hf.printHelp("lichee", options);
 			System.exit(-1);
 		}	
-		if(cmdLine.hasOption("tree")) {
-			params.numShow = Integer.parseInt(cmdLine.getOptionValue("tree"));
+		if(cmdLine.hasOption("showTree")) {
+			params.numShow = Integer.parseInt(cmdLine.getOptionValue("showTree"));
 		}
-		if(cmdLine.hasOption("net")) {
+		if(cmdLine.hasOption("showNetwork")) {
 			params.showNetwork = true;
 		}	
 		if(cmdLine.hasOption("s")) {
@@ -372,7 +372,7 @@ public class LineageEngine {
 		
 		// --- 'show' command ---
 		String showFileNamePrefix;
-		int numShow = 1;
+		int numShow = 0;
 		int numSave = 1;
 		
 		// flags
