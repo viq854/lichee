@@ -14,7 +14,7 @@
     <div style="background-color:black; color:white; padding:25px">
         <header class="inner">
           <a style="display: block;position: absolute;top:0;right: 10px;z-index: 10;padding: 10px 50px 10px 10px;color: #fff; background: url('images/blacktocat.png') #0090ff no-repeat 95% 50%; font-weight: 700; box-shadow: 0 0 10px rgba(0,0,0,.5); border-bottom-left-radius: 2px; border-bottom-right-radius: 2px;" href="https://github.com/viq854/lichee">View on GitHub</a>
-          <h1 id="project_title">LICHeE: Lineage Inference for Cancer Heterogeneity and Evolution</h1>
+          <h1 id="project_title">LICHeE: Fast and scalable inference of multi-sample cancer lineages</h1>
         </header>
     </div>
 
@@ -34,454 +34,63 @@ style="width: 194px; height: 206px;" align="left"><span
 style="font-family: Chalkboard SE Bold;"></span></span></big></h3>
 <h3 style="color: black; font-family: Arial Rounded MT Bold;"><br>
 </h3>
-<h3 style="color: black; font-family: Arial Rounded MT Bold;"><big><span
-style="font-weight: bold;"><span
-style="font-family: Chalkboard SE Bold;">About</span></span></big></h3>
-<span style="font-family: Arial;">LICHeE is designed to reconstruct
-multi-sample cell lineage trees and infer the subclonal composition of
-the given samples based on variant allele frequencies (VAFs) of
-deep-sequencing somatic single nucleotide variants (SSNVs). The program
-accepts as input a list of SSNVs with specified per-sample VAFs and
-outputs the inferred cell lineage tree(s) and the sample subclone
-decomposition. It provides a simple GUI to allow users to interact with
-the trees </span><span style="font-family: Arial;">dynamically</span><span
-style="font-family: Arial;">. </span><br style="font-family: Arial;">
-<br style="font-family: Arial;">
-<span style="font-family: Arial;">For more information about the
-algorithm please see the following publication:<br>
-</span><span style="font-family: Arial;">Popic V, Salari R,
-Hajirasouliha I, Kashef-Haghighi D, West RB, Batzoglou S.&nbsp; </span><span
-style="font-family: Arial;"><br>
-</span><a href="http://www.ncbi.nlm.nih.gov/pubmed/25944252"
-style="font-family: Arial;">Fast and scalable inference of
-multi-sample cancer lineages</a><span style="font-family: Arial;">.</span><span
-style="font-family: Arial;"> <span style="font-style: italic;">Genome
-Biology</span> 2015, 16:91</span><br>
-<h3 style="color: rgb(0, 0, 102); font-family: Arial Rounded MT Bold;"><big><span
-style="font-weight: bold;"><span
-style="color: black; font-family: Chalkboard Bold;">Program Parameters</span><br>
-</span></big></h3>
-<span style="font-family: Arial;">For best results users are advised to
-explore the parameters exposed by
-the method and customize them to their specific datasets. </span><br
-style="font-family: Arial;">
-<br style="font-family: Arial;">
-<span style="font-family: Arial Rounded MT Bold;">COMMANDS</span><br
-style="font-family: Arial;">
-<br style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="background-color: black; color: rgb(255, 204, 204); font-family: Courier New,Courier,monospace;"><span
-style="color: rgb(204, 255, 255);">-build</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span><span
-style="font-family: Courier New,Courier,monospace;"></span>&nbsp;&nbsp;&nbsp;
-lineage tree reconstruction </span><br style="font-family: Arial;">
-<span style="font-family: Arial;"><br>
-<span style="font-family: Arial Rounded MT Bold;">INPUT/OUTPUT AND
-DISPLAY OPTIONS</span><br>
-<br>
-<span style="background-color: black; color: rgb(255, 204, 204);"><span
-style="color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"></span></span></span><span
-style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-i
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-style="font-family: Arial;"><span
-style="background-color: black; color: rgb(255, 204, 204);"><span
-style="color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"></span></span>&nbsp;
-&nbsp; Input file path </span><span style="font-family: Arial;"><span
-style="color: red;">(required)</span></span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-o
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
-&nbsp; &nbsp; &nbsp; </span>&nbsp;&nbsp;&nbsp; Output file path where
-the
-results should be written (default: input file name with the suffix
-.<span style="font-style: italic;">trees</span>)</span><br>
-<span style="font-family: Arial;"><span
-style="background-color: black; color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">-cp
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;
-&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span> &nbsp;&nbsp; Input data
-represents cell prevalence (CP) values (as opposed to default VAF
-values)</span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-sampleProfile
-&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>
-&nbsp;&nbsp; Input file contains the SSNV sample presence-absence
-profile (this will disable the default SSNV calling step) </span><span
-style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span></span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-n,--normal
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>
-&nbsp;&nbsp; Normal sample column id in the list of samples, 0-based
-(e.g. 0 is the first column) </span><span style="font-family: Arial;"><span
-style="color: red;">(required*)</span></span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-clustersFile
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>
-&nbsp;&nbsp; SSNV clusters file path</span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-s,--save
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>
-&nbsp;&nbsp; Maximum number of output trees to save, if any (default: 1)</span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; background-color: black; color: rgb(204, 255, 255);">-net,--showNetwork
-&nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span> &nbsp;&nbsp;
-Display the
-constraint network</span><br style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; background-color: black; color: rgb(204, 255, 255);">-tree,--showTree
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp;</span> &nbsp;&nbsp; Display the
-top
-ranking lineage tree(s)&nbsp; (default: 1)</span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span></span><span
-style="font-family: Arial;"><br>
-<span style="font-family: Arial Rounded MT Bold;">SSNV FILTERING AND
-CALLING</span><br>
-<br>
-</span><span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-maxVAFAbsent,--absent
-&lt;arg&gt; &nbsp;</span> &nbsp;&nbsp;
-Maximum VAF to consider an SSNV as </span><span
-style="font-family: Arial;">robustly </span><span
-style="font-family: Arial;">absent from a sample </span><span
-style="font-family: Arial; color: black;"></span><span
-style="font-family: Arial;"><span style="color: red;">(required*)</span></span><span
-style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span></span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-minVAFPresent,--present
-&lt;arg&gt;</span> &nbsp;&nbsp; Minimum VAF
-to consider an SSNV as </span><span style="font-family: Arial;">robustly
-</span><span style="font-family: Arial;">present in a sample </span><span
-style="font-family: Arial;"></span><span style="font-family: Arial;"><span
-style="color: red;">(required*)</span></span><span
-style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span></span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-maxVAFValid
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-&nbsp;&nbsp;
-Maximum allowed VAF in a sample (default: 0.6)<br>
-</span><span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-minProfileSupport
-&lt;arg&gt; &nbsp; &nbsp; &nbsp;</span>
-&nbsp;&nbsp; Minimum number of robust** SSNVs required for a group
-presence-absence profile to be labeled
-robust during SNV calling: SNVs from non-robust groups can be
-re-assigned
-to existing robust groups (default: 2)</span><span
-style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span></span><span
-style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;"></span></span><span
-style="font-family: Arial;"></span><br style="font-family: Arial;">
-<span style="font-family: Arial;"><br>
-</span><span style="font-family: Arial;"><span style="color: red;"><span
-style="color: black; font-style: italic;">* these parameters are
-required unless the -sampleProfile option is specified<br>
-** robust SNVs have VAFs &lt; maxVAFAbsent or&nbsp; &gt; minVAFPresent
-across all the samples <br style="color: black; font-style: italic;">
-</span><br>
-</span></span><span style="font-family: Arial;"><span
-style="font-family: Arial Rounded MT Bold;">PHYLOGENETIC NETWORK
-CONSTRUCTION AND TREE SEARCH</span><br>
-</span><span style="font-family: Arial;"></span><span
-style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;"></span></span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;">-minClusterSize
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span> &nbsp;&nbsp;
-Minimum
-number of SSNVs required per cluster (default: 2)</span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;">-minPrivateClusterSize
-&lt;arg&gt; &nbsp;</span> &nbsp;&nbsp;
-Minimum number of SSNVs required for a private cluster (i.e. with SSNVs
-occurring only in one sample) (default: 1)</span><br>
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-minRobustNodeSupport
-&lt;arg &nbsp; &nbsp;</span> &nbsp;&nbsp; Minimum number of robust
-SSNVs
-required for a node to be labeled robust during tree search: non-robust
-nodes can be removed from the network when no valid lineage trees are
-found (default: 2)</span><span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;"></span></span><span
-style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;"></span></span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-maxClusterDist
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span> &nbsp;&nbsp;
-Maximum mean VAF difference on average per sample up to which two
-SSNV clusters can be collapsed (default: 0.2)</span><br>
-<span style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;">-c,--completeNetwork
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span
-style="font-family: Courier New,Courier,monospace;"> </span>&nbsp;
-Add all possible edges to the constraint network, by default private
-nodes are connected only to closest level parents and only nodes with
-no other parents are descendants of root</span><br>
-<span style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;">-e
-&lt;arg&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-&nbsp; &nbsp; &nbsp;</span> &nbsp;&nbsp; VAF error margin (default: 0.1)<br>
-</span><span style="font-family: Arial;"><span
-style="color: rgb(204, 255, 255); background-color: black; font-family: Courier New,Courier,monospace;">-nTreeQPCheck
-&lt;arg&gt;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-&nbsp;&nbsp;
-Number of top-ranking trees the QP consistency check is run on, we have
-not seen this check to fail in practice
-(default: 0, for best performance)</span><br style="font-family: Arial;">
-<span style="font-family: Arial;"></span><br style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Arial Rounded MT Bold;">OTHER</span></span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"></span><br style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-v,--verbose
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-&nbsp;&nbsp; Verbose mode, prints more information about each step of
-the algorithm</span><br style="font-family: Arial;">
-<span style="font-family: Arial;"><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-h,--help
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-&nbsp;&nbsp;</span>
-&nbsp;&nbsp; Print program usage information</span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><br>
-</span>
-<h3 style="font-family: Chalkboard Bold;"><big>How to Run</big></h3>
-<span style="font-family: Arial;">From the /release directory: <br>
-<br>
-</span><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">./lichee
--build -i &lt;input_file_path&gt; [</span><span
-style="font-family: Arial; color: rgb(204, 255, 255);"><span
-style="font-family: Courier New,Courier,monospace; background-color: black;">-minVAFPresent
-&lt;VAF1&gt;&nbsp;</span><span
-style="font-family: Courier New,Courier,monospace; background-color: black;">-maxVAFAbsent
-&lt;VAF2&gt;&nbsp;</span></span><span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">-n
-&lt;normal_sample_id&gt;] [other
-options]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span
-style="font-family: Arial;"><br>
-</span>
-<h3 style="font-family: Chalkboard Bold;"><big><big><small>Examples</small><br>
-</big></big></h3>
-<span style="font-family: Arial;">From the /release directory (for
-other command-line settings used on the ccRCC and HGSC datasets see the
-README file in the data/ directory): <br>
-<br>
-</span><span style="font-family: Arial;"># Show the top ranking tree</span><br
-style="font-family: Arial;">
-<span
-style="font-family: Courier New,Courier,monospace; background-color: black; color: rgb(204, 255, 255);">./lichee
--build -i ../data/ccRCC/RK26.txt -maxVAFAbsent 0.005 -minVAFPresent
-0.005 -n 0 -tree 1
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><br
-style="font-family: Arial;">
-<span style="font-family: Arial;"><br>
-# Eliminate private clusters/nodes that have fewer than 2 SSNVs, show
-and save to file the top-ranking tree</span><br
-style="font-family: Arial;">
-<span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">./lichee
--build -i ../data/ccRCC/RMH008.txt -maxVAFAbsent 0.005 -minVAFPresent
-0.005 -n 0 -minPrivateClusterSize 2 -tree 1 -s 1 </span><br
-style="font-family: Arial;">
-<br>
-<span style="font-family: Arial;"># Reduce the VAF cluster centroid
-distance, which determines when the clusters are collapsed</span><br
-style="font-family: Arial;">
-<span
-style="font-family: Courier New,Courier,monospace; color: rgb(204, 255, 255); background-color: black;">./lichee
--build -i ../data/hgsc/case6.txt -maxVAFAbsent 0.005 -minVAFPresent
-0.01 -n 0 -maxClusterDist 0.1 -tree
-1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span><span style="font-family: Arial;"></span><span
-style="font-family: Arial;"><br>
-</span>
-<h3 style="font-family: Chalkboard Bold;"><big><small><big><big><small>Input
-File Types</small></big></big></small></big></h3>
-<span style="font-family: Arial;">LICHeE accepts three different file
-format types. The main file format is composed of a list of SSNVs with
-their associated VAF or CP values per sample: one SSNV entry per line. <br>
-The file contains the following header with fields separated by <span
-style="font-weight: bold;">tabs</span>:<br>
-<br>
-<span style="font-family: Courier New,Courier,monospace;"></span><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">#chr&nbsp;&nbsp;&nbsp;
-position &nbsp;&nbsp; description &nbsp;&nbsp; &lt;sample names
-separated by
-tabs&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"><br>
-</span></span><span style="font-family: Arial;"><br>
-For example (the following file contains 5 samples and 3 SSNVs):</span><br>
-<span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"><br>
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">#chr&nbsp;&nbsp;&nbsp;
-position&nbsp;&nbsp;&nbsp; description&nbsp;&nbsp;&nbsp;
-Normal&nbsp;&nbsp;&nbsp; S1&nbsp;&nbsp;&nbsp; S2&nbsp;&nbsp;&nbsp;
-S3&nbsp;&nbsp;&nbsp;
-S4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"></span></span><span
-style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"><br>
-17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 123456&nbsp;&nbsp;&nbsp; &nbsp; A/T
-DUSP19&nbsp;&nbsp;&nbsp;&nbsp; 0.0 &nbsp;&nbsp; &nbsp;&nbsp;
-0.1&nbsp;&nbsp; 0.2&nbsp;&nbsp; 0.25&nbsp; 0.15
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<br>
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">11
-&nbsp;&nbsp;&nbsp;&nbsp; 341567 &nbsp;&nbsp; &nbsp; C/G MUC16
-&nbsp;&nbsp;&nbsp;&nbsp; 0.0 &nbsp;&nbsp; &nbsp;&nbsp; 0.4 &nbsp;
-0.09&nbsp; 0.38&nbsp; 0.24
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<br>
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-787834 &nbsp;&nbsp; &nbsp; A/C OR2A14 &nbsp;&nbsp;&nbsp; 0.0
-&nbsp;&nbsp; &nbsp;&nbsp; 0.35&nbsp; 0.14&nbsp; 0.17&nbsp; 0.48
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"></span></span><span
-style="font-family: Arial;"></span><br>
-<span style="font-family: Arial;"><br>
-Users can also optionally provide pre-computed SSNV calls per sample,
-by adding one more column
-to the above format before the sample frequency information, <br>
-which can specify the binary presence-absence pattern of this SSNV
-across samples. For example, for a file with 5 samples, a pattern of
-01001 implies<br>
-that the SSNV was called in the second and fifth sample (column id 1
-and 4, since we start counting at 0).&nbsp; <br>
-In order to use this file type (and disable the default calling
-mechanism), users should include the -</span><span
-style="font-family: Arial;"><span style="color: red;"><span
-style="color: black; font-style: italic;">sampleProfile</span></span></span><span
-style="font-family: Arial;"> flag. <br>
-An example is shown below:<br>
-<br>
-</span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">#chr&nbsp;&nbsp;&nbsp;
-position&nbsp;&nbsp;&nbsp; description&nbsp;&nbsp;&nbsp; profile</span></span><span
-style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">
-&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; </span></span><span
-style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">Normal&nbsp;&nbsp;&nbsp;
-S1&nbsp;&nbsp;&nbsp; S2&nbsp;&nbsp;&nbsp; S3&nbsp;&nbsp;&nbsp;
-S4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"></span></span><span
-style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"><br>
-1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 184306474 &nbsp; A/G HMCN1
-&nbsp;&nbsp;&nbsp;&nbsp; 01111 &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
-&nbsp; 0.0 &nbsp;&nbsp; &nbsp;&nbsp; 0.1&nbsp;&nbsp; 0.2&nbsp;&nbsp;
-0.25&nbsp; 0.15 &nbsp;&nbsp; <br>
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-18534005 &nbsp;&nbsp; C/A IGSF21 &nbsp;&nbsp;&nbsp; 01111 &nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;
-&nbsp; 0.0 &nbsp;&nbsp; &nbsp;&nbsp; 0.1 &nbsp; 0.25&nbsp;
-0.2&nbsp;&nbsp; 0.1 &nbsp; &nbsp; </span></span><br>
-<span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-110456920 &nbsp; G/A UBL4B &nbsp;&nbsp;&nbsp;&nbsp; 01111 &nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;
-&nbsp; 0.0 &nbsp;&nbsp; &nbsp;&nbsp; 0.4 &nbsp; 0.4 &nbsp;
-0.45&nbsp; 0.45 &nbsp;&nbsp; </span></span><br>
-<span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">10
-&nbsp;&nbsp;&nbsp;&nbsp; 26503064 &nbsp;&nbsp; C/G MYO3A
-&nbsp;&nbsp;&nbsp;&nbsp; 01001 &nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.0 &nbsp;&nbsp; &nbsp;&nbsp; 0.4 &nbsp;
-0.0&nbsp;&nbsp; 0.0&nbsp;&nbsp; 0.24 &nbsp;&nbsp; </span></span><br>
-<br>
-<span style="font-family: Arial;">Finally, users can also specify
-pre-computed SSNV clustering information by providing an additional
-input file <br>
-containing the clusters (with the corresponding centroid VAFs per
-sample and the member SSNVs): one cluster per line.</span><span
-style="font-family: Arial;"><br>
-The file should contain the following fields separated by tabs
-(corresponding to the primary SSNV input file):<br>
-<br>
-</span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">profile
-&nbsp; &lt;cluster VAFs per sample
-separated by tabs&gt; &lt;comma-separated list of SSNVs&gt; </span></span><span
-style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"><br>
-</span></span><span style="font-family: Arial;"><br>
-</span><span style="font-family: Arial;">For example (the following
-file contains 3 clusters for the SSNV example file shown above; the
-SSNVs are specified as line numbers in the SSNV input file ignoring the
-header line, starting from 1):</span><br>
-<span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;"><br>
-</span></span><span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">01111
-&nbsp;&nbsp;&nbsp; 0.0 &nbsp; 0.1&nbsp;&nbsp; 0.23&nbsp; 0.23&nbsp;
-0.13 &nbsp;&nbsp; 1,2
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span><br>
-<span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">01111
-&nbsp;&nbsp;&nbsp; 0.0 &nbsp; 0.4 &nbsp; 0.4 &nbsp;
-0.45&nbsp; 0.45 &nbsp;&nbsp;
-3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span><br>
-<span style="font-family: Arial;"><span
-style="background-color: rgb(204, 255, 255); font-family: Courier New,Courier,monospace;">01001
-&nbsp;&nbsp;&nbsp;
-0.0 &nbsp; 0.4 &nbsp;
-0.0&nbsp;&nbsp; 0.0&nbsp;&nbsp; 0.24 &nbsp;&nbsp;
-4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span><br>
-<span style="font-family: Arial;"><br>
-</span>
-<h3 style="font-family: Chalkboard Bold;"><big>Output Visualization</big></h3>
-<span style="font-family: Arial;">The resulting trees and sample
-decomposition information produced by LICHeE can be written to a text
-file (using the -<span style="font-style: italic;">s</span> option that
-specifies up to how many top trees should be saved) and visualized via
-the simple GUI (using the -<span style="font-style: italic;">tree</span>
-option that specifies how many trees should be displayed). The GUI
-allows users to dynamically remove nodes from the tree, collapse
-clusters of the same SSNV group, and see information about the SSNVs at
-each node and the sample breakdown.<br>
-A few useful tips for working with the GUI: one or multiple nodes can
-be selected and dragged, the size and position of the graph can be
-adjusted using the trackpad, the Snapshot button can be used to capture
-the current state of the tree</span><span style="font-family: Arial;">.
-</span>
-<h3 style="font-family: Chalkboard Bold;"><big>System Requirements</big></h3>
-<span style="font-family: Arial;">Java Runtime Environment (JRE) 1.6 </span><br>
-<span style="font-family: Arial;"><span style="color: rgb(51, 51, 255);"></span></span>
-<h3 style="font-family: Chalkboard Bold;"><big>License</big></h3>
-<span style="font-family: Arial;">MIT License <br>
-</span>
-<h3 style="font-family: Chalkboard Bold;"><big>Support</big></h3>
-<span style="font-family: Arial;">For help running the program or any
-questions/suggestions/bug reports, please contact <span
-style="color: rgb(51, 51, 255);">viq@stanford.edu</span></span><br>
-<br>
+<h3 id="about">About</h3>
+<p>LICHeE is a combinatorial method designed to reconstruct multi-sample cell lineage trees and infer the subclonal composition of the given samples based on variant allele frequencies (VAFs) of deep-sequencing somatic single nucleotide variants (SSNVs). The program accepts as input a list of SNVs with specified per-sample VAFs and outputs the inferred cell lineage tree(s) and the sample subclone decomposition. It provides an optional simple GUI to allow users to interact with the trees dynamically.</p>
+<p>For more information about the algorithm please see the following publication:<br>Popic V, Salari R, Hajirasouliha I, Kashef-Haghighi D, West RB, Batzoglou S.<br><em>Fast and scalable inference of multi-sample cancer lineages</em>. Genome Biology 2015, 16:91.</p>
+<h3 id="program-parameters">Program Parameters</h3>
+<p>For best results users are advised to explore the parameters exposed by the method and customize them to their specific datasets.</p>
+<h5 id="commands">COMMANDS</h5>
+<p><code>-build</code> lineage tree reconstruction</p>
+<h5 id="input-output-and-display-options">INPUT/OUTPUT AND DISPLAY OPTIONS</h5>
+<p><code>-i &lt;arg&gt;</code> Input file path (<em>required</em>)<br><code>-o &lt;arg&gt;</code> Output file path where the results should be written (default: input file name with the suffix .trees)<br><code>-cp</code> Input data represents cell prevalence (CP) values (as opposed to default VAF values)<br><code>-sampleProfile</code> Input file contains the SSNV sample presence-absence profile (this will disable the default SSNV calling step)<br><code>-n,--normal &lt;arg&gt;</code> Normal sample column id in the list of samples, 0-based (e.g. 0 is the first column) (<em>required</em>*)<br><code>-clustersFile &lt;arg&gt;</code> SSNV clusters file path<br><code>-s,--save &lt;arg&gt;</code> Maximum number of output trees to save, if any (default: 1)<br><code>-showNetwork,--net</code> Display the constraint network<br><code>-showTree,--tree &lt;arg&gt;</code> Display the top ranking lineage tree(s) (default: 0)</p>
+<h5 id="ssnv-filtering-and-calling">SSNV FILTERING AND CALLING</h5>
+<p><code>-maxVAFAbsent,--absent &lt;arg&gt;</code> Maximum VAF to consider an SSNV as robustly absent from a sample (<em>required</em>*)<br><code>-minVAFPresent,--present &lt;arg&gt;</code> Minimum VAF to consider an SSNV as robustly present in a sample (<em>required</em>*)<br><code>-maxVAFValid &lt;arg&gt;</code> Maximum allowed VAF in a sample (default: 0.6)<br><code>-minProfileSupport &lt;arg&gt;</code> Minimum number of <em>robust</em>** SSNVs required for a group presence-absence profile to be labeled robust during SNV calling: SNVs from non-robust groups can be re-assigned to existing robust groups (default: 2)</p>
+<p>* <em>these parameters are required unless the -sampleProfile option is specified</em><br>** <em>robust SNVs have VAFs &lt; maxVAFAbsent or &gt; minVAFPresent across all the samples</em></p>
+<h5 id="phylogenetic-network-construction-and-tree-search">PHYLOGENETIC NETWORK CONSTRUCTION AND TREE SEARCH</h5>
+<p><code>-minClusterSize &lt;arg&gt;</code> Minimum number of SSNVs required per cluster (default: 2)<br><code>-minPrivateClusterSize &lt;arg&gt;</code> Minimum number of SSNVs required for a private cluster (i.e. with SSNVs occurring only in one sample) (default: 1)<br><code>-minRobustNodeSupport &lt;arg&gt;</code> Minimum number of robust SSNVs required for a node to be labeled robust during tree search: non-robust nodes can be removed from the network when no valid lineage trees are found (default: 2)<br><code>-maxClusterDist &lt;arg&gt;</code> Maximum mean VAF difference on average per sample up to which two SSNV clusters can be collapsed (default: 0.2)<br><code>-c,--completeNetwork</code> Add all possible edges to the constraint network, by default private nodes are connected only to closest level parents and only nodes with no other parents are descendants of root<br><code>-e &lt;arg&gt;</code> VAF error margin (default: 0.1)<br><code>-nTreeQPCheck &lt;arg&gt;</code> Number of top-ranking trees the QP consistency check is run on, we have not seen this check to fail in practice (default: 0, for best performance)</p>
+<h5 id="other">OTHER</h5>
+<p><code>-v,--verbose</code> Verbose mode, prints more information about each step of the algorithm<br><code>-h,--help</code> Print program usage information</p>
+<h3 id="how-to-run">How to Run</h3>
+<p>From the /release directory:</p>
+<pre><code>./lichee -build -i &lt;input_file_path&gt; [-minVAFPresent &lt;VAF1&gt; -maxVAFAbsent &lt;VAF2&gt; -n &lt;normal_sample_id&gt;] [other options]
+</code></pre><h3 id="examples">Examples</h3>
+<p>From the /release directory (for other command-line settings used on the ccRCC and HGSC datasets see the README file in the data/ directory):</p>
+<p>#Show the top ranking tree &lt;br&gt;</p>
+<pre><code>./lichee -build -i ../data/ccRCC/RK26.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -showTree 1
+</code></pre><p>#Eliminate private clusters/nodes that have fewer than 2 SSNVs, show and save to file the top-ranking tree &lt;br&gt;</p>
+<pre><code>./lichee -build -i ../data/ccRCC/RMH008.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -minPrivateClusterSize 2 -showTree 1 -s 1
+</code></pre><p>#Reduce the VAF cluster centroid distance, which determines when the clusters are collapsed &lt;br&gt;</p>
+<pre><code>./lichee -build -i ../data/hgsc/case6.txt -maxVAFAbsent 0.005 -minVAFPresent 0.01 -n 0 -maxClusterDist 0.1 -showTree 1
+</code></pre><h3 id="input-file-types">Input File Types</h3>
+<p>LICHeE accepts three different file format types. The main file format is composed of a list of SSNVs with their associated VAF or CP values per sample: one SSNV entry per line.<br>The file contains the following header with fields separated by tabs:</p>
+<pre><code>#chr position description &lt;sample names separated by tabs&gt;
+</code></pre><p>For example (the following file contains 5 samples and 3 SSNVs):</p>
+<pre><code>#chr    position    description    Normal    S1    S2    S3    S4                     
+17      123456      A/T DUSP19     0.0       0.1   0.2   0.25  0.15                   
+11      341567      C/G MUC16      0.0       0.4   0.09  0.38  0.24                   
+9       787834      A/C OR2A14     0.0       0.35  0.14  0.17  0.48
+</code></pre><p>Users can also optionally provide pre-computed SSNV calls per sample, by adding one more column to the above format before the sample frequency information, which can specify the binary presence-absence pattern of this SSNV across samples. For example, for a file with 5 samples, a pattern of 01001 implies that the SSNV was called in the second and fifth sample (column id 1 and 4, since we start counting at 0). In order to use this file type (and disable the default calling mechanism), users should include the <code>-sampleProfile</code> flag.<br>An example is shown below:</p>
+<pre><code>#chr    position    description    profile        Normal    S1    S2    S3    S4      
+1       184306474   A/G HMCN1      01111          0.0       0.1   0.2   0.25  0.15    
+1       18534005    C/A IGSF21     01111          0.0       0.1   0.25  0.2   0.1     
+1       110456920   G/A UBL4B      01111          0.0       0.4   0.4   0.45  0.45    
+10      26503064    C/G MYO3A      01001          0.0       0.4   0.0   0.0   0.24
+</code></pre><p>Finally, users can also specify pre-computed SSNV clustering information by providing an additional input file 
+containing the clusters (with the corresponding centroid VAFs per sample and the member SSNVs): one cluster per line.
+The file should contain the following fields separated by tabs (corresponding to the primary SSNV input file):</p>
+<pre><code>profile   &lt;cluster VAFs per sample separated by tabs&gt; &lt;comma-separated list of SSNVs&gt;
+</code></pre><p>For example (the following file contains 3 clusters for the SSNV example file shown above; the SSNVs are specified as line numbers in the SSNV input file ignoring the header line, starting from 1):</p>
+<pre><code>01111     0.0   0.1   0.23  0.23  0.13    1,2                                         
+01111     0.0   0.4   0.4   0.45  0.45    3                                           
+01001     0.0   0.4   0.0   0.0   0.24    4
+</code></pre><h3 id="output-visualization">Output Visualization</h3>
+<p>The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the <code>-s</code> option that specifies up to how many top trees should be saved) and visualized via the simple GUI (using the <code>-showTree</code> option that specifies how many trees should be displayed). The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and see information about the SSNVs at each node and the sample breakdown. A few useful tips for working with the GUI: one or multiple nodes can be selected and dragged, the size and position of the graph can be adjusted using the trackpad, the Snapshot button can be used to capture the current state of the tree.</p>
+<h3 id="system-requirements">System Requirements</h3>
+<p>Java Runtime Environment (JRE) 1.6 </p>
+<h3 id="license">License</h3>
+<p>MIT License </p>
+<h3 id="support">Support</h3>
+<p>For help running the program or any questions/suggestions/bug reports, please contact viq@stanford.edu</p>
 </section>
 </div>
     <!-- FOOTER  -->
