@@ -106,7 +106,8 @@ public class LineageEngine {
 		
 		if(spanningTrees.size() == 0) {
 			logger.info("Adjusting the network...");	
-			// if no valid trees were found, fix the network (e.g. remove group nodes that are not robust)
+			// if no valid trees were found, fix the network 
+			// remove group nodes that are not robust, complete edges
 			int delta = 0;
 			do {
 				int numNodes = constrNetwork.numNodes;
@@ -114,6 +115,11 @@ public class LineageEngine {
 				spanningTrees = constrNetwork.getLineageTrees();  
 				delta = numNodes - constrNetwork.numNodes; 
 			} while((delta != 0) && (spanningTrees.size() <= 0));
+			if(spanningTrees.size() <= 0) {
+				Parameters.ALL_EDGES = true;
+				constrNetwork = new PHYNetwork(groups, db.getNumSamples());
+				spanningTrees = constrNetwork.getLineageTrees();
+			}	
 			logger.info("Found " + spanningTrees.size() + " valid trees after network adjustments");	
 		}
 		
