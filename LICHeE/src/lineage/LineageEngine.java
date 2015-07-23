@@ -310,7 +310,7 @@ public class LineageEngine {
 			System.exit(-1);
 		}
 		if(cmdLine.hasOption("maxVAFValid")) {
-			Parameters.MAX_ALLOWED_VAF = Integer.parseInt(cmdLine.getOptionValue("maxVAFValid"));
+			Parameters.MAX_ALLOWED_VAF = Double.parseDouble(cmdLine.getOptionValue("maxVAFValid"));
 		}
 		if(cmdLine.hasOption("minProfileSupport")) {
 			Parameters.MIN_GROUP_PROFILE_SUPPORT = Integer.parseInt(cmdLine.getOptionValue("minProfileSupport"));
