@@ -16,6 +16,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,6 +52,7 @@ import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.PickableVertexPaintTransformer;
 import edu.uci.ics.jung.visualization.picking.PickedState;
 import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
+import de.erichseifert.vectorgraphics2d.PDFGraphics2D;
 
 public class Visualizer {
 
@@ -334,17 +336,20 @@ public class Visualizer {
 		snapshotButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent evt) {
-				BufferedImage bufImage = new BufferedImage(graphPanel.getSize().width, graphPanel.getSize().height, BufferedImage.TYPE_INT_RGB);
-				graphPanel.paint(bufImage.createGraphics());
+				//BufferedImage bufImage = new BufferedImage(graphPanel.getSize().width, graphPanel.getSize().height, BufferedImage.TYPE_INT_RGB);
+				//graphPanel.paint(bufImage.createGraphics());
+				PDFGraphics2D bufImage = new PDFGraphics2D(0.0, 0.0, graphPanel.getSize().width, graphPanel.getSize().height);
+				graphPanel.paint(bufImage);				
+				
 				final JFileChooser fc = new JFileChooser();
 				int returnVal = fc.showSaveDialog(graphPanel);
 		        if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            File imageFile = fc.getSelectedFile();
 		            try{
 		            	imageFile.createNewFile();
-		            	ImageIO.write(bufImage, "jpeg", imageFile);
-		            }catch(Exception ex){
-		            }
+		            	//ImageIO.write(bufImage, "jpeg", imageFile);
+		            	Files.write(imageFile.toPath(), bufImage.getBytes());
+		            }catch(Exception ex){}
 		        }
 			}
 		});
