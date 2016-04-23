@@ -153,7 +153,8 @@ public class Visualizer {
      	frame.setContentPane(licheePanel);
      		
         licheePanel.setBackground(new java.awt.Color(255, 255, 255));
-        graphPanel.setBackground(new java.awt.Color(211, 255, 248));
+        //graphPanel.setBackground(new java.awt.Color(211, 255, 248));
+        graphPanel.setBackground(new java.awt.Color(255, 255, 255));
         graphPanel.setLayout(new BorderLayout());
         graphPanel.add(visServer, BorderLayout.PAGE_START);
         visServer.setBackground(graphPanel.getBackground());
@@ -268,6 +269,14 @@ public class Visualizer {
 		visServer.getRenderContext().setVertexFillPaintTransformer(new PickableVertexPaintTransformer<Integer>(pickedState, Color.white, Color.yellow));
 		visServer.getRenderContext().setEdgeDrawPaintTransformer(new Transformer<Integer, Paint>() {
 			public Paint transform(Integer s) {
+				return Color.BLACK;
+			}
+		});
+		visServer.getRenderContext().setVertexDrawPaintTransformer(new Transformer<Integer, Paint>() {
+			public Paint transform(Integer s) {
+				if(s < 0) {
+					return new Color(227,37,107);
+				}
 				return Color.BLACK;
 			}
 		});
