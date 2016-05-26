@@ -149,7 +149,7 @@ Using Graphviz (Graphviz must be installed separately):
 dot -Tpdf ../data/ccRCC/RK26.txt.dot -O
 ```
 
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.pdf "RK26 Graphviz output")
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.png "RK26 Graphviz output")
 
 
 Example 2. Visualization for ccRCC patient RMH008
@@ -164,14 +164,14 @@ LICHeE GUI in color mode, cluster node 10 is selected, sample constributions hig
 
 Snapshot PDF:
 
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.pdf "RMH008 GUI snapshot file")
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.png "RMH008 GUI snapshot file")
 
 Using Graphviz:
 
 ```
 dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
 ```
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.pdf "RMH008 Graphviz output")
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png "RMH008 Graphviz output")
 
 
 ### System Requirements
