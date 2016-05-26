@@ -141,6 +141,7 @@ Example 1. Visualization for ccRCC patient RK26
 
 LICHeE GUI in color mode, sample node R5 is selected:
 
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="200" height="200" />
 ![tree]( https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png "RK26 tree GUI view")
 
 Using Graphviz (Graphviz must be installed separately):
