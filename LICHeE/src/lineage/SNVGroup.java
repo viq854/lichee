@@ -143,6 +143,10 @@ public class SNVGroup implements Serializable {
 		return tag.length();
 	}
 	
+	public int[] getSampleIds() {
+		return sampleIndex;
+	}
+	
 	public int getNumSNVs() {
 		return snvs.size();
 	}

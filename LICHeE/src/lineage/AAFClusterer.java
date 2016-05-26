@@ -370,7 +370,7 @@ public class AAFClusterer implements Serializable {
 	 * Cluster of observation points
 	 * Each cluster has an associated centroid point and a list of members
 	 */
-	protected class Cluster implements Serializable {
+	public class Cluster implements Serializable {
 		
 		private static final long serialVersionUID = 1L;
 

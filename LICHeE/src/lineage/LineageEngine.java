@@ -29,6 +29,7 @@
 
 package lineage;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +49,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import util.LineageDisplayConfig;
+import util.Visualizer;
 import lineage.AAFClusterer.Cluster;
 import lineage.AAFClusterer.ClusteringAlgorithms;
 import lineage.Parameters.Format;
@@ -135,14 +138,18 @@ public class LineageEngine {
 			constrNetwork.displayNetwork();
 		}
 		if(spanningTrees.size() > 0) {
-			for(int i = 0; i < args.numShow; i++) {
-				if(spanningTrees.size() > i) {
-					constrNetwork.displayTree(spanningTrees.get(i), db.getSampleNames(), null, null);
-				} else {
-					break;
+			for(int i = 0; i < spanningTrees.size(); i++) {
+				if(i >= args.numShow && i > 0) break;
+				LineageDisplayConfig display = new LineageDisplayConfig(constrNetwork, spanningTrees.get(i), db.getSampleNames(), args.color);
+				if(i < args.numShow) {
+					Visualizer.showLineageTree(display);
+				}
+				if(i == 0 && args.outputDOTFileName != null) { // top tree only for simplicity
+					String parentDir = new File(args.outputDOTFileName).getParent();
+					writeTreeToDOTFile(display.toDOT(parentDir), db.getSampleNames(), args);
 				}
 			}
-			// 8. persistent storage
+			// 8. persistent storage	
 			if(args.numSave > 0) {
 				writeTreesToTxtFile(constrNetwork, spanningTrees, db.getSampleNames(), args);
 			}	
@@ -150,7 +157,7 @@ public class LineageEngine {
 	}
 	
 	///// I/O /////
-	
+
 	private static void writeTreesToTxtFile(PHYNetwork net, ArrayList<PHYTree> trees, ArrayList<String> sampleNames, Args args) {
 		String treeFileName = args.outputFileName;
 		try {
@@ -181,6 +188,19 @@ public class LineageEngine {
 		}
 	}
 	
+	private static void writeTreeToDOTFile(String dotTree, ArrayList<String> sampleNames, Args args) {
+		String treeFileName = args.outputDOTFileName;
+		try {
+			FileWriter fw = new FileWriter(treeFileName);
+			fw.write(dotTree);
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Failed to write to the file: " + treeFileName);
+			System.exit(-1);
+		}
+	}
+	
 	// ---- LAUNCH ----
 	
 	private static final String TREES_TXT_FILE_EXTENSION = ".trees.txt";
@@ -199,6 +219,9 @@ public class LineageEngine {
 		options.addOption("s", "save", true, "Maximum number of output trees to save (default: 1)");
 		options.addOption("showNetwork", "net", false, "Display the constraint network");
 		options.addOption("showTree", "tree", true, "Number of top-ranking trees to display (default: 0)");
+		options.addOption("color", false, "Enable lineage tree visualization in color mode");
+		options.addOption("dot", false, "Enable DOT file export of the top-scoring tree for Graphviz visualization (saved by default to: input file with suffix .dot)");
+		options.addOption("dotFile", true, "DOT file path");
 	
 		// SSNV filtering / calling
 		options.addOption("maxVAFAbsent", "absent", true, "Maximum VAF to robustly consider an SSNV as absent from a sample [required without -sampleProfile]");
@@ -231,6 +254,9 @@ public class LineageEngine {
 		optionsList.add(options.getOption("s"));
 		optionsList.add(options.getOption("net"));
 		optionsList.add(options.getOption("tree"));
+		optionsList.add(options.getOption("color"));
+		optionsList.add(options.getOption("dot"));
+		optionsList.add(options.getOption("dotFile"));
 		optionsList.add(options.getOption("maxVAFAbsent"));
 		optionsList.add(options.getOption("minVAFPresent"));
 		optionsList.add(options.getOption("maxVAFValid"));
@@ -271,6 +297,13 @@ public class LineageEngine {
 		} else {
 			params.outputFileName = params.inputFileName + TREES_TXT_FILE_EXTENSION;
 		}
+		if(cmdLine.hasOption("dot")) {
+			params.outputDOTFileName = params.inputFileName + ".dot";	
+		}
+		if(cmdLine.hasOption("dotFile")) {
+			params.outputDOTFileName = cmdLine.getOptionValue("dotFile");	
+		}
+		
 		if(cmdLine.hasOption("clustersFile")) {
 			params.clustersFileName = cmdLine.getOptionValue("clustersFile");
 		}
@@ -293,6 +326,9 @@ public class LineageEngine {
 		}	
 		if(cmdLine.hasOption("s")) {
 			params.numSave = Integer.parseInt(cmdLine.getOptionValue("s")); 
+		}
+		if(cmdLine.hasOption("color")) {
+			params.color = true;
 		}
 		
 		if(cmdLine.hasOption("maxVAFAbsent")) {
@@ -368,8 +404,9 @@ public class LineageEngine {
 	protected static class Args {
 		// --- 'build' command ---
 		String inputFileName;
-		String outputFileName;	
-		String clustersFileName;	
+		String outputFileName;
+		String outputDOTFileName;	
+		String clustersFileName;
 		int normalSampleId = 0;
 		String cnvFileName;
 		String annFileName;
@@ -384,6 +421,7 @@ public class LineageEngine {
 		// flags
 		boolean showNetwork = false;
 		boolean verbose = false;
+		boolean color = false;
 	}
 
 	protected static class LogFormatter extends Formatter {

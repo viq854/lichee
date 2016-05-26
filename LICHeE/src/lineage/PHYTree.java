@@ -44,8 +44,8 @@ import java.util.HashMap;
 public class PHYTree implements Comparable<PHYTree>, Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	protected ArrayList<PHYNode> treeNodes;
-	protected HashMap<PHYNode, ArrayList<PHYNode>> treeEdges;
+	public ArrayList<PHYNode> treeNodes;
+	public HashMap<PHYNode, ArrayList<PHYNode>> treeEdges;
 	protected double errorScore = -1;
 	
 	public PHYTree() {
@@ -112,6 +112,10 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 			}
 		}
 		return false;
+	}
+	
+	public PHYNode getRoot() {
+		return treeNodes.get(0);
 	}
 	
 	/** 
@@ -237,11 +241,12 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 	 */
 	public String getLineage(int sampleId, String sampleName) {
 		StringBuilder lineage = new StringBuilder();
-		String indent = "";
-		lineage.append(sampleName + ":\n");
+		lineage.append("\tSample lineage decomposition: ");
+		lineage.append(sampleName + "\n");
 		lineage.append("GL\n");
 		
 		// traverse the tree starting from the root in DFS order
+		String indent = "";
 		for(PHYNode n : treeEdges.get(treeNodes.get(0))) {
 			getLineageHelper(lineage, indent, n, sampleId);
 		}
@@ -249,9 +254,10 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 	}
 	
 	private void getLineageHelper(StringBuilder lineage, String indent, PHYNode n, int sampleId) {
-		indent += "     ";			
+		//indent += "     ";	
+		indent += ".....";	
 		
-		DecimalFormat df = new DecimalFormat("#.##");
+		DecimalFormat df = new DecimalFormat("#.###");
 		if(n.getSNVGroup().containsSample(sampleId)) {
 			lineage.append(indent + n.getSNVGroup().getTag() + ": " + df.format(n.getAAF(sampleId)) + " [" + df.format(n.getStdDev(sampleId)) + "]\n");
 		}
@@ -259,6 +265,30 @@ public class PHYTree implements Comparable<PHYTree>, Serializable {
 			for(PHYNode nbr : treeEdges.get(n)) {
 				getLineageHelper(lineage, indent, nbr, sampleId);
 			}
+		}
+	}
+	
+	public void getLineageClusters(ArrayList<PHYNode> path, ArrayList<ArrayList<PHYNode>> clones, PHYNode n, int sampleId) {
+		if(n.getSNVGroup() != null && n.getSNVGroup().containsSample(sampleId)) {
+			path.add(n);
+		} else if(n.getSNVGroup() != null && !n.getSNVGroup().containsSample(sampleId)) {
+			return;
+		}
+		if(treeEdges.get(n) != null) {
+			for(PHYNode nbr : treeEdges.get(n)) {
+				int size1 = clones.size();
+				ArrayList<PHYNode> clone = new ArrayList<PHYNode>(path);
+				getLineageClusters(new ArrayList<PHYNode>(path), clones, nbr, sampleId);
+				int size2 = clones.size();
+				if(size1 == size2) {
+					if(nbr.getSNVGroup() != null && nbr.getSNVGroup().containsSample(sampleId)) {
+						clone.add(nbr);
+						clones.add(clone);
+					}
+				}
+			}
+		} else {
+			clones.add(new ArrayList<PHYNode>(path));
 		}
 	}
 }	

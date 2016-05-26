@@ -66,23 +66,23 @@ public class PHYNetwork implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	/** Nodes in the graph divided by levels (number of samples node SNVs occurred in) */
-	protected HashMap<Integer, ArrayList<PHYNode>> nodes;
+	public HashMap<Integer, ArrayList<PHYNode>> nodes;
 	
 	/** Nodes in the graph indexed by their unique ID */
-	protected transient HashMap<Integer, PHYNode> nodesById;
+	public transient HashMap<Integer, PHYNode> nodesById;
 	
 	/** Adjacency map of nodes to the their neighbors/children */
-	protected transient HashMap<PHYNode, ArrayList<PHYNode>> edges;
+	public transient HashMap<PHYNode, ArrayList<PHYNode>> edges;
 	
 	/** Total number of nodes in the graph.
 	 *  During construction: used as a counter to assign unique IDs to nodes */
-	protected int numNodes;
+	public int numNodes;
 	
 	/** Total number of edges in the graph */
-	protected int numEdges;
+	public int numEdges;
 	
 	/** Total number of tissue samples */
-	protected int numSamples;
+	public int numSamples;
 		
 	private static Logger logger = LineageEngine.logger;
 	
@@ -778,83 +778,6 @@ public class PHYNetwork implements Serializable {
 			}
 		}
 		Visualizer.showNetwork(g, nodeLabels);	
-	}
-	
-	/** Displays a spanning tree of the network */
-	public void displayTree(PHYTree t, ArrayList<String> sampleNames, HashMap<String, ArrayList<SNVEntry>> snvsByTag, String fileOutputName) {			
-		DirectedGraph<Integer, Integer> g = new DirectedSparseGraph<Integer, Integer>();
-		HashMap<Integer, String> nodeLabels = new HashMap<Integer, String>();
-		HashMap<Integer, PHYNode> nodeObj = new HashMap<Integer, PHYNode>();
-		
-		int edgeId = 0;
-		for (PHYNode n : t.treeEdges.keySet()) {
-			g.addVertex(n.getNodeId());
-			nodeLabels.put(n.getNodeId(), n.getLabel());
-			nodeObj.put(n.getNodeId(), n);
-			for(PHYNode n2 : t.treeEdges.get(n)) {
-				if(!g.containsVertex(n2.getNodeId())) {
-					g.addVertex(n2.getNodeId());
-					nodeLabels.put(n2.getNodeId(), n2.getLabel());
-					nodeObj.put(n2.getNodeId(), n2);
-				}
-				g.addEdge(edgeId, n.getNodeId(), n2.getNodeId(), EdgeType.DIRECTED);
-				edgeId++;
-			}
-		}
-		
-		// add sample leaves
-		for(int i = 0; i < numSamples; i++) {
-			PHYNode n = new PHYNode(0, i, numNodes + i);
-			g.addVertex(-n.getNodeId());
-			nodeLabels.put(-n.getNodeId(), sampleNames.get(i));
-			nodeObj.put(-n.getNodeId(), n);
-			
-			// find a parent in the closest higher level		 
-			boolean found = false;
-			ArrayList<PHYNode> parents = new ArrayList<PHYNode>();
-			ArrayList<PHYNode> sameLevelParents = new ArrayList<PHYNode>();
-			for(int j = n.getLevel() + 1; j <= numSamples; j++) {
-				ArrayList<PHYNode> fromLevelNodes = nodes.get(j);
-				if(fromLevelNodes == null) continue;
-				for(PHYNode n2 : fromLevelNodes) {
-					if(n2.getAAF(i) > 0) {
-						boolean addEdge = true;
-						for(PHYNode p : parents) {
-							if(t.isDescendent(n2, p)) {
-								addEdge = false;
-								break;
-							}
-						}
-						if(addEdge) {
-							sameLevelParents.add(n2);
-							parents.add(n2);
-							found = true;
-						}
-					}
-				}
-				// remove nodes that are in same level that are connected
-				ArrayList<PHYNode> toRemove = new ArrayList<PHYNode>();
-				for(PHYNode n1 : sameLevelParents) {
-					for(PHYNode n2 : sameLevelParents) {
-						if(t.isDescendent(n1, n2)) {
-							toRemove.add(n1);
-						}
-					}
-				}
-				sameLevelParents.removeAll(toRemove);
-				
-				for(PHYNode n2 : sameLevelParents) {
-					g.addEdge(edgeId, n2.getNodeId(), -n.getNodeId());
-					edgeId++;
-				}
-				sameLevelParents.clear();
-			}
-			if(!found) {
-				g.addEdge(edgeId, 0, -n.getNodeId());
-				edgeId++;
-			}
-		}			
-		Visualizer.showLineageTree(g, nodeLabels, snvsByTag, fileOutputName, nodeObj, t, this, sampleNames);	
 	}
 	
 	
