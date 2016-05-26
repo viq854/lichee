@@ -26,7 +26,10 @@ For best results users are advised to explore the parameters exposed by the meth
 ```-clustersFile <arg>``` SSNV clusters file path  
 ```-s,--save <arg>``` Maximum number of output trees to save, if any (default: 1)  
 ```-showNetwork,--net``` Display the constraint network  
-```-showTree,--tree <arg>``` Display the top ranking lineage tree(s) (default: 0)
+```-showTree,--tree <arg>``` Display the top ranking lineage tree(s) (default: 0)  
+```-color``` Enable lineage tree visualization in color mode  
+```-dot``` Enable DOT file export of the top-scoring tree for Graphviz visualization (saved by default to: input file with suffix .dot)  
+```-dotFile <arg>``` DOT file path  
 
 ##### SSNV FILTERING AND CALLING
 
@@ -122,7 +125,54 @@ For example (the following file contains 3 clusters for the SSNV example file sh
 
 ### Output Visualization
 
-The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the ```-s``` option that specifies up to how many top trees should be saved) and visualized via the simple GUI (using the ```-showTree``` option that specifies how many trees should be displayed). The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and see information about the SSNVs at each node and the sample breakdown. A few useful tips for working with the GUI: one or multiple nodes can be selected and dragged, the size and position of the graph can be adjusted using the trackpad, the Snapshot button can be used to capture the current state of the tree.
+The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the ```-s``` option that specifies up to how many top trees should be saved) and visualized via the interactive LICHeE Lineage Tree Viewer GUI (using the ```-showTree``` option that specifies how many trees should be displayed). It is also possible to export the best-scoring tree as a DOT file for Graphviz visualization (using the ```-dot``` or ```-dotFile``` options).  
+
+The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and view information about each node (e.g. SSNV composition of cluster nodes or the subclone decomposition of sample nodes). The Snapshot button can be used anytime to capture the current state of the tree as a vector graphic PDF file (please note that it takes a bit of time to write out the image to file).
+
+We currently support two display modes: plain (default) and color (enabled with the ```-color``` flag). In the color mode, each cluster node is assigned a unique color and each sample node is decorated with the colors corresponding to the clusters of mutations present in the sample. The sample is decomposed by color according the the (approximate) prevalence of each cluster in the sample. The contribution of a cluster to each sample is highlighted (in purple) when the cluster node is selected.
+
+A few useful tips for working with the GUI: one or multiple nodes can be selected and dragged to the desired position, the size (zoom) and position of the graph can be adjusted using the trackpad.
+
+Example 1. Visualization for ccRCC patient RK26
+
+```
+./lichee -build -i ../data/ccRCC/RK26.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -showTree 1 -color -dot
+```
+
+LICHeE GUI in color mode, sample node R5 is selected:
+
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png "RK26 tree GUI view")
+
+Using Graphviz (Graphviz must be installed separately):
+
+```
+dot -Tpdf ../data/ccRCC/RK26.txt.dot -O
+```
+
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.pdf "RK26 Graphviz output")
+
+
+Example 2. Visualization for ccRCC patient RMH008
+
+```
+./lichee -build -i ../data/ccRCC/RMH008.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -minPrivateClusterSize 2 -showTree 1 -color -dot
+```
+
+LICHeE GUI in color mode, cluster node 10 is selected, sample constributions highlighted in purple:
+
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png "RMH008 tree GUI view")
+
+Snapshot PDF:
+
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.pdf "RMH008 GUI snapshot file")
+
+Using Graphviz:
+
+```
+dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
+```
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.pdf "RMH008 Graphviz output")
+
 
 ### System Requirements
 
