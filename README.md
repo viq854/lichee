@@ -129,7 +129,7 @@ The resulting trees and sample decomposition information produced by LICHeE can 
 
 The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and view information about each node (e.g. SSNV composition of cluster nodes or the subclone decomposition of sample nodes). The Snapshot button can be used anytime to capture the current state of the tree as a vector graphic PDF file (please note that it takes a bit of time to write out the image to file).
 
-We currently support two display modes: plain (default) and color (enabled with the ```-color``` flag). In the color mode, each cluster node is assigned a unique color and each sample node is decorated with the colors corresponding to the clusters of mutations present in the sample. The sample is decomposed by color according the the (approximate) prevalence of each cluster in the sample. The contribution of a cluster to each sample is highlighted (in purple) when the cluster node is selected.
+We currently support two display modes: plain (default) and color (enabled with the ```-color``` flag). In the color mode, each cluster node is assigned a unique color and each sample node is decorated with the colors corresponding to the clusters of mutations present in the sample. The sample is decomposed by color according to the (approximate) prevalence of each cluster in the sample. The contribution of a cluster to each sample is highlighted (in purple) when the cluster node is selected.
 
 A few useful tips for working with the GUI: one or multiple nodes can be selected and dragged to the desired position, the size (zoom) and position of the graph can be adjusted using the trackpad.
 
@@ -139,13 +139,7 @@ Example 1. Visualization for ccRCC patient RK26
 ./lichee -build -i ../data/ccRCC/RK26.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -showTree 1 -color -dot
 ```
 
-LICHeE GUI in color mode, sample node R5 is selected:
-
-<p align="center">
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="65%" height="65%" />
-</p>
-
-Using Graphviz (Graphviz must be installed separately):
+Display using Graphviz (Graphviz must be installed separately):
 
 ```
 dot -Tpdf ../data/ccRCC/RK26.txt.dot -O
@@ -161,20 +155,6 @@ Example 2. Visualization for ccRCC patient RMH008
 ./lichee -build -i ../data/ccRCC/RMH008.txt -maxVAFAbsent 0.005 -minVAFPresent 0.005 -n 0 -minPrivateClusterSize 2 -showTree 1 -color -dot
 ```
 
-LICHeE GUI in color mode, cluster node 10 is selected, sample constributions highlighted in purple:
-
-<p align="center">
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png" width="65%" height="65%" />
-</p>
-
-Snapshot PDF:
-
-<p align="center">
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.png" width="60%" height="60%" />
-</p>
-
-Using Graphviz:
-
 ```
 dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
 ```
@@ -183,10 +163,25 @@ dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
 <img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.color.dot.png" width="65%" height="65%" />
 </p>
 
-Plain mode simple look:
+Plain mode simple look (withot ```-color``` flag):
 
 <p align="center">
 <img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png" width="65%" height="65%" />
+</p>
+
+GUI interaction examples:
+
+Cluster node 10 is selected, sample constributions highlighted in purple.
+
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png" width="65%" height="65%" />
+</p>
+
+
+Sample node R5 is selected, lineages highlighted in purple:
+
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="65%" height="65%" />
 </p>
 
 ### System Requirements
