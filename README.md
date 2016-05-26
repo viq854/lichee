@@ -141,15 +141,19 @@ Example 1. Visualization for ccRCC patient RK26
 
 LICHeE GUI in color mode, sample node R5 is selected:
 
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="75%" height="75%" />
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="65%" height="65%" />
+</p>
 
 Using Graphviz (Graphviz must be installed separately):
 
 ```
 dot -Tpdf ../data/ccRCC/RK26.txt.dot -O
 ```
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.png" width="75%" height="75%" />
 
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.png" width="65%" height="65%" />
+</p>
 
 Example 2. Visualization for ccRCC patient RMH008
 
@@ -159,22 +163,31 @@ Example 2. Visualization for ccRCC patient RMH008
 
 LICHeE GUI in color mode, cluster node 10 is selected, sample constributions highlighted in purple:
 
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png" width="75%" height="75%" />
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png" width="65%" height="65%" />
+</p>
 
 Snapshot PDF:
 
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.png" width="75%" height="75%" />
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.png" width="60%" height="60%" />
+</p>
 
 Using Graphviz:
 
 ```
 dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
 ```
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.color.dot.png" width="75%" height="75%" />
+
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.color.dot.png" width="65%" height="65%" />
+</p>
 
 Plain mode simple look:
 
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png" width="75%" height="75%" />
+<p align="center">
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png" width="65%" height="65%" />
+</p>
 
 ### System Requirements
 
