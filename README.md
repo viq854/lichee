@@ -141,7 +141,7 @@ Example 1. Visualization for ccRCC patient RK26
 
 LICHeE GUI in color mode, sample node R5 is selected:
 
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png "RK26 tree GUI view")
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png "RK26 tree GUI view" =100x20)
 
 Using Graphviz (Graphviz must be installed separately):
 
@@ -171,8 +171,11 @@ Using Graphviz:
 ```
 dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
 ```
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png "RMH008 Graphviz output")
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.color.dot.png "RMH008 Graphviz output")
 
+Plain mode simple look:
+
+![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.plain.dot.png "RMH008 Graphviz output")
 
 ### System Requirements
 
