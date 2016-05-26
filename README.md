@@ -141,15 +141,14 @@ Example 1. Visualization for ccRCC patient RK26
 
 LICHeE GUI in color mode, sample node R5 is selected:
 
-<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="50%" height="50%" />
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="75%" height="75%" />
 
 Using Graphviz (Graphviz must be installed separately):
 
 ```
 dot -Tpdf ../data/ccRCC/RK26.txt.dot -O
 ```
-
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.png "RK26 Graphviz output")
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RK26.txt.dot.png" width="75%" height="75%" />
 
 
 Example 2. Visualization for ccRCC patient RMH008
@@ -160,22 +159,22 @@ Example 2. Visualization for ccRCC patient RMH008
 
 LICHeE GUI in color mode, cluster node 10 is selected, sample constributions highlighted in purple:
 
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png "RMH008 tree GUI view")
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_cluster_demo.png" width="75%" height="75%" />
 
 Snapshot PDF:
 
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.png "RMH008 GUI snapshot file")
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.snapshot_color.png" width="75%" height="75%" />
 
 Using Graphviz:
 
 ```
 dot -Tpdf ../data/ccRCC/RMH008.txt.dot -O
 ```
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.color.dot.png "RMH008 Graphviz output")
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.color.dot.png" width="75%" height="75%" />
 
 Plain mode simple look:
 
-![tree]( https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png "RMH008 Graphviz output")
+<img src="https://github.com/viq854/lichee/blob/master/img_demo/RMH008.txt.dot.png" width="75%" height="75%" />
 
 ### System Requirements
 
