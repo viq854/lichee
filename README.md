@@ -4,13 +4,15 @@ LICHeE: Fast and scalable inference of multi-sample cancer lineages
 ### About
 LICHeE is a combinatorial method designed to reconstruct multi-sample cell lineage trees and infer the subclonal composition of the given samples based on variant allele frequencies (VAFs) of deep-sequencing somatic single nucleotide variants (SSNVs). The program accepts as input a list of SNVs with specified per-sample VAFs and outputs the inferred cell lineage tree(s) and the sample subclone decomposition. It provides an optional simple GUI to allow users to interact with the trees dynamically.
 
+At a high level, LICHeE's execution can be broken down into the following steps: (1) SSNV calling across input samples, (2) SSNV clustering using VAFs (each group of SSNVs present in the same set of samples is clustered separately), (3) construction of the evolutionary constraint network (where the nodes are the clusters obtained in step (2) and the edges represent valid pairwise ancestry relationships), (4) search for lineage trees embedded in the network that satisfy all the phylogenetic constraints, and (5) output visualization.
+
 For more information about the algorithm please see the following publication:  
 Popic V, Salari R, Hajirasouliha I, Kashef-Haghighi D, West RB, Batzoglou S.  
 *Fast and scalable inference of multi-sample cancer lineages*. Genome Biology 2015, 16:91.
 
 ### Program Parameters
 
-For best results users are advised to explore the parameters exposed by the method and customize them to their specific datasets.
+For best results users are advised to explore the parameters exposed by the method and customize them to their specific datasets. The default values for several parameters are set fairly conservatively, assuming noisy real data, and relaxing these thresholds (especially when testing on simulated data) can produce more granular results. For example, lowering ```-maxClusterDist```, which controls the collapsing of nearby clusters, can order additional SSNVs by keeping them in separate clusters; similarly, lowering ```-minClusterSize``` to 1 will keep single-SSNV clusters in the network. More information on parameter tuning is provided below.
 
 ##### COMMANDS
 
@@ -125,7 +127,7 @@ For example (the following file contains 3 clusters for the SSNV example file sh
 
 ### Output Visualization
 
-The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the ```-s``` option that specifies up to how many top trees should be saved) and visualized via the interactive LICHeE Lineage Tree Viewer GUI (using the ```-showTree``` option that specifies how many trees should be displayed). It is also possible to export the best-scoring tree as a DOT file for Graphviz visualization (using the ```-dot``` or ```-dotFile``` options).  
+The resulting trees and sample decomposition information produced by LICHeE can be written to a text file (using the ```-s``` option that specifies up to how many top trees should be saved; it is recommended to evaluate all the trees that achieved the best score) and visualized via the interactive LICHeE Lineage Tree Viewer GUI (using the ```-showTree``` option that specifies how many trees should be displayed). It is also possible to export the best-scoring tree as a DOT file for Graphviz visualization (using the ```-dot``` or ```-dotFile``` options).  
 
 The GUI allows users to dynamically remove nodes from the tree, collapse clusters of the same SSNV group, and view information about each node (e.g. SSNV composition of cluster nodes or the subclone decomposition of sample nodes). The Snapshot button can be used anytime to capture the current state of the tree as a vector graphic PDF file (please note that it takes a bit of time to write out the image to file).
 
@@ -184,14 +186,23 @@ Sample node R5 is selected, lineages highlighted in purple:
 <img src="https://github.com/viq854/lichee/blob/master/img_demo/lichee_sample_demo.png" width="65%" height="65%" />
 </p>
 
+### Parameter Tuning and Diagnostics
+
+In some cases, LICHeE may not find a valid tumor lineage tree for an input dataset given a specific parameter setting. In some other cases, multiple alternative lineage trees might be valid under different parameter settings. Therefore, it is recommended to explore various parameters when analyzing a particular dataset. 
+
+For instance, since LICHeE uses a heuristic method to call SSNVs that heavily relies on the values of the ```-maxVAFAbsent``` and ```-minVAFPresent``` parameters, adjusting these parameters to reflect the expected noise levels in the data, or supplying pre-computed calls can be very useful. Furthermore, it might be useful to adjust the criteria for incorporating clusters into the constraint network. For example, clusters that contain only a few SSNVs are more likely to represent mis-called presence patterns and can be filtered out by increasing the ```-minClusterSize``` and ```-minPrivateClusterSize``` parameters. The parameter ```-minRobustNodeSupport``` (which determines how many robustly-called SSNVs are required for a node to be non-removable) can be increased to iteratively remove nodes from the network while no valid trees are found automatically. For very noisy data, the ```-e``` parameter can be increased to relax the VAF constraint enforcement (although this should be done sparingly). On the other hand, adjusting these parameters in the opposite direction can result in more granular trees and is advisable on less noisy datasets in order to get the most informative results.
+
+For diagnostics, LICHeE outputs a log detailing the execution of each step of the algorithm (with more information provided using the verbose, ```-v```, flag). This log can be very useful when trying to diagnose the performance of the program and view any of its intermediate results. In particular, it provides information about SSNV calling, clustering, the structure of the resulting constraint network, tree scoring, and any other operations controlled by various parameter settings. Using the log, the user can also trace why a particular SSNV was not included in the final output tree(s) (e.g. due to filtering based on the maximum VAF allowed or due to cluster size constraints) by searching the log for the "Filtered" keyword or for the unique descriptor of the SSNV (the log will output the SSNV entry line for each filtered SSNV as it appears in the input file). Furthermore, when no valid trees are found, examining the cluster centroid VAFs and the topology of the constraint network can be helpful to determine why at least one phylogenetic constraint is violated in each candidate embedded spanning trees. 
+
+
 ### System Requirements
 
 Java Runtime Environment (JRE) 1.6 
 
-###License
+### License
 
 MIT License 
 
-###Support
+### Support
 
-For help running the program or any questions/suggestions/bug reports, please contact viq@stanford.edu
+For help running the program or any questions/suggestions/bug reports, please contact viq@cs.stanford.edu
